@@ -44,10 +44,7 @@ module MEM_Stage(
     wire        mem_ready_go;
     wire [31:0] mem_result;
     reg         mem_valid;
-    wire        mem_we;
-    wire [31:0] mem_rkd_value;
     wire [31:0] mem_rf_wdata;
-    wire        mem_rf_we;
     wire [ 4:0] mem_rf_waddr;
     wire [31:0] mem_alu_result;
     wire        mem_res_from_mem;
@@ -77,9 +74,7 @@ module MEM_Stage(
             mem_rf_waddr,
             mem_pc,
             mem_alu_result,
-            mem_rkd_value,
-            mem_res_from_mem,
-            mem_we
+            mem_res_from_mem
             } = ex_to_mem_reg;
     
 //mem and wb state interface
@@ -88,8 +83,7 @@ module MEM_Stage(
     assign mem_to_wb_wire = {mem_rf_we,
                              mem_rf_waddr,
                              mem_rf_wdata,
-                             mem_pc
-                             };
+                             mem_pc};
                              
     assign mem_rf_zip      = {mem_rf_we & mem_valid,
                               mem_rf_waddr,

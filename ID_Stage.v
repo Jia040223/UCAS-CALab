@@ -44,7 +44,7 @@ module ID_Stage(
     
     wire [31:0] id_pc;
     wire        id_res_from_mem; // res_from_mem
-    wire        id_mem_we;
+    wire [ 3:0] id_mem_we;
     wire [31:0] id_rkd_value;
     
     wire        id_ready_go;
@@ -52,14 +52,14 @@ module ID_Stage(
     wire [31:0] inst;
 
     wire [11:0] alu_op;
-    wire [31:0] alu_src1   ;
-    wire [31:0] alu_src2   ;
+    wire [31:0] alu_src1;
+    wire [31:0] alu_src2;
     wire        src1_is_pc;
     wire        src2_is_imm;
     wire        res_from_mem;
     wire        dst_is_r1;
     wire        gr_we;
-    wire        mem_we;
+    wire [ 3:0] mem_we;
     wire        src_reg_is_rd;
     wire        rj_eq_rd;
     wire [4: 0] dest;
@@ -121,19 +121,19 @@ module ID_Stage(
     // reg         wb_rf_we   ;
     // reg  [ 4:0] wb_rf_waddr;
     // reg  [31:0] wb_rf_wdata;
-    wire        wb_rf_we   ;
+    wire        wb_rf_we;
     wire [ 4:0] wb_rf_waddr;
     wire [31:0] wb_rf_wdata;
     
-    wire        mem_rf_we   ;
+    wire        mem_rf_we;
     wire [ 4:0] mem_rf_waddr;
     wire [31:0] mem_rf_wdata;
     
-    wire        ex_rf_we   ;
+    wire        ex_rf_we;
     wire [ 4:0] ex_rf_waddr;
     wire [31:0] ex_rf_wdata;
     
-    wire        id_rf_we   ;
+    wire        id_rf_we;
     wire [ 4:0] id_rf_waddr;
 
     wire        conflict_r1_wb;
@@ -150,11 +150,11 @@ module ID_Stage(
     wire        need_r2;
         
 //stage control signal
-    assign id_ready_go      = ~conflict;
+    assign id_ready_go     = ~conflict;
     
-    assign conflict         =  ex_res_from_mem & (conflict_r1_ex & need_r1|conflict_r2_ex & need_r2);  
+    assign conflict        =  ex_res_from_mem & (conflict_r1_ex & need_r1|conflict_r2_ex & need_r2);  
     
-    assign id_allowin       = ~id_valid | id_ready_go & ex_allowin;     
+    assign id_allowin      = ~id_valid | id_ready_go & ex_allowin;     
     assign id_to_ex_valid  = id_valid & id_ready_go;
     always @(posedge clk) begin
         if(~resetn)
@@ -185,7 +185,7 @@ module ID_Stage(
                     || inst_bl
                     || inst_b
                     ) && id_valid;
-    assign br_target = (inst_beq || inst_bne || inst_bl || inst_b) ? (id_pc + br_offs) :
+    assign br_target = (inst_beq || inst_bne || inst_bl || inst_b) ? (id_pc + br_offs):
                                                     /*inst_jirl*/ (rj_value + jirl_offs);
                     
                                            
@@ -251,7 +251,7 @@ module ID_Stage(
     assign need_si26  =  inst_b | inst_bl;
     assign src2_is_4  =  inst_jirl | inst_bl;
 
-    assign imm = src2_is_4 ? 32'h4                      :
+    assign imm = src2_is_4 ? 32'h4                     :
                 need_si20 ? {i20[19:0], 12'b0}         :
     /*need_ui5 || need_si12*/{{20{i12[11]}}, i12[11:0]} ;
 
@@ -265,14 +265,14 @@ module ID_Stage(
     assign src1_is_pc    = inst_jirl | inst_bl;
 
     assign src2_is_imm   = inst_slli_w |
-                        inst_srli_w |
-                        inst_srai_w |
-                        inst_addi_w |
-                        inst_ld_w   |
-                        inst_st_w   |
-                        inst_lu12i_w|
-                        inst_jirl   |
-                        inst_bl     ;
+                           inst_srli_w |
+                           inst_srai_w |
+                           inst_addi_w |
+                           inst_ld_w   |
+                           inst_st_w   |
+                           inst_lu12i_w|
+                           inst_jirl   |
+                           inst_bl     ;
 
     assign alu_src1 = src1_is_pc  ? id_pc[31:0] : rj_value;
     assign alu_src2 = src2_is_imm ? imm : rkd_value;
@@ -280,13 +280,13 @@ module ID_Stage(
     assign res_from_mem  = inst_ld_w;
     assign dst_is_r1     = inst_bl;
     assign gr_we         = ~inst_st_w & ~inst_beq & ~inst_bne & ~inst_b; 
-    assign mem_we        = inst_st_w ;   
+    assign mem_we        = {4{inst_st_w}} ;   
     assign dest          = dst_is_r1 ? 5'd1 : rd;
 
 //regfile control
     assign rf_raddr1 = rj;
-    assign rf_raddr2 = src_reg_is_rd ? rd :rk;
-    assign id_rf_we    = gr_we ; 
+    assign rf_raddr2 = src_reg_is_rd ? rd : rk;
+    assign id_rf_we    = gr_we; 
     assign id_rf_waddr = dest; 
     
     assign {wb_rf_we, 
@@ -302,14 +302,14 @@ module ID_Stage(
             ex_rf_waddr, 
             ex_rf_wdata} = ex_rf_zip;
     
-    assign conflict_r1_wb = (|rf_raddr1) & (rf_raddr1 == wb_rf_waddr) & wb_rf_we;
-    assign conflict_r2_wb = (|rf_raddr2) & (rf_raddr2 == wb_rf_waddr) & wb_rf_we;
+    assign conflict_r1_wb =  (|rf_raddr1) & (rf_raddr1 == wb_rf_waddr)  & wb_rf_we;
+    assign conflict_r2_wb =  (|rf_raddr2) & (rf_raddr2 == wb_rf_waddr)  & wb_rf_we;
     assign conflict_r1_mem = (|rf_raddr1) & (rf_raddr1 == mem_rf_waddr) & mem_rf_we;
     assign conflict_r2_mem = (|rf_raddr2) & (rf_raddr2 == mem_rf_waddr) & mem_rf_we;
-    assign conflict_r1_ex = (|rf_raddr1) & (rf_raddr1 == ex_rf_waddr) & ex_rf_we;
-    assign conflict_r2_ex = (|rf_raddr2) & (rf_raddr2 == ex_rf_waddr) & ex_rf_we;
+    assign conflict_r1_ex =  (|rf_raddr1) & (rf_raddr1 == ex_rf_waddr)  & ex_rf_we;
+    assign conflict_r2_ex =  (|rf_raddr2) & (rf_raddr2 == ex_rf_waddr)  & ex_rf_we;
     
-    assign need_r1 = inst_add_w | inst_sub_w | inst_slt | inst_addi_w | inst_sltu | inst_nor | inst_and | inst_or | inst_xor | inst_srli_w | inst_slli_w | inst_srai_w | inst_ld_w | inst_st_w |inst_bne  | inst_beq | inst_jirl;
+    assign need_r1 = inst_add_w | inst_sub_w | inst_slt | inst_addi_w | inst_sltu | inst_nor | inst_and | inst_or | inst_xor | inst_srli_w | inst_slli_w | inst_srai_w | inst_ld_w | inst_st_w | inst_bne | inst_beq | inst_jirl;
     assign need_r2 = inst_add_w | inst_sub_w | inst_slt | inst_sltu | inst_and | inst_or | inst_nor | inst_xor | inst_st_w | inst_beq | inst_bne;
     
     regfile u_regfile(
@@ -324,12 +324,12 @@ module ID_Stage(
     );
 
     
-    assign rj_value  =  conflict_r1_ex ? ex_rf_wdata:
-                        conflict_r1_mem ? mem_rf_wdata:
+    assign rj_value  =  conflict_r1_ex  ? ex_rf_wdata :
+                        conflict_r1_mem ? mem_rf_wdata :
                         conflict_r1_wb  ? wb_rf_wdata : rf_rdata1; 
                         
-    assign rkd_value =  conflict_r2_ex ? ex_rf_wdata:
-                        conflict_r2_mem ? mem_rf_wdata:
+    assign rkd_value =  conflict_r2_ex  ? ex_rf_wdata :
+                        conflict_r2_mem ? mem_rf_wdata :
                         conflict_r2_wb  ? wb_rf_wdata : rf_rdata2; 
 
     assign id_mem_we = mem_we;
