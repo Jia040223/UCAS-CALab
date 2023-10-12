@@ -1,5 +1,4 @@
 `timescale 1ns / 1ps
-`include "mycpu_head.h"
 //////////////////////////////////////////////////////////////////////////////////
 // Company: 
 // Engineer: 
@@ -21,20 +20,19 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-
 module EX_Stage(
     input  wire        clk,
     input  wire        resetn,
     // id and exe state interface
     output wire        ex_allowin,
-    input  wire [`ID_TO_EX_WIDTH-1:0] id_to_ex_wire,
+    input  wire [147:0]id_to_ex_wire,
     input  wire        id_to_ex_valid,
     // exe and mem state interface
     input  wire        mem_allowin,
-    output wire [`EX_TO_MEM_WIDTH-1:0] ex_to_mem_wire, 
+    output wire [103:0]ex_to_mem_wire, 
     output wire        ex_to_mem_valid,
     
-    input  wire [38:0] ex_rf_zip,
+    input wire  [38:0] ex_rf_zip,
     
 // data sram interface
     output wire        data_sram_en,
@@ -42,22 +40,21 @@ module EX_Stage(
     output wire [31:0] data_sram_addr,
     output wire [31:0] data_sram_wdata
 );
-    reg  [`ID_TO_EX_WIDTH - 1:0] id_to_ex_reg;
+    reg  [147:0] id_to_ex_reg;
+    wire         ex_ready_go;
+    reg          ex_valid;
     
-    wire        ex_ready_go;
-    reg         ex_valid;
-    
-    wire        ex_rf_we;
-    wire [ 4:0] ex_rf_waddr;
-    wire [31:0] ex_pc;    
+    wire         ex_rf_we   ;
+    wire [ 4:0]  ex_rf_waddr;
+    wire [31:0]  ex_pc;    
 
-    wire [11:0] ex_alu_op;
-    wire [31:0] ex_alu_src1;
-    wire [31:0] ex_alu_src2;
+    wire  [11:0] ex_alu_op;
+    wire  [31:0] ex_alu_src1   ;
+    wire  [31:0] ex_alu_src2   ;
+
     wire [31:0] ex_alu_result; 
-
     wire        ex_res_from_mem; 
-    wire [ 3:0] ex_mem_we;
+    wire        ex_mem_we;
     wire [31:0] ex_rkd_value;
 
 //stage control signal
@@ -100,7 +97,10 @@ module EX_Stage(
                              ex_rf_waddr,
                              ex_pc,
                              ex_alu_result,
-                             ex_res_from_mem};
+                             ex_rkd_value,
+                             ex_res_from_mem,
+                             ex_mem_we
+                             };
                              
     assign ex_rf_zip       = {ex_res_from_mem & ex_valid,
                               ex_rf_we & ex_valid,
@@ -108,8 +108,8 @@ module EX_Stage(
                               ex_alu_result};
     
     //data sram interface
-    assign data_sram_en    = ex_res_from_mem || (|ex_mem_we);
-    assign data_sram_we    = ex_mem_we;
+    assign data_sram_en    = ex_res_from_mem || ex_mem_we;
+    assign data_sram_we    = {4{ex_mem_we}};
     assign data_sram_addr  = ex_alu_result;
     assign data_sram_wdata = ex_rkd_value;
                                 
