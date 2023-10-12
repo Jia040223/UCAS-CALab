@@ -29,7 +29,7 @@ module EX_Stage(
     input  wire        id_to_ex_valid,
     // exe and mem state interface
     input  wire        mem_allowin,
-    output wire [EX_TO_MEM_WIDTH-1:0]ex_to_mem_wire, 
+    output wire [`EX_TO_MEM_WIDTH-1:0]ex_to_mem_wire, 
     output wire        ex_to_mem_valid,
     
     input wire  [38:0] ex_rf_zip,
@@ -40,7 +40,7 @@ module EX_Stage(
     output wire [31:0] data_sram_addr,
     output wire [31:0] data_sram_wdata
 );
-    reg  [ID_TO_EX_WIDTH-1:0] id_to_ex_reg;
+    reg  [`ID_TO_EX_WIDTH-1:0] id_to_ex_reg;
     
     wire        ex_ready_go;
     reg         ex_valid;
