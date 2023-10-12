@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+`include "mycpu_head.h"
 //////////////////////////////////////////////////////////////////////////////////
 // Company: 
 // Engineer: 
@@ -19,7 +20,6 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-
 module IF_Stage(
     input  wire        clk,
     input  wire        resetn,
@@ -35,18 +35,18 @@ module IF_Stage(
     input  wire [31:0]  br_target,
     //if to id stage signal
     output wire         if_to_id_valid,
-    output wire [63:0]  if_to_id_wire
+    output wire [`IF_TO_ID_WIDTH-1:0] if_to_id_wire
 );
-    wire [31:0]  if_inst;
-    reg  [31:0]  if_pc;
+    wire [31:0] if_inst;
+    reg  [31:0] if_pc;
     
-    wire                if_ready_go;
-    reg                 if_valid;
-    wire        [31:0]  seq_pc;
-    wire         [31:0]  nextpc;
+    wire        if_ready_go;
+    reg         if_valid;
+    wire [31:0] seq_pc;
+    wire [31:0] nextpc;
     
-    wire                if_allowin;
-    wire                to_if_valid;
+    wire        if_allowin;
+    wire        to_if_valid;
     
 //IF statge control signal
 
@@ -59,7 +59,7 @@ module IF_Stage(
         if(~resetn)
             if_valid <= 0; 
         else if(if_allowin)
-            if_valid <= to_if_valid;// ÔÚreset³·ÏúµÄÏÂÒ»¸öÊ±ÖÓÉÏÉýÑØ²Å¿ªÊ¼È¡Ö¸
+            if_valid <= to_if_valid;// ï¿½ï¿½resetï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ø²Å¿ï¿½Ê¼È¡Ö¸
         else if(br_taken)
             if_valid <= 0;
     end
