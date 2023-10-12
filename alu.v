@@ -17,8 +17,6 @@ wire op_sll;   //logic left shift
 wire op_srl;   //logic right shift
 wire op_sra;   //arithmetic right shift
 wire op_lui;   //Load Upper Immediate
-wire qqqqqq;
-assign qqqqqq = 1'b1;
 
 // control code decomposition
 assign op_add  = alu_op[ 0];
