@@ -1,25 +1,3 @@
-`timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 2023/09/22 19:32:00
-// Design Name: 
-// Module Name: MEM_Stage
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
-
 module MEM_Stage(
     input  wire        clk,
     input  wire        resetn,
@@ -47,13 +25,18 @@ module MEM_Stage(
     wire        mem_rf_we;
     wire [ 4:0] mem_rf_waddr;
     wire [31:0] mem_alu_result;
-    wire        mem_res_from_mem;
+
+    wire        res_from_mem;
+    wire        mem_inst_ld_b;
+    wire        mem_inst_ld_bu;
+    wire        mem_inst_ld_h;
+    wire        mem_inst_ld_hu;
+    wire        mem_inst_ld_w;
 
 //stage control signal
     assign mem_ready_go     = 1'b1;
     assign mem_allowin      = ~mem_valid | mem_ready_go & wb_allowin;     
     assign mem_to_wb_valid  = mem_valid & mem_ready_go;
-    assign mem_rf_wdata     = mem_res_from_mem ? mem_result : mem_alu_result;
 
     always @(posedge clk) begin
         if(~resetn)
@@ -68,19 +51,25 @@ module MEM_Stage(
             ex_to_mem_reg <= ex_to_mem_wire;
     end
     
-    assign {mem_rf_we,
-            mem_rf_waddr,
+    assign {mem_rf_we, mem_rf_waddr,
             mem_pc,
             mem_alu_result,
-            mem_res_from_mem,
+            mem_inst_ld_b, mem_inst_ld_bu, mem_inst_ld_h, mem_inst_ld_hu, mem_inst_ld_w
             } = ex_to_mem_reg;
     
 //mem and wb state interface
-    assign mem_result = data_sram_rdata;
+    assign res_from_mem = mem_inst_ld_b || mem_inst_ld_bu || mem_inst_ld_h || mem_inst_ld_hu || mem_inst_ld_w;
+    assign mem_result = {32{mem_inst_ld_b}} & {24{data_sram_rdata[7]}, data_sram_rdata[7:0]} |
+                        {32{mem_inst_ld_bu}} & {24'b0, data_sram_rdata[7:0]} |
+                        {32{mem_inst_ld_h}} & {16{data_sram_rdata[15]}, data_sram_rdata[15:0]} |
+                        {32{mem_inst_ld_hu}} & {16'b0, data_sram_rdata[15:0]} |
+                        data_sram_rdata;
+
+    assign mem_rf_wdata     = res_from_mem ? mem_result : mem_alu_result;
     
     assign mem_to_wb_wire = {mem_rf_we,
                              mem_rf_waddr,
-                             mem_rf_wdata,
+                             mem_rf_wdata
                              mem_pc};
                              
     assign mem_rf_zip      = {mem_rf_we & mem_valid,

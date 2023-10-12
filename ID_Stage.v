@@ -1,25 +1,3 @@
-`timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 2023/09/22 19:30:58
-// Design Name: 
-// Module Name: ID_Stage
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
-
 module ID_Stage(
     input  wire        clk,
     input  wire        resetn,
@@ -41,8 +19,6 @@ module ID_Stage(
     reg  [`IF_TO_ID_WIDTH-1:0] if_to_id_reg; 
     
     wire [31:0] id_pc;
-    wire        id_res_from_mem; // res_from_mem
-    wire [ 3:0] id_mem_we;
     wire [31:0] id_rkd_value;
     
     wire        id_ready_go;
@@ -54,12 +30,13 @@ module ID_Stage(
     wire [31:0] alu_src2;
     wire        src1_is_pc;
     wire        src2_is_imm;
-    wire        res_from_mem;
+    wire [ 3:0] res_from_mem;
     wire        dst_is_r1;
     wire        gr_we;
-    wire [ 3:0] mem_we;
     wire        src_reg_is_rd;
     wire        rj_eq_rd;
+    wire        rj_lt_rd_signed;
+    wire        rj_lt_rd_unsigned;
     wire [4: 0] dest;
     wire [31:0] rj_value;
     wire [31:0] rkd_value;
@@ -83,43 +60,6 @@ module ID_Stage(
     wire [15:0] op_25_22_d;
     wire [ 3:0] op_21_20_d;
     wire [31:0] op_19_15_d;
-    
-    wire        inst_add_w;
-    wire        inst_sub_w;
-    wire        inst_slti;
-    wire        inst_slt;
-    wire        inst_sltui;
-    wire        inst_sltu;
-    wire        inst_nor;
-    wire        inst_and;
-    wire        inst_andi;
-    wire        inst_or;
-    wire        inst_ori;
-    wire        inst_xor;
-    wire        inst_xori;
-    wire        inst_sll_w;
-    wire        inst_slli_w;
-    wire        inst_srl_w;
-    wire        inst_srli_w;
-    wire        inst_sra_w;
-    wire        inst_srai_w;
-    wire        inst_addi_w;
-    wire        inst_ld_w;
-    wire        inst_st_w;
-    wire        inst_jirl;
-    wire        inst_b;
-    wire        inst_bl;
-    wire        inst_beq;
-    wire        inst_bne;
-    wire        inst_lu12i_w;
-    wire        inst_pcaddul2i;
-    wire        inst_mul_w;
-    wire        inst_mulh_w;
-    wire        inst_mulh_wu;
-    wire        inst_div_w;
-    wire        inst_div_wu;
-    wire        inst_mod_w;
-    wire        inst_mod_wu;
 
     wire        need_ui5;
     wire        need_ui12;
@@ -158,7 +98,7 @@ module ID_Stage(
     wire        conflict_r1_ex;
     wire        conflict_r2_ex;
     
-    wire        ex_res_from_mem;
+    wire [ 3:0] ex_res_from_mem;
     wire        conflict;
     
     wire        need_r1;
@@ -167,7 +107,7 @@ module ID_Stage(
 //stage control signal
     assign id_ready_go      = ~conflict;
     
-    assign conflict         =  ex_res_from_mem & (conflict_r1_ex & need_r1|conflict_r2_ex & need_r2);  
+    assign conflict         =  (|ex_res_from_mem) & (conflict_r1_ex & need_r1|conflict_r2_ex & need_r2);  
     
     assign id_allowin       = ~id_valid | id_ready_go & ex_allowin;     
     assign id_to_ex_valid  = id_valid & id_ready_go;
@@ -188,19 +128,6 @@ module ID_Stage(
     end
     
     assign {inst, id_pc} = if_to_id_reg;
-
-
-    assign rj_eq_rd = (rj_value == rkd_value);
-    assign br_taken = conflict ? 1'b0 :
-                      (inst_beq  &&  rj_eq_rd
-                    || inst_bne  && !rj_eq_rd
-                    || inst_jirl
-                    || inst_bl
-                    || inst_b
-                    ) && id_valid;
-    assign br_target = (inst_beq || inst_bne || inst_bl || inst_b) ? (id_pc + br_offs) :
-                                                    /*inst_jirl*/ (rj_value + jirl_offs);
-                    
                                            
 //decode instruction
     assign op_31_26  = inst[31:26];
@@ -222,43 +149,87 @@ module ID_Stage(
     decoder_2_4  u_dec2(.in(op_21_20 ), .out(op_21_20_d ));
     decoder_5_32 u_dec3(.in(op_19_15 ), .out(op_19_15_d ));
 
-    assign inst_add_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h00];
-    assign inst_sub_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h02];
-    assign inst_slt    = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h04];
-    assign inst_sltu   = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h05];
-    assign inst_nor    = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h08];
-    assign inst_and    = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h09];
-    assign inst_or     = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h0a];
-    assign inst_xor    = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h0b];
-    assign inst_slli_w = op_31_26_d[6'h00] & op_25_22_d[4'h1] & op_21_20_d[2'h0] & op_19_15_d[5'h01];
-    assign inst_srli_w = op_31_26_d[6'h00] & op_25_22_d[4'h1] & op_21_20_d[2'h0] & op_19_15_d[5'h09];
-    assign inst_srai_w = op_31_26_d[6'h00] & op_25_22_d[4'h1] & op_21_20_d[2'h0] & op_19_15_d[5'h11];
-    assign inst_addi_w = op_31_26_d[6'h00] & op_25_22_d[4'ha];
-    assign inst_ld_w   = op_31_26_d[6'h0a] & op_25_22_d[4'h2];
-    assign inst_st_w   = op_31_26_d[6'h0a] & op_25_22_d[4'h6];
-    assign inst_jirl   = op_31_26_d[6'h13];
-    assign inst_b      = op_31_26_d[6'h14];
-    assign inst_bl     = op_31_26_d[6'h15];
-    assign inst_beq    = op_31_26_d[6'h16];
-    assign inst_bne    = op_31_26_d[6'h17];
-    assign inst_lu12i_w= op_31_26_d[6'h05] & ~inst[25];
+    //inst_calculate_register
+    wire inst_add_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h00];
+    wire inst_sub_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h02];
+    wire inst_slt    = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h04];
+    wire inst_sltu   = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h05];
+    wire inst_nor    = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h08];
+    wire inst_and    = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h09];
+    wire inst_or     = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h0a];
+    wire inst_xor    = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h0b];
+
+    //inst_calculate_immediate
+    wire inst_slti   = op_31_26_d[6'h00] & op_25_22_d[4'h8];
+    wire inst_sltui  = op_31_26_d[6'h00] & op_25_22_d[4'h9];
+    wire inst_andi   = op_31_26_d[6'h00] & op_25_22_d[4'hd];
+    wire inst_ori    = op_31_26_d[6'h00] & op_25_22_d[4'he];
+    wire inst_xori   = op_31_26_d[6'h00] & op_25_22_d[4'hf];
     
-    assign inst_sll_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h0e];
-    assign inst_srl_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h0f];
-    assign inst_sra_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h10];
-    assign inst_mul_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h18];
-    assign inst_mulh_w = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h19];
-    assign inst_mulh_wu= op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h1a];
-    assign inst_div_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h00];
-    assign inst_mod_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h01];
-    assign inst_div_wu = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h02];
-    assign inst_mod_wu = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h03];
-    assign inst_slti   = op_31_26_d[6'h00] & op_25_22_d[4'h8];
-    assign inst_sltui  = op_31_26_d[6'h00] & op_25_22_d[4'h9];
-    assign inst_andi   = op_31_26_d[6'h00] & op_25_22_d[4'hd];
-    assign inst_ori    = op_31_26_d[6'h00] & op_25_22_d[4'he];
-    assign inst_xori   = op_31_26_d[6'h00] & op_25_22_d[4'hf];
-    assign inst_pcaddul2i = op_31_26_d[6'h07] & ~inst[25];
+    //inst_shift_register
+    wire inst_sll_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h0e];
+    wire inst_srl_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h0f];
+    wire inst_sra_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h10];
+
+    //inst_shift_immediate
+    wire inst_slli_w = op_31_26_d[6'h00] & op_25_22_d[4'h1] & op_21_20_d[2'h0] & op_19_15_d[5'h01];
+    wire inst_srli_w = op_31_26_d[6'h00] & op_25_22_d[4'h1] & op_21_20_d[2'h0] & op_19_15_d[5'h09];
+    wire inst_srai_w = op_31_26_d[6'h00] & op_25_22_d[4'h1] & op_21_20_d[2'h0] & op_19_15_d[5'h11];
+    wire inst_addi_w = op_31_26_d[6'h00] & op_25_22_d[4'ha];
+
+    //inst_mul&div&mod
+    wire inst_mul_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h18];
+    wire inst_mulh_w = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h19];
+    wire inst_mulh_wu= op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h1a];
+    wire inst_div_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h00];
+    wire inst_mod_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h01];
+    wire inst_div_wu = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h02];
+    wire inst_mod_wu = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h03];
+    
+    //inst_load
+    wire inst_ld_b;
+    wire inst_ld_h;
+    wire inst_ld_w   = op_31_26_d[6'h0a] & op_25_22_d[4'h2];
+    wire inst_ld_bu;
+    wire inst_ld_hu;
+
+    //inst_store
+    wire inst_st_b;
+    wire inst_st_h;
+    wire inst_st_w   = op_31_26_d[6'h0a] & op_25_22_d[4'h6];
+
+    //inst_branch
+    wire inst_jirl   = op_31_26_d[6'h13];
+    wire inst_b      = op_31_26_d[6'h14];
+    wire inst_bl     = op_31_26_d[6'h15];
+    wire inst_beq    = op_31_26_d[6'h16];
+    wire inst_bne    = op_31_26_d[6'h17];
+    wire inst_blt;
+    wire inst_bge;
+    wire inst_bltu;
+    wire inst_bgeu;
+
+    //inst_u12i
+    wire inst_lu12i_w= op_31_26_d[6'h05] & ~inst[25];
+    wire inst_pcaddul2i = op_31_26_d[6'h07] & ~inst[25];
+
+    assign rj_eq_rd = (rj_value == rkd_value);
+    assign rj_lt_rd_signed = ($signed(rj_value) < $signed(rkd_value));
+    assign rj_lt_rd_unsigned = (rj_value < rkd_value);
+    assign br_taken = conflict ? 1'b0 :
+                      (inst_beq  &&  rj_eq_rd
+                    || inst_bne  && !rj_eq_rd
+                    || inst_blt  &&  rj_lt_rd_signed
+                    || inst_bge  && !rj_lt_rd_signed
+                    || inst_bltu &&  rj_lt_rd_unsigned
+                    || inst_bgeu && !rj_lt_rd_unsigned
+                    || inst_jirl
+                    || inst_bl
+                    || inst_b
+                    ) && id_valid;
+    assign br_target = (inst_beq || inst_bne || inst_bl || inst_b) ? (id_pc + br_offs) :
+                                                    /*inst_jirl*/ (rj_value + jirl_offs);
+                    
     
     assign alu_op[ 0] = inst_add_w | inst_addi_w | inst_ld_w | inst_st_w
                         | inst_jirl | inst_bl | inst_pcaddul2i;
@@ -297,7 +268,7 @@ module ID_Stage(
                  {20'b0, i12[11:0]};
 
     assign br_offs = need_si26 ? {{ 4{i26[25]}}, i26[25:0], 2'b0} :
-                                {{14{i16[15]}}, i16[15:0], 2'b0} ;
+                                 {{14{i16[15]}}, i16[15:0], 2'b0} ;
 
     assign jirl_offs = {{14{i16[15]}}, i16[15:0], 2'b0};
 
@@ -324,10 +295,15 @@ module ID_Stage(
     assign alu_src1 = src1_is_pc  ? id_pc[31:0] : rj_value;
     assign alu_src2 = src2_is_imm ? imm : rkd_value;
 
-    assign res_from_mem  = inst_ld_w;
+    assign res_from_mem  = {3'b0, inst_ld_b} |
+                           {3'b0, inst_ld_bu} |
+                           {2'b0, {2{inst_ld_h}}} |
+                           {2'b0, {2{inst_ld_hu}}} |
+                           {4{inst_ld_w}};
+    assign load_unsigned = inst_ld_bu || inst_ld_hu;
+
     assign dst_is_r1     = inst_bl;
     assign gr_we         = ~inst_st_w & ~inst_beq & ~inst_bne & ~inst_b; 
-    assign mem_we        = {4{inst_st_w}} ;   
     assign dest          = dst_is_r1 ? 5'd1 : rd;
 
 //regfile control
@@ -349,12 +325,12 @@ module ID_Stage(
             ex_rf_waddr, 
             ex_rf_wdata} = ex_rf_zip;
     
-    assign conflict_r1_wb = (|rf_raddr1) & (rf_raddr1 == wb_rf_waddr) & wb_rf_we;
-    assign conflict_r2_wb = (|rf_raddr2) & (rf_raddr2 == wb_rf_waddr) & wb_rf_we;
+    assign conflict_r1_wb  = (|rf_raddr1) & (rf_raddr1 == wb_rf_waddr)  & wb_rf_we;
+    assign conflict_r2_wb  = (|rf_raddr2) & (rf_raddr2 == wb_rf_waddr)  & wb_rf_we;
     assign conflict_r1_mem = (|rf_raddr1) & (rf_raddr1 == mem_rf_waddr) & mem_rf_we;
     assign conflict_r2_mem = (|rf_raddr2) & (rf_raddr2 == mem_rf_waddr) & mem_rf_we;
-    assign conflict_r1_ex = (|rf_raddr1) & (rf_raddr1 == ex_rf_waddr) & ex_rf_we;
-    assign conflict_r2_ex = (|rf_raddr2) & (rf_raddr2 == ex_rf_waddr) & ex_rf_we;
+    assign conflict_r1_ex  = (|rf_raddr1) & (rf_raddr1 == ex_rf_waddr)  & ex_rf_we;
+    assign conflict_r2_ex  = (|rf_raddr2) & (rf_raddr2 == ex_rf_waddr)  & ex_rf_we;
     
     assign need_r1 = inst_add_w | inst_sub_w | inst_slt | inst_addi_w | inst_sltu | inst_nor | inst_and | inst_or | inst_xor | inst_srli_w | inst_slli_w | inst_srai_w | inst_ld_w | inst_st_w |inst_bne  | inst_beq | inst_jirl;
     assign need_r2 = inst_add_w | inst_sub_w | inst_slt | inst_sltu | inst_and | inst_or | inst_nor | inst_xor | inst_st_w | inst_beq | inst_bne;
@@ -379,19 +355,14 @@ module ID_Stage(
                         conflict_r2_mem ? mem_rf_wdata:
                         conflict_r2_wb  ? wb_rf_wdata : rf_rdata2; 
 
-    assign id_mem_we = mem_we;
     assign id_rkd_value = rkd_value;
     assign id_res_from_mem = res_from_mem;
     
-    assign id_to_ex_wire = {alu_op, 
-                            alu_src1,        
-                            alu_src2,
-                            id_rf_we, 
-                            id_rf_waddr,
+    assign id_to_ex_wire = {alu_op, alu_src1, alu_src2,
+                            id_rf_we, id_rf_waddr,
                             id_pc,
-                            id_mem_we,
+                            inst_st_b, inst_st_h, inst_st_w,
                             id_rkd_value,
-                            id_res_from_mem
-                            };                            
+                            inst_ld_b, inst_ld_bu, inst_ld_h, inst_ld_hu, inst_ld_w};                            
     
 endmodule
