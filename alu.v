@@ -44,17 +44,12 @@ wire [31:0] sll_result;
 wire [63:0] sr64_result;
 wire [31:0] sr_result;
 
-wire [31:0] test;
-
-
 // 32-bit adder
 wire [31:0] adder_a;
 wire [31:0] adder_b;
 wire        adder_cin;
 wire [31:0] adder_result;
 wire        adder_cout;
-
-assign test = 64'b1;
 
 assign adder_a   = alu_src1;
 assign adder_b   = (op_sub | op_slt | op_sltu) ? ~alu_src2 : alu_src2;  //src1 - src2 rj-rk
