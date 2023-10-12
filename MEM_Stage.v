@@ -25,7 +25,7 @@ module MEM_Stage(
     input  wire        resetn,
     // exe and mem state interface
     output wire        mem_allowin,
-    input  wire [`EX_TO_MEM_WIDTH-1:0]ex_to_mem_wire,
+    input  wire [`EX_TO_MEM_WIDTH-1:0] ex_to_mem_wire,
     input  wire        ex_to_mem_valid,
 
     // mem and wb state interface

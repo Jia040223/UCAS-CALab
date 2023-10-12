@@ -25,11 +25,11 @@ module EX_Stage(
     input  wire        resetn,
     // id and exe state interface
     output wire        ex_allowin,
-    input  wire [`ID_TO_EX_WIDTH-1:0]id_to_ex_wire,
+    input  wire [`ID_TO_EX_WIDTH-1:0] id_to_ex_wire,
     input  wire        id_to_ex_valid,
     // exe and mem state interface
     input  wire        mem_allowin,
-    output wire [`EX_TO_MEM_WIDTH-1:0]ex_to_mem_wire, 
+    output wire [`EX_TO_MEM_WIDTH-1:0] ex_to_mem_wire, 
     output wire        ex_to_mem_valid,
     
     input wire  [38:0] ex_rf_zip,
