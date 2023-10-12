@@ -25,11 +25,11 @@ module EX_Stage(
     input  wire        resetn,
     // id and exe state interface
     output wire        ex_allowin,
-    input  wire [147:0]id_to_ex_wire,
+    input  wire [`ID_TO_EX_WIDTH-1:0]id_to_ex_wire,
     input  wire        id_to_ex_valid,
     // exe and mem state interface
     input  wire        mem_allowin,
-    output wire [103:0]ex_to_mem_wire, 
+    output wire [EX_TO_MEM_WIDTH-1:0]ex_to_mem_wire, 
     output wire        ex_to_mem_valid,
     
     input wire  [38:0] ex_rf_zip,
@@ -40,21 +40,22 @@ module EX_Stage(
     output wire [31:0] data_sram_addr,
     output wire [31:0] data_sram_wdata
 );
-    reg  [147:0] id_to_ex_reg;
-    wire         ex_ready_go;
-    reg          ex_valid;
+    reg  [ID_TO_EX_WIDTH-1:0] id_to_ex_reg;
     
-    wire         ex_rf_we   ;
-    wire [ 4:0]  ex_rf_waddr;
-    wire [31:0]  ex_pc;    
+    wire        ex_ready_go;
+    reg         ex_valid;
 
-    wire  [11:0] ex_alu_op;
-    wire  [31:0] ex_alu_src1   ;
-    wire  [31:0] ex_alu_src2   ;
+    wire        ex_rf_we;
+    wire [ 4:0] ex_rf_waddr;
+    wire [31:0] ex_pc;    
+
+    wire [11:0] ex_alu_op;
+    wire [31:0] ex_alu_src1;
+    wire [31:0] ex_alu_src2;
 
     wire [31:0] ex_alu_result; 
     wire        ex_res_from_mem; 
-    wire        ex_mem_we;
+    wire [ 3:0] ex_mem_we;
     wire [31:0] ex_rkd_value;
 
 //stage control signal
@@ -109,7 +110,7 @@ module EX_Stage(
     
     //data sram interface
     assign data_sram_en    = ex_res_from_mem || ex_mem_we;
-    assign data_sram_we    = {4{ex_mem_we}};
+    assign data_sram_we    = ex_mem_we;
     assign data_sram_addr  = ex_alu_result;
     assign data_sram_wdata = ex_rkd_value;
                                 

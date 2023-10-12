@@ -25,7 +25,7 @@ module WB_Stage(
     input  wire        resetn,
     // mem and wb state interface
     output wire        wb_allowin,
-    input  wire [69:0] mem_to_wb_wire, // {mem_rf_we, mem_rf_waddr, mem_rf_wdata}
+    input  wire [`MEM_TO_WB_WIDTH-1:0] mem_to_wb_wire, // {mem_rf_we, mem_rf_waddr, mem_rf_wdata}
     input  wire        mem_to_wb_valid,  
     // trace debug interface
     output wire [31:0] debug_wb_pc,
@@ -35,10 +35,10 @@ module WB_Stage(
     // id and wb state interface
     output wire [37:0] wb_rf_zip  // {rf_we, rf_waddr, rf_wdata}
 );    
-    reg [69:0] mem_to_wb_reg;
+    reg   [`MEM_TO_WB_WIDTH-1:0] mem_to_wb_reg;
     
-    wire        wb_ready_go;
-    reg         wb_valid;
+    wire         wb_ready_go;
+    reg          wb_valid;
     wire  [31:0] wb_pc;
     wire  [31:0] wb_rf_wdata;
     wire  [4 :0] wb_rf_waddr;

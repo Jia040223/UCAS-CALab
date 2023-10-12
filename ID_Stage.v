@@ -28,21 +28,21 @@ module ID_Stage(
     output wire        br_taken,
     output wire [31:0] br_target,
     input  wire        if_to_id_valid,
-    input  wire [63:0] if_to_id_wire,
+    input  wire [`IF_TO_ID_WIDTH-1:0] if_to_id_wire,
     // id and exe state interface
     input  wire        ex_allowin,
-    output wire [147:0]id_to_ex_wire,
+    output wire [`ID_TO_EX_WIDTH-1:0] id_to_ex_wire,
     output wire        id_to_ex_valid,  
     // id and wb state interface
     input  wire [37:0] wb_rf_zip, // {wb_rf_we, wb_rf_waddr, wb_rf_wdata}
     input wire  [37:0] mem_rf_zip,
     input wire  [38:0] ex_rf_zip
 );
-    reg  [63:0] if_to_id_reg; 
-    wire [31:0] id_pc;
+    reg  [`IF_TO_ID_WIDTH-1:0] if_to_id_reg; 
     
+    wire [31:0] id_pc;
     wire        id_res_from_mem; // res_from_mem
-    wire        id_mem_we;
+    wire [ 3:0] id_mem_we;
     wire [31:0] id_rkd_value;
     
     wire        id_ready_go;
@@ -50,14 +50,14 @@ module ID_Stage(
     wire [31:0] inst;
 
     wire [11:0] alu_op;
-    wire [31:0] alu_src1   ;
-    wire [31:0] alu_src2   ;
+    wire [31:0] alu_src1;
+    wire [31:0] alu_src2;
     wire        src1_is_pc;
     wire        src2_is_imm;
     wire        res_from_mem;
     wire        dst_is_r1;
     wire        gr_we;
-    wire        mem_we;
+    wire [ 3:0] mem_we;
     wire        src_reg_is_rd;
     wire        rj_eq_rd;
     wire [4: 0] dest;
@@ -284,7 +284,7 @@ module ID_Stage(
 
 
     assign need_ui5   =  inst_slli_w | inst_srli_w | inst_srai_w;
-    assign need_ui12  =  inst_andi   | inst_ori | inst_xori;
+    assign need_ui12  =  inst_andi | inst_ori | inst_xori;
     assign need_si12  =  inst_addi_w | inst_ld_w | inst_st_w | inst_slti | inst_sltui;
     assign need_si16  =  inst_jirl | inst_beq | inst_bne;
     assign need_si20  =  inst_lu12i_w | inst_pcaddul2i;
@@ -306,20 +306,20 @@ module ID_Stage(
     assign src1_is_pc    = inst_jirl | inst_bl | inst_pcaddul2i;
 
     assign src2_is_imm   = inst_slli_w |
-                        inst_srli_w |
-                        inst_srai_w |
-                        inst_addi_w |
-                        inst_ld_w   |
-                        inst_st_w   |
-                        inst_lu12i_w|
-                        inst_jirl   |
-                        inst_bl     |
-                        inst_pcaddul2i|
-                        inst_andi   |
-                        inst_ori    |
-                        inst_xori   |
-                        inst_slti   |
-                        inst_sltui;
+                           inst_srli_w |
+                           inst_srai_w |
+                           inst_addi_w |
+                           inst_ld_w   |
+                           inst_st_w   |
+                           inst_lu12i_w|
+                           inst_jirl   |
+                           inst_bl     |
+                           inst_pcaddul2i|
+                           inst_andi   |
+                           inst_ori    |
+                           inst_xori   |
+                           inst_slti   |
+                           inst_sltui;
 
     assign alu_src1 = src1_is_pc  ? id_pc[31:0] : rj_value;
     assign alu_src2 = src2_is_imm ? imm : rkd_value;
@@ -327,7 +327,7 @@ module ID_Stage(
     assign res_from_mem  = inst_ld_w;
     assign dst_is_r1     = inst_bl;
     assign gr_we         = ~inst_st_w & ~inst_beq & ~inst_bne & ~inst_b; 
-    assign mem_we        = inst_st_w ;   
+    assign mem_we        = {4{inst_st_w}} ;   
     assign dest          = dst_is_r1 ? 5'd1 : rd;
 
 //regfile control

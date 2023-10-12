@@ -24,29 +24,29 @@ module IF_Stage(
     input  wire        clk,
     input  wire        resetn,
     // inst sram interface
-    output wire         inst_sram_en,
-    output wire [ 3:0]  inst_sram_we,
-    output wire [31:0]  inst_sram_addr,
-    output wire [31:0]  inst_sram_wdata,
-    input  wire [31:0]  inst_sram_rdata,
+    output wire        inst_sram_en,
+    output wire [ 3:0] inst_sram_we,
+    output wire [31:0] inst_sram_addr,
+    output wire [31:0] inst_sram_wdata,
+    input  wire [31:0] inst_sram_rdata,
     // id to if stage signal
-    input  wire         id_allowin,
-    input  wire         br_taken,
-    input  wire [31:0]  br_target,
+    input  wire        id_allowin,
+    input  wire        br_taken,
+    input  wire [31:0] br_target,
     //if to id stage signal
-    output wire         if_to_id_valid,
-    output wire [63:0]  if_to_id_wire
+    output wire        if_to_id_valid,
+    output wire [`IF_TO_ID_WIDTH-1:0] if_to_id_wire
 );
-    wire [31:0]  if_inst;
-    reg  [31:0]  if_pc;
+    wire [31:0] if_inst;
+    reg  [31:0] if_pc;
     
-    wire                if_ready_go;
-    reg                 if_valid;
-    wire        [31:0]  seq_pc;
-    wire         [31:0]  nextpc;
+    wire        if_ready_go;
+    reg         if_valid;
+    wire [31:0] seq_pc;
+    wire [31:0] nextpc;
     
-    wire                if_allowin;
-    wire                to_if_valid;
+    wire        if_allowin;
+    wire        to_if_valid;
     
 //IF statge control signal
 
@@ -59,7 +59,7 @@ module IF_Stage(
         if(~resetn)
             if_valid <= 0; 
         else if(if_allowin)
-            if_valid <= to_if_valid;// ÔÚreset³·ÏúµÄÏÂÒ»¸öÊ±ÖÓÉÏÉýÑØ²Å¿ªÊ¼È¡Ö¸
+            if_valid <= to_if_valid;// ï¿½ï¿½resetï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ø²Å¿ï¿½Ê¼È¡Ö¸
         else if(br_taken)
             if_valid <= 0;
     end
@@ -84,8 +84,8 @@ module IF_Stage(
     
     assign if_inst          = inst_sram_rdata;
     
-    assign if_to_id_wire    = {if_inst, // 32-63
-                               if_pc     // 0-31
-                               };
+    assign if_to_id_wire    = {if_inst,     // 32-63
+                               if_pc};      // 0-31
+                               
     
 endmodule

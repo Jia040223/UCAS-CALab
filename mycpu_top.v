@@ -29,10 +29,10 @@ module mycpu_top(
     wire        ex_to_mem_valid;
     wire        mem_to_wb_valid;
     
-    wire [63:0] if_to_id_wire;
-    wire [147:0] id_to_ex_wire;
-    wire [103:0] ex_to_mem_wire;
-    wire [69:0] mem_to_wb_wire;
+    wire [`IF_TO_ID_WIDTH  - 1:0] if_to_id_wire;
+    wire [`ID_TO_EX_WIDTH  - 1:0] id_to_ex_wire;
+    wire [`EX_TO_MEM_WIDTH - 1:0] ex_to_mem_wire;
+    wire [`MEM_TO_WB_WIDTH - 1:0] mem_to_wb_wire;
     
     wire        ex_mem_we;
     wire        ex_res_from_mem;
