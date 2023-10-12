@@ -97,4 +97,3 @@ assign alu_result = ({32{op_add|op_sub}} & add_sub_result)
                   | ({32{op_srl|op_sra}} & sr_result);
 
 endmodule
-
