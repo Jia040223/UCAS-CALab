@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+`include "mycpu_head.h"
 //////////////////////////////////////////////////////////////////////////////////
 // Company: 
 // Engineer: 
@@ -29,19 +30,19 @@ module ID_Stage(
     output wire        br_taken,
     output wire [31:0] br_target,
     input  wire        if_to_id_valid,
-    input  wire [63:0] if_to_id_wire,
+    input  wire [`IF_TO_ID_WIDTH-1:0] if_to_id_wire,
     // id and exe state interface
     input  wire        ex_allowin,
-    output wire [147:0]id_to_ex_wire,
+    output wire [`ID_TO_EX_WIDTH-1:0] id_to_ex_wire,
     output wire        id_to_ex_valid,  
     // id and wb state interface
     input  wire [37:0] wb_rf_zip, // {wb_rf_we, wb_rf_waddr, wb_rf_wdata}
-    input wire  [37:0] mem_rf_zip,
-    input wire  [38:0] ex_rf_zip
+    input  wire [37:0] mem_rf_zip,
+    input  wire [38:0] ex_rf_zip
 );
-    reg  [63:0] if_to_id_reg; 
-    wire [31:0] id_pc;
+    reg  [`IF_TO_ID_WIDTH - 1:0] if_to_id_reg; 
     
+    wire [31:0] id_pc;
     wire        id_res_from_mem; // res_from_mem
     wire        id_mem_we;
     wire [31:0] id_rkd_value;
@@ -165,6 +166,8 @@ module ID_Stage(
     end
 
 //if to id stage signal
+
+
     always @(posedge clk) begin
         if(if_to_id_valid & id_allowin) begin
             if_to_id_reg <= if_to_id_wire;
