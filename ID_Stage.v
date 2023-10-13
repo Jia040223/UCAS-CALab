@@ -187,15 +187,15 @@ module ID_Stage(
     wire inst_mod_wu = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h03];
     
     //inst_load
-    wire inst_ld_b;
-    wire inst_ld_h;
+    wire inst_ld_b   = op_31_26_d[6'h0a] & op_25_22_d[4'h0];
+    wire inst_ld_h   = op_31_26_d[6'h0a] & op_25_22_d[4'h1];
     wire inst_ld_w   = op_31_26_d[6'h0a] & op_25_22_d[4'h2];
-    wire inst_ld_bu;
-    wire inst_ld_hu;
+    wire inst_ld_bu  = op_31_26_d[6'h0a] & op_25_22_d[4'h8];
+    wire inst_ld_hu  = op_31_26_d[6'h0a] & op_25_22_d[4'h9];
 
     //inst_store
-    wire inst_st_b;
-    wire inst_st_h;
+    wire inst_st_b   = op_31_26_d[6'h0a] & op_25_22_d[4'h4];
+    wire inst_st_h   = op_31_26_d[6'h0a] & op_25_22_d[4'h5];
     wire inst_st_w   = op_31_26_d[6'h0a] & op_25_22_d[4'h6];
 
     //inst_branch
@@ -204,10 +204,10 @@ module ID_Stage(
     wire inst_bl     = op_31_26_d[6'h15];
     wire inst_beq    = op_31_26_d[6'h16];
     wire inst_bne    = op_31_26_d[6'h17];
-    wire inst_blt;
-    wire inst_bge;
-    wire inst_bltu;
-    wire inst_bgeu;
+    wire inst_blt    = op_31_26_d[6'h18];
+    wire inst_bge    = op_31_26_d[6'h19];
+    wire inst_bltu   = op_31_26_d[6'h1a];
+    wire inst_bgeu   = op_31_26_d[6'h1b];
 
     //inst_u12i
     wire inst_lu12i_w= op_31_26_d[6'h05] & ~inst[25];
@@ -332,8 +332,14 @@ module ID_Stage(
     assign conflict_r1_ex  = (|rf_raddr1) & (rf_raddr1 == ex_rf_waddr)  & ex_rf_we;
     assign conflict_r2_ex  = (|rf_raddr2) & (rf_raddr2 == ex_rf_waddr)  & ex_rf_we;
     
-    assign need_r1 = inst_add_w | inst_sub_w | inst_slt | inst_addi_w | inst_sltu | inst_nor | inst_and | inst_or | inst_xor | inst_srli_w | inst_slli_w | inst_srai_w | inst_ld_w | inst_st_w |inst_bne  | inst_beq | inst_jirl;
-    assign need_r2 = inst_add_w | inst_sub_w | inst_slt | inst_sltu | inst_and | inst_or | inst_nor | inst_xor | inst_st_w | inst_beq | inst_bne;
+    assign need_r1 = inst_add_w | inst_sub_w | inst_slt | inst_addi_w | inst_sltu | inst_nor | inst_and | inst_or | inst_xor | 
+                     inst_srli_w | inst_slli_w | inst_srai_w | 
+                     inst_ld_b | inst_ld_h | inst_ld_w | inst_ld_bu | inst_ld_hu |
+                     inst_st_b | inst_st_h | inst_st_w |
+                     inst_bne  | inst_beq | inst_jirl;
+    assign need_r2 = inst_add_w | inst_sub_w | inst_slt | inst_sltu | inst_and | inst_or | inst_nor | inst_xor | 
+                     inst_st_b | inst_st_h | inst_st_w |
+                     inst_beq | inst_bne | inst_blt | inst_bge | inst_bltu | inst_bgeu;
     
     regfile u_regfile(
     .clk    (clk      ),
