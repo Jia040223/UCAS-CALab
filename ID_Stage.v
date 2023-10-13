@@ -333,14 +333,18 @@ module ID_Stage(
     assign conflict_r2_ex  = (|rf_raddr2) & (rf_raddr2 == ex_rf_waddr)  & ex_rf_we;
     
     assign need_r1 = inst_add_w | inst_sub_w | inst_slt | inst_addi_w | inst_sltu | inst_nor | inst_and | inst_or | inst_xor | 
-                     inst_srli_w | inst_slli_w | inst_srai_w | 
+                     inst_srli_w | inst_slli_w | inst_srai_w | inst_sll_w | inst_srl_w | inst_sra_w |
+                     inst_slti | inst_sltui | inst_andi | inst_ori |inst_xori |
+                     inst_mul_w | inst_mulh_w | inst_mulh_wu | inst_div_w | inst_mod_w | inst_div_wu | inst_mod_wu |
                      inst_ld_b | inst_ld_h | inst_ld_w | inst_ld_bu | inst_ld_hu |
                      inst_st_b | inst_st_h | inst_st_w |
                      inst_bne  | inst_beq | inst_jirl;
+                    
     assign need_r2 = inst_add_w | inst_sub_w | inst_slt | inst_sltu | inst_and | inst_or | inst_nor | inst_xor | 
-                     inst_st_b | inst_st_h | inst_st_w |
+                     inst_st_b | inst_st_h | inst_st_w | inst_sll_w | inst_srl_w | inst_sra_w | 
+                     inst_mul_w | inst_mulh_w | inst_mulh_wu | inst_div_w | inst_mod_w | inst_div_wu | inst_mod_wu |
                      inst_beq | inst_bne | inst_blt | inst_bge | inst_bltu | inst_bgeu;
-    
+
     regfile u_regfile(
     .clk    (clk      ),
     .raddr1 (rf_raddr1),
