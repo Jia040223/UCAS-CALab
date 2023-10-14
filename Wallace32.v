@@ -23,6 +23,7 @@
 module Wallace32(
     input [31:0] mul1,
     input [31:0] mul2,
+    input mul_signed,
     output [63:0] ans,
     output cmp
     );
@@ -33,48 +34,45 @@ module Wallace32(
     assign ex_A = {{32{mul1[31]}},mul1};
     assign ex_B = {{32{mul2[31]}},mul2};
 
-    assign cmp = (cmpans == ans); //�ȽϽ���Ƿ���ȷ
-
-    wire [31: 0] A;  
-    wire [31: 0] A_w;   
-    wire [32: 0] A_2; 
-    wire [31: 0] revA;
-    wire [32: 0] rev2A;
-    wire [31: 0] B;
-    wire [31: 0] B_w;
-    wire [63: 0] Nsum [15: 0];  //�洢booth�Ĳ��ֻ�
-    wire [64: 0] Csum [16: 0];  //�洢����ʿ�е�C
-    wire [63: 0] Ssum [16: 0];  //�洢����ʿ�е�S
-    wire [ 2: 0] y[31: 0];      
+    wire [33: 0] A;  
+    wire [33: 0] A_w;   
+    wire [34: 0] A_2; 
+    wire [33: 0] revA;
+    wire [34: 0] rev2A;
+    wire [33: 0] B;
+    wire [33: 0] B_w;
+    wire [63: 0] Nsum [16: 0];  
+    wire [64: 0] Csum [17: 0];  
+    wire [63: 0] Ssum [17: 0]; 
+    wire [ 2: 0] y[33: 0];      
     
-    assign A = mul1;
-    assign revA = ~A;       //A����
+    assign A = {{2{mul1[31] & mul_signed}}, mul1};
+    assign revA = ~A;       //~A
     assign A_2  = (A<<1);   //2A
-    assign rev2A= ~A_2;     // 2A����
+    assign rev2A= ~A_2;     // ~2A
     assign B = mul2;
     genvar i;
     genvar j;
     generate 
         assign y[1] = {B[1],B[0],1'b0};
-        for(i=3;i<=31;i=i+2)begin
+        for(i=3;i<=33;i=i+2)begin
             assign y[i]= {B[i],B[i-1],B[i-2]};
         end
     endgenerate
     generate 
-        for(i=1;i<=16;i=i+1)begin
+        for(i=1;i<=17;i=i+1)begin
             assign  Nsum[i-1] = {64{(y[2*i-1]==3'b000) | (y[2*i-1]==3'b111)}} & 64'b0                                          |  //0
                                 {64{(y[2*i-1]==3'b001) | (y[2*i-1]==3'b010)}} & {{34-2*i{    A[31]}},    A,{2*i-2{1'b0}}}      |  //A
                                 {64{(y[2*i-1]==3'b011)}}                      & {{33-2*i{    A[31]}},    A,{2*i-1{1'b0}}}      |  //2A
                                 {64{(y[2*i-1]==3'b100)}}                      & {{33-2*i{rev2A[32]}},rev2A,{2*i-2{1'b1}}}      |  //-2A
                                 {64{(y[2*i-1]==3'b101) | (y[2*i-1]==3'b110)}} & {{34-2*i{ revA[31]}}, revA,{2*i-2{1'b1}}};        //-A
                                             
-            assign  Csum[i-1][0] = ((y[2*i-1]==3'b100) | (y[2*i-1]==3'b101) | (y[2*i-1]==3'b110)) & 1'b1;      //�����1����һ������ʿ����λ����            
+            assign  Csum[i-1][0] = ((y[2*i-1]==3'b100) | (y[2*i-1]==3'b101) | (y[2*i-1]==3'b110)) & 1'b1;           
         end
     endgenerate
     
-    assign Csum[16][0] = 1'b0;  //���������C������һλ
-    
-    //����ʿ��
+    assign Csum[17][0] = 1'b0;  
+
     generate 
         for(i=1;i<=64;i=i+1)begin
             addr  addr0(.a(Nsum[  0][i-1]),.b(Nsum[  1][i-1]),.cin(Nsum[  2][i-1]),.s(Ssum[ 0][i-1]),.cout(Csum[ 0][i]));
@@ -100,7 +98,6 @@ module Wallace32(
     
 endmodule
 
-//ȫ����
 module addr(
     input a,
     input b,

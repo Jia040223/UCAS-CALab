@@ -376,3 +376,44 @@ module ID_Stage(
                             inst_ld_b, inst_ld_bu, inst_ld_h, inst_ld_hu, inst_ld_w};                            
     
 endmodule
+
+
+//CLA
+module CLA(
+        input [31:0] A,
+        input [31:0] B,
+        input CIN,
+        output SF,        //符号位
+        output ZF,        //零标志位
+        output CF,        //Carryout标志位
+        output OF,        //Overflow标志位
+        output [31:0] S  
+);
+        wire [32:0] cout;
+        wire Cin;
+        wire COUT;
+        
+        assign cout[0] = CIN;
+        
+        //并行加法器
+        genvar i;
+        generate 
+                for(i = 0; i < 32; i = i + 1) 
+                begin : CLA
+                        wire p, g;
+                        assign p = ~A[i] & B[i] | A[i] & ~B[i];
+                        assign g = A[i] & B[i];
+                        assign S[i] = ~p & cout[i] | p & ~cout[i];
+                        assign cout[i + 1] = g | p & cout[i];
+                end
+        endgenerate 
+        
+        assign COUT = cout[32];
+        assign Cin = cout[31];
+
+        //SF:符号位 ZF:零标志 CF:进位标准 OF:溢出标准       
+        assign SF = S[31];
+        assign ZF = ~|S;
+        assign CF = ~COUT;
+        assign OF =  Cin ^ COUT;
+endmodule
