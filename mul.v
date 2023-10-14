@@ -1,23 +1,3 @@
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 2023/10/14 11:48:53
-// Design Name: 
-// Module Name: mul
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
 `timescale 1ns / 1ps
 
 module multiple(
@@ -26,11 +6,17 @@ module multiple(
     input mul_signed,
     input [31:0] x,
     input [31:0] y,
-    output [63:0] multiple
+    output [63:0] result
 );
+
+reg reset;
+always @(posedge mul_clk) begin
+        reset <= ~resetn;
+end
 
 wire [67:0] p [16:0];
 wire [16:0] c;
+reg [16:0] c_reg;
 
 wire [14:0] cout [67:0];
 wire [67:0] c_wal;
@@ -40,18 +26,41 @@ wire [63:0] add_B;
 wire [33:0] A;
 wire [33:0] B;
 
+wire [63:0] result_adder_64; 
+
 assign A = mul_signed ? {{2{x[31]}}, x}: {{2{1'b0}}, x};
 assign B = mul_signed ? {{2{y[31]}}, y}: {{2{1'b0}}, y};
 
+always @(posedge mul_clk) begin
+    if (~resetn)
+        c_reg <= 17'b0;
+    else
+        c_reg <= c;
+end
+
+/*
+bug[2-1]
 assign add_B = {c_wal[62:0], c[15]};
 
 adder_64 adder_64(
     .Cin(c[16]),
     .A(s[63:0]),
     .B(add_B),
-    .S(multiple),
+    .S(result_adder_64),
     .Cout()
 );
+*/
+
+assign add_B = {c_wal[62:0], c_reg[15]};
+adder_64 adder_64(
+    .Cin(c_reg[16]),
+    .A(s[63:0]),
+    .B(add_B),
+    .S(result_adder_64),
+    .Cout()
+);
+
+assign result = reset ? 0 : result_adder_64;
 
 //bug[1]
 //booth_2 b0(.y2(B[1]), .y1(B[0]), .y0(1'b0), .x({{34{A[31]}}, A[33:0]}), .p(p[0]), .c(c[0]));
@@ -65,15 +74,19 @@ generate
     end
 endgenerate
 
-Wallace wallace0(.n({p[16][0], p[15][0], p[14][0], p[13][0], p[12][0], p[11][0], p[10][0]
-        , p[9][0], p[8][0], p[7][0], p[6][0], p[5][0], p[4][0], p[3][0], p[2][0]
-        , p[1][0], p[0][0]}), .Cin(c[14:0]), .Cout({s[0], c_wal[0], cout[0]}));
+Wallace wallace0(.mul_clk(mul_clk), .resetn(resetn), .n({p[16][0], p[15][0],
+        p[14][0], p[13][0], p[12][0], p[11][0], p[10][0], p[9][0], p[8][0], 
+        p[7][0], p[6][0], p[5][0], p[4][0], p[3][0], p[2][0], p[1][0], p[0][0]}), 
+//[bug2-2]
+//        .Cin({c_reg[14:11], c[10:0]}), .Cout({s[0], c_wal[0], cout[0]}));
+        .Cin({c_reg[14:11], c[10:0]}), .Cout({s[0], c_wal[0], cout[0]}));
 genvar i_wal;
 generate
     for (i_wal = 1; i_wal < 68; i_wal = i_wal + 1) begin: mul_wal
-        Wallace wallace(.n({p[16][i_wal], p[15][i_wal], p[14][i_wal], p[13][i_wal], p[12][i_wal], p[11][i_wal], p[10][i_wal]
-        , p[9][i_wal], p[8][i_wal], p[7][i_wal], p[6][i_wal], p[5][i_wal], p[4][i_wal], p[3][i_wal], p[2][i_wal]
-        , p[1][i_wal], p[0][i_wal]}), .Cin(cout[i_wal - 1]), .Cout({s[i_wal], c_wal[i_wal], cout[i_wal]}));
+        Wallace wallace(.mul_clk(mul_clk), .resetn(resetn), .n({p[16][i_wal], p[15][i_wal], 
+        p[14][i_wal], p[13][i_wal], p[12][i_wal], p[11][i_wal], p[10][i_wal], p[9][i_wal], 
+        p[8][i_wal], p[7][i_wal], p[6][i_wal], p[5][i_wal], p[4][i_wal], p[3][i_wal], p[2][i_wal], 
+        p[1][i_wal], p[0][i_wal]}), .Cin(cout[i_wal - 1]), .Cout({s[i_wal], c_wal[i_wal], cout[i_wal]}));
     end
 endgenerate
 
@@ -107,6 +120,8 @@ endgenerate
 endmodule
 
 module Wallace(             //华莱士树
+    input mul_clk,
+    input resetn,
     input [16:0] n,
     input [14:0] Cin,
     output [16:0] Cout
@@ -115,6 +130,10 @@ module Wallace(             //华莱士树
 wire [4:0] s1;
 wire [3:0] s2;
 wire [1:0] s3;
+
+reg [1:0] s3_reg;
+reg [3:0] c10_7_reg;
+
 wire [1:0] s4;
 wire s5;
 wire s6;
@@ -145,10 +164,17 @@ Full_Adder add3_9(.A(s2[0]), .B(s2[1]), .Cin(s2[2]),
 Full_Adder add3_10(.A(s2[3]), .B(Cin[5]), .Cin(Cin[6]),
 .S(s3[1]), .Cout(Cout[10]));
 
-Full_Adder add4_11(.A(s3[0]), .B(s3[1]), .Cin(Cin[7]),
+always @(posedge mul_clk) begin
+    if (~resetn)
+        {c10_7_reg, s3_reg} <= 6'b0;
+    else
+        {c10_7_reg, s3_reg} <= {Cin[10:7], s3};
+end
+
+Full_Adder add4_11(.A(s3_reg[0]), .B(s3_reg[1]), .Cin(c10_7_reg[0]),
 .S(s4[0]), .Cout(Cout[11]));
 
-Full_Adder add4_12(.A(Cin[8]), .B(Cin[9]), .Cin(Cin[10]),
+Full_Adder add4_12(.A(c10_7_reg[1]), .B(c10_7_reg[2]), .Cin(c10_7_reg[3]),
 .S(s4[1]), .Cout(Cout[12]));
 
 Full_Adder add5_13(.A(s4[0]), .B(s4[1]), .Cin(Cin[11]),
