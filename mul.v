@@ -1,12 +1,12 @@
 `timescale 1ns / 1ps
 
 module mul(
-    input mul_clk,
-    input resetn,
-    input mul_signed,
-    input [31:0] x,
-    input [31:0] y,
-    output [63:0] result
+    input  wire         mul_clk,
+    input  wire         resetn,
+    input  wire         mul_signed,
+    input  wire [31:0]  x,
+    input  wire [31:0]  y,
+    output wire [63:0]  result
 );
 
 reg reset;
@@ -16,7 +16,7 @@ end
 
 wire [67:0] p [16:0];
 wire [16:0] c;
-reg [16:0] c_reg;
+reg  [16:0] c_reg;
 
 wire [14:0] cout [67:0];
 wire [67:0] c_wal;
