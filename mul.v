@@ -60,7 +60,7 @@ adder_64 adder_64(
     .Cout()
 );
 
-assign result = reset ? 0 : result_adder_64;
+assign result = (~resetn | reset) ? 0 : result_adder_64;
 
 //bug[1]
 //booth_2 b0(.y2(B[1]), .y1(B[0]), .y0(1'b0), .x({{34{A[31]}}, A[33:0]}), .p(p[0]), .c(c[0]));
