@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module multiple(
+module mul(
     input mul_clk,
     input resetn,
     input mul_signed,
@@ -92,7 +92,7 @@ endgenerate
 
 endmodule
 
-module booth_2(             //boothÁ½Î»Ò»³ËÉú³ÉpiºÍcÄ£¿é
+module booth_2(             //boothï¿½ï¿½Î»Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½piï¿½ï¿½cÄ£ï¿½ï¿½
     input y2,
     input y1,
     input y0,
@@ -119,7 +119,7 @@ endgenerate
 
 endmodule
 
-module Wallace(             //»ªÀ³Ê¿Ê÷
+module Wallace(             //ï¿½ï¿½ï¿½ï¿½Ê¿ï¿½ï¿½
     input mul_clk,
     input resetn,
     input [16:0] n,
@@ -188,7 +188,7 @@ Full_Adder add7_15(.A(s6), .B(Cin[14]), .Cin(0),
 
 endmodule
 
-module Full_Adder(              //È«¼ÓÆ÷
+module Full_Adder(              //È«ï¿½ï¿½ï¿½ï¿½
     input A,
     input B,
     input Cin,
@@ -200,7 +200,7 @@ assign Cout = A & B | A & Cin | B & Cin;
 
 endmodule
 
-module adder_4(                 //4Î»¼Ó·¨Æ÷
+module adder_4(                 //4Î»ï¿½Ó·ï¿½ï¿½ï¿½
     input c0,
     input [3:0] p,
     input [3:0] g,
@@ -218,7 +218,7 @@ assign G = g[3] | p[3] & g[2] | p[3] & p[2] & g[1] | p[3] & p[2] & p[1] & g[0];
 
 endmodule
 
-module adder_64(                //64Î»¼Ó·¨Æ÷
+module adder_64(                //64Î»ï¿½Ó·ï¿½ï¿½ï¿½
     input Cin,
     input [63:0] A,
     input [63:0] B,
