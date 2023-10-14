@@ -111,6 +111,7 @@ module ID_Stage(
     wire        mul_signed;
     wire        div_signed;
     wire        div_r;
+    wire        mul_h;
         
 //stage control signal
     assign id_ready_go      = ~conflict;
@@ -268,7 +269,7 @@ module ID_Stage(
     assign alu_op[ 6] = inst_or | inst_ori;
     assign alu_op[ 7] = inst_xor | inst_xori;
     assign alu_op[ 8] = inst_slli_w | inst_sll_w;
-    assign alu_op[ 9] = inst_srli_w | inst_srli_w;
+    assign alu_op[ 9] = inst_srli_w | inst_srl_w;
     assign alu_op[10] = inst_srai_w | inst_sra_w;
     assign alu_op[11] = inst_lu12i_w;
     
@@ -389,16 +390,18 @@ module ID_Stage(
     assign res_from_div = inst_div_w | inst_div_wu | inst_mod_w | inst_mod_wu;
 
     assign mul_signed = inst_mul_w | inst_mulh_w;
-    assign div_signed = inst_div_wu | inst_mod_wu;
+    assign div_signed = inst_div_w | inst_mod_w;
     assign div_r      = inst_mod_w | inst_mod_wu;
     
+    assign mul_h      = inst_mulh_w | inst_mulh_wu;
+        
     assign id_to_ex_wire = {alu_op, alu_src1, alu_src2,
                             id_rf_we, id_rf_waddr,
                             id_pc,
                             inst_st_b, inst_st_h, inst_st_w,
                             id_rkd_value,
                             inst_ld_b, inst_ld_bu, inst_ld_h, inst_ld_hu, inst_ld_w,
-                            res_from_mul, mul_signed, res_from_div, div_signed, div_r};                            
+                            res_from_mul, mul_signed, mul_h, res_from_div, div_signed, div_r};                            
     
 endmodule
 
@@ -434,8 +437,6 @@ module adder_32(
         assign c1[0] = IN;
         assign c2[0] = IN;
         assign c3[0] = IN;
-
-        assign Cout = p3 & IN | g3;
 
         genvar ic1;
         generate
@@ -477,8 +478,8 @@ module adder_32(
             end
         endgenerate
 
-        assign COUT = S[32];
-        assign CIN = S[31];
+        assign COUT = p3 & IN | g3;
+        assign CIN = c1[31];
 
         //SF:符号�? ZF:零标�? CF:进位标准 OF:溢出标准       
         assign SF = S[31];

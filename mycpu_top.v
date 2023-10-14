@@ -38,7 +38,7 @@ module mycpu_top(
     wire        ex_res_from_mem;
     wire [31:0] ex_rkd_value;
     wire [31:0] ex_alu_result;
-    wire [31:0] mul_result;
+    wire [63:0] mul_result;
     
     wire [37:0] wb_rf_zip;
     wire [37:0] mem_rf_zip;

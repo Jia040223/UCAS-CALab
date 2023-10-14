@@ -13,7 +13,7 @@ module EX_Stage(
     output wire        ex_to_mem_valid,
     
     input  wire  [38:0] ex_rf_zip,
-    output wire  [31:0] mul_result,
+    output wire  [63:0] mul_result,
     
 // data sram interface
     output wire        data_sram_en,
@@ -52,6 +52,7 @@ module EX_Stage(
     wire        ex_res_from_mul;
     wire        ex_res_from_div;
     wire        ex_mul_signed;
+    wire        ex_mul_h;
 
     wire        ex_div_r;
     wire        ex_div_signed;
@@ -83,7 +84,7 @@ module EX_Stage(
             ex_inst_st_b, ex_inst_st_h, ex_inst_st_w,
             ex_rkd_value,
             ex_inst_ld_b, ex_inst_ld_bu, ex_inst_ld_h, ex_inst_ld_hu, ex_inst_ld_w,
-            ex_res_from_mul, ex_mul_signed, ex_res_from_div, ex_div_signed, ex_div_r
+            ex_res_from_mul, ex_mul_signed, ex_mul_h, ex_res_from_div, ex_div_signed, ex_div_r
             } = id_to_ex_reg;   
 
     alu u_alu(
@@ -131,7 +132,7 @@ module EX_Stage(
                              ex_pc,
                              ex_alu_result,
                              ex_inst_ld_b, ex_inst_ld_bu, ex_inst_ld_h, ex_inst_ld_hu, ex_inst_ld_w,
-                             ex_res_from_mul, ex_res_from_div, ex_div_result};
+                             ex_res_from_mul, ex_mul_h, ex_res_from_div, ex_div_result};
     
     assign ex_res_from_mem = ex_inst_ld_b || ex_inst_ld_bu || ex_inst_ld_h || ex_inst_ld_hu || ex_inst_ld_w;
                              
