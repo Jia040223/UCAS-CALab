@@ -213,9 +213,29 @@ module ID_Stage(
     wire inst_lu12i_w= op_31_26_d[6'h05] & ~inst[25];
     wire inst_pcaddul2i = op_31_26_d[6'h07] & ~inst[25];
 
-    assign rj_eq_rd = (rj_value == rkd_value);
-    assign rj_lt_rd_signed = ($signed(rj_value) < $signed(rkd_value));
-    assign rj_lt_rd_unsigned = (rj_value < rkd_value);
+    CLA instance_CLA(
+        .A(adder_src1),
+        .B(adder_src2),
+        .IN(adder_IN),
+        .SF(adder_SF),    
+        .ZF(adder_ZF),     
+        .CF(adder_CF),        
+        .OF(adder_OF),        
+        .S(adder_res)  
+    );
+
+    wire [31:0] adder_src1 = rj_value;
+    wire [31:0] adder_src2 = ~rkd_value;
+    wire        adder_IN = 1'b1;
+    wire        adder_SF;
+    wire        adder_ZF;
+    wire        adder_CF;
+    wire        adder_OF:
+    wire        adder_res;
+
+    assign rj_eq_rd = ZF;
+    assign rj_lt_rd_signed = adder_OF ^ adder_SF;
+    assign rj_lt_rd_unsigned = ~adder_CF;
     assign br_taken = conflict ? 1'b0 :
                       (inst_beq  &&  rj_eq_rd
                     || inst_bne  && !rj_eq_rd
@@ -229,7 +249,6 @@ module ID_Stage(
                     ) && id_valid;
     assign br_target = (inst_beq || inst_bne || inst_bl || inst_b) ? (id_pc + br_offs) :
                                                     /*inst_jirl*/ (rj_value + jirl_offs);
-                    
     
     assign alu_op[ 0] = inst_add_w | inst_addi_w | inst_ld_w | inst_st_w
                         | inst_jirl | inst_bl | inst_pcaddul2i;
