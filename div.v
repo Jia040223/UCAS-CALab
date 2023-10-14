@@ -44,7 +44,7 @@ module div(
     reg  [32:0] r_reg;
 
     wire        start;
-    reg  [5:0]  counter;
+    reg  [ 5:0] counter;
 
     wire [32:0] test_div_r;
     wire [32:0] final_r;
