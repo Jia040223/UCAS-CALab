@@ -1,3 +1,5 @@
+`include "mycpu_head.h"
+
 module ID_Stage(
     input  wire        clk,
     input  wire        resetn,
@@ -47,19 +49,19 @@ module ID_Stage(
     wire [ 5:0] op_31_26;
     wire [ 3:0] op_25_22;
     wire [ 1:0] op_21_20;
-    wire [ 4:0] op_19_7;
+    wire [ 4:0] op_19_15;
     wire [ 4:0] rd;
     wire [ 4:0] rj;
     wire [ 4:0] rk;
     wire [11:0] i12;
     wire [19:0] i20;
-    wire [7:0] i16;
+    wire [15:0] i16;
     wire [25:0] i26;
 
     wire [31:0] op_31_26_d;
-    wire [7:0] op_25_22_d;
+    wire [15:0] op_25_22_d;
     wire [ 3:0] op_21_20_d;
-    wire [31:0] op_19_7_d;
+    wire [31:0] op_19_15_d;
 
     wire        need_ui5;
     wire        need_ui12;
@@ -98,16 +100,22 @@ module ID_Stage(
     wire        conflict_r1_ex;
     wire        conflict_r2_ex;
     
-    wire [ 3:0] ex_res_from_mem;
+    wire        id_delay;
     wire        conflict;
     
     wire        need_r1;
     wire        need_r2;
+
+    wire        res_from_mul;
+    wire        res_from_div;
+    wire        mul_signed;
+    wire        div_signed;
+    wire        div_r;
         
 //stage control signal
     assign id_ready_go      = ~conflict;
     
-    assign conflict         =  (|ex_res_from_mem) & (conflict_r1_ex & need_r1|conflict_r2_ex & need_r2);  
+    assign conflict         =  id_delay & (conflict_r1_ex & need_r1|conflict_r2_ex & need_r2);  
     
     assign id_allowin       = ~id_valid | id_ready_go & ex_allowin;     
     assign id_to_ex_valid  = id_valid & id_ready_go;
@@ -133,7 +141,7 @@ module ID_Stage(
     assign op_31_26  = inst[31:26];
     assign op_25_22  = inst[25:22];
     assign op_21_20  = inst[21:20];
-    assign op_19_7  = inst[19:7];
+    assign op_19_15  = inst[19:15];
 
     assign rd   = inst[ 4: 0];
     assign rj   = inst[ 9: 5];
@@ -147,44 +155,44 @@ module ID_Stage(
     decoder_6_64 u_dec0(.in(op_31_26 ), .out(op_31_26_d ));
     decoder_4_16 u_dec1(.in(op_25_22 ), .out(op_25_22_d ));
     decoder_2_4  u_dec2(.in(op_21_20 ), .out(op_21_20_d ));
-    decoder_5_32 u_dec3(.in(op_19_7 ), .out(op_19_7_d ));
-
+    decoder_5_32 u_dec3(.in(op_19_15 ), .out(op_19_15_d ));
+   
     //inst_calculate_register
-    wire inst_add_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_7_d[5'h00];
-    wire inst_sub_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_7_d[5'h02];
-    wire inst_slt    = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_7_d[5'h04];
-    wire inst_sltu   = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_7_d[5'h05];
-    wire inst_nor    = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_7_d[5'h08];
-    wire inst_and    = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_7_d[5'h09];
-    wire inst_or     = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_7_d[5'h0a];
-    wire inst_xor    = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_7_d[5'h0b];
+    assign inst_add_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h00];
+    assign inst_sub_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h02];
+    assign inst_slt    = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h04];
+    assign inst_sltu   = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h05];
+    assign inst_nor    = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h08];
+    assign inst_and    = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h09];
+    assign inst_or     = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h0a];
+    assign inst_xor    = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h0b];
 
     //inst_calculate_immediate
-    wire inst_slti   = op_31_26_d[6'h00] & op_25_22_d[4'h8];
-    wire inst_sltui  = op_31_26_d[6'h00] & op_25_22_d[4'h9];
-    wire inst_andi   = op_31_26_d[6'h00] & op_25_22_d[4'hd];
-    wire inst_ori    = op_31_26_d[6'h00] & op_25_22_d[4'he];
-    wire inst_xori   = op_31_26_d[6'h00] & op_25_22_d[4'hf];
+    assign inst_slti   = op_31_26_d[6'h00] & op_25_22_d[4'h8];
+    assign inst_sltui  = op_31_26_d[6'h00] & op_25_22_d[4'h9];
+    assign inst_andi   = op_31_26_d[6'h00] & op_25_22_d[4'hd];
+    assign inst_ori    = op_31_26_d[6'h00] & op_25_22_d[4'he];
+    assign inst_xori   = op_31_26_d[6'h00] & op_25_22_d[4'hf];
     
     //inst_shift_register
-    wire inst_sll_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_7_d[5'h0e];
-    wire inst_srl_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_7_d[5'h0f];
-    wire inst_sra_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_7_d[5'h10];
+    assign inst_sll_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h0e];
+    assign inst_srl_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h0f];
+    assign inst_sra_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h10];
 
     //inst_shift_immediate
-    wire inst_slli_w = op_31_26_d[6'h00] & op_25_22_d[4'h1] & op_21_20_d[2'h0] & op_19_7_d[5'h01];
-    wire inst_srli_w = op_31_26_d[6'h00] & op_25_22_d[4'h1] & op_21_20_d[2'h0] & op_19_7_d[5'h09];
-    wire inst_srai_w = op_31_26_d[6'h00] & op_25_22_d[4'h1] & op_21_20_d[2'h0] & op_19_7_d[5'h11];
-    wire inst_addi_w = op_31_26_d[6'h00] & op_25_22_d[4'ha];
+    assign inst_slli_w = op_31_26_d[6'h00] & op_25_22_d[4'h1] & op_21_20_d[2'h0] & op_19_15_d[5'h01];
+    assign inst_srli_w = op_31_26_d[6'h00] & op_25_22_d[4'h1] & op_21_20_d[2'h0] & op_19_15_d[5'h09];
+    assign inst_srai_w = op_31_26_d[6'h00] & op_25_22_d[4'h1] & op_21_20_d[2'h0] & op_19_15_d[5'h11];
+    assign inst_addi_w = op_31_26_d[6'h00] & op_25_22_d[4'ha];
 
     //inst_mul&div&mod
-    wire inst_mul_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_7_d[5'h18];
-    wire inst_mulh_w = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_7_d[5'h19];
-    wire inst_mulh_wu= op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_7_d[5'h1a];
-    wire inst_div_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_7_d[5'h00];
-    wire inst_mod_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_7_d[5'h01];
-    wire inst_div_wu = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_7_d[5'h02];
-    wire inst_mod_wu = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_7_d[5'h03];
+    assign inst_mul_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h18];
+    assign inst_mulh_w = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h19];
+    assign inst_mulh_wu= op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h1a];
+    assign inst_div_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h00];
+    assign inst_mod_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h01];
+    assign inst_div_wu = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h02];
+    assign inst_mod_wu = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h03];
     
     //inst_load
     wire inst_ld_b   = op_31_26_d[6'h0a] & op_25_22_d[4'h0];
@@ -201,7 +209,7 @@ module ID_Stage(
     //inst_branch
     wire inst_jirl   = op_31_26_d[6'h13];
     wire inst_b      = op_31_26_d[6'h14];
-    wire inst_bl     = op_31_26_d[6'h7];
+    wire inst_bl     = op_31_26_d[6'h15];
     wire inst_beq    = op_31_26_d[6'h16];
     wire inst_bne    = op_31_26_d[6'h17];
     wire inst_blt    = op_31_26_d[6'h18];
@@ -210,10 +218,19 @@ module ID_Stage(
     wire inst_bgeu   = op_31_26_d[6'h1b];
 
     //inst_u12i
-    wire inst_lu12i_w= op_31_26_d[6'h05] & ~inst[25];
-    wire inst_pcaddul2i = op_31_26_d[6'h07] & ~inst[25];
+    assign inst_lu12i_w= op_31_26_d[6'h05] & ~inst[25];
+    assign inst_pcaddul2i = op_31_26_d[6'h07] & ~inst[25];
 
-    adder_32 instance_CLA(
+    wire [31:0] adder_src1 = rj_value;
+    wire [31:0] adder_src2 = ~rkd_value;
+    wire        adder_IN = 1'b1;
+    wire        adder_SF;
+    wire        adder_ZF;
+    wire        adder_CF;
+    wire        adder_OF;
+    wire        adder_res;
+    
+    /*adder_32 instance_adder32(
         .A(adder_src1),
         .B(adder_src2),
         .IN(adder_IN),
@@ -222,20 +239,11 @@ module ID_Stage(
         .CF(adder_CF),        
         .OF(adder_OF),        
         .S(adder_res)  
-    );
+    );*/
 
-    wire [31:0] adder_src1 = rj_value;
-    wire [31:0] adder_src2 = ~rkd_value;
-    wire        adder_IN = 1'b1;
-    wire        adder_SF;
-    wire        adder_ZF;
-    wire        adder_CF;
-    wire        adder_OF:
-    wire        adder_res;
-
-    assign rj_eq_rd = ZF;
-    assign rj_lt_rd_signed = adder_OF ^ adder_SF;
-    assign rj_lt_rd_unsigned = ~adder_CF;
+    assign rj_eq_rd = (rj_value == rkd_value);
+    /*assign rj_lt_rd_signed = adder_OF ^ adder_SF;
+    assign rj_lt_rd_unsigned = ~adder_CF;*/
     assign br_taken = conflict ? 1'b0 :
                       (inst_beq  &&  rj_eq_rd
                     || inst_bne  && !rj_eq_rd
@@ -264,15 +272,6 @@ module ID_Stage(
     assign alu_op[10] = inst_srai_w | inst_sra_w;
     assign alu_op[11] = inst_lu12i_w;
     
-    assign alu_op[12] = inst_mul_w ;
-    assign alu_op[13] = inst_mulh_w;
-    assign alu_op[14] = inst_mulh_wu;
-    assign alu_op[7] = inst_div_w;
-    assign alu_op[16] = inst_div_wu;
-    assign alu_op[17] = inst_mod_w;
-    assign alu_op[18] = inst_mod_wu;
-
-
     assign need_ui5   =  inst_slli_w | inst_srli_w | inst_srai_w;
     assign need_ui12  =  inst_andi | inst_ori | inst_xori;
     assign need_si12  =  inst_addi_w | inst_ld_w | inst_st_w | inst_slti | inst_sltui;
@@ -286,10 +285,10 @@ module ID_Stage(
                 (need_ui5 || need_si12) ? {{20{i12[11]}}, i12[11:0]} :
                  {20'b0, i12[11:0]};
 
-    assign br_offs = need_si26 ? {{ 4{i26[25]}}, i26[25:0], 2'b0} :
-                                 {{14{i16[7]}}, i16[7:0], 2'b0} ;
+   assign br_offs = need_si26 ? {{ 4{i26[25]}}, i26[25:0], 2'b0} :
+                                {{14{i16[15]}}, i16[15:0], 2'b0} ;
 
-    assign jirl_offs = {{14{i16[7]}}, i16[7:0], 2'b0};
+    assign jirl_offs = {{14{i16[15]}}, i16[15:0], 2'b0};
 
     assign src_reg_is_rd = inst_beq | inst_bne | inst_st_w;
 
@@ -339,7 +338,7 @@ module ID_Stage(
             mem_rf_waddr,
             mem_rf_wdata} = mem_rf_zip;
             
-    assign {ex_res_from_mem,
+    assign {id_delay,
             ex_rf_we, 
             ex_rf_waddr, 
             ex_rf_wdata} = ex_rf_zip;
@@ -375,7 +374,6 @@ module ID_Stage(
     .wdata  (wb_rf_wdata )
     );
 
-    
     assign rj_value  =  conflict_r1_ex ? ex_rf_wdata:
                         conflict_r1_mem ? mem_rf_wdata:
                         conflict_r1_wb  ? wb_rf_wdata : rf_rdata1; 
@@ -386,25 +384,33 @@ module ID_Stage(
 
     assign id_rkd_value = rkd_value;
     assign id_res_from_mem = res_from_mem;
+
+    assign res_from_mul = inst_mul_w | inst_mulh_w | inst_mulh_wu;
+    assign res_from_div = inst_div_w | inst_div_wu | inst_mod_w | inst_mod_wu;
+
+    assign mul_signed = inst_mul_w | inst_mulh_w;
+    assign div_signed = inst_div_wu | inst_mod_wu;
+    assign div_r      = inst_mod_w | inst_mod_wu;
     
     assign id_to_ex_wire = {alu_op, alu_src1, alu_src2,
                             id_rf_we, id_rf_waddr,
                             id_pc,
                             inst_st_b, inst_st_h, inst_st_w,
                             id_rkd_value,
-                            inst_ld_b, inst_ld_bu, inst_ld_h, inst_ld_hu, inst_ld_w};                            
+                            inst_ld_b, inst_ld_bu, inst_ld_h, inst_ld_hu, inst_ld_w,
+                            res_from_mul, mul_signed, res_from_div, div_signed, div_r};                            
     
 endmodule
 
-
+/*
 module adder_32(                
         input [31:0] A,
         input [31:0] B,
-        input CIN,
-        output SF,        //符号位
+        input IN,
+        output SF,        //符号�?
         output ZF,        //零标志位
-        output CF,        //Carryout标志位
-        output OF,        //Overflow标志位
+        output CF,        //Carryout标志�?
+        output OF,        //Overflow标志�?
         output [31:0] S  
 );
 
@@ -425,11 +431,11 @@ module adder_32(
 
         assign p0 = A | B;
         assign g0 = A & B;
-        assign c1[0] = CIN;
-        assign c2[0] = CIN;
-        assign c3[0] = CIN;
+        assign c1[0] = IN;
+        assign c2[0] = IN;
+        assign c3[0] = IN;
 
-        assign Cout = p3 & CIN | g3;
+        assign Cout = p3 & IN | g3;
 
         genvar ic1;
         generate
@@ -467,17 +473,18 @@ module adder_32(
         genvar i_result;
         generate
             for (i_result = 0; i_result < 64; i_result = i_result + 1) begin: calc_Sum
-                Full_Adder sum(.CIN(c1[i_result]), .A(A[i_result]), .B(B[i_result]), .S(S[i_result]), .Cout());
+                Full_Adder sum(.Cin(c1[i_result]), .A(A[i_result]), .B(B[i_result]), .S(S[i_result]), .Cout());
             end
         endgenerate
 
-        assign COUT = cout[32];
-        assign CIN = cout[31];
+        assign COUT = S[32];
+        assign CIN = S[31];
 
-        //SF:符号位 ZF:零标志 CF:进位标准 OF:溢出标准       
+        //SF:符号�? ZF:零标�? CF:进位标准 OF:溢出标准       
         assign SF = S[31];
         assign ZF = ~|S;
         assign CF = ~COUT;
         assign OF =  CIN ^ COUT;
 
 endmodule
+*/

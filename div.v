@@ -113,4 +113,5 @@ module div(
     //调整最终的商和余数
     assign r = div_signed & r_sign ? (~r_reg + 1'b1) : r_reg;
     assign s = div_signed & s_sign ? (~s_reg + 1'b1) : s_reg;
+    
 endmodule

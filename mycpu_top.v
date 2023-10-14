@@ -38,6 +38,7 @@ module mycpu_top(
     wire        ex_res_from_mem;
     wire [31:0] ex_rkd_value;
     wire [31:0] ex_alu_result;
+    wire [31:0] mul_result;
     
     wire [37:0] wb_rf_zip;
     wire [37:0] mem_rf_zip;
@@ -97,6 +98,7 @@ module mycpu_top(
         .mem_allowin(mem_allowin),
         .ex_to_mem_valid(ex_to_mem_valid),
         .ex_to_mem_wire(ex_to_mem_wire),
+        .mul_result(mul_result),
    
         .data_sram_en(data_sram_en),
         .data_sram_we(data_sram_we),
@@ -119,6 +121,7 @@ module mycpu_top(
         .mem_to_wb_wire(mem_to_wb_wire),
         .mem_to_wb_valid(mem_to_wb_valid),
         
+        .mul_result(mul_result),
         .data_sram_rdata(data_sram_rdata),
         
         .mem_rf_zip(mem_rf_zip)

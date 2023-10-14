@@ -1,3 +1,5 @@
+`include "mycpu_head.h"
+
 module EX_Stage(
     input  wire        clk,
     input  wire        resetn,
@@ -10,7 +12,8 @@ module EX_Stage(
     output wire [`EX_TO_MEM_WIDTH-1:0] ex_to_mem_wire, 
     output wire        ex_to_mem_valid,
     
-    input wire  [38:0] ex_rf_zip,
+    input  wire  [38:0] ex_rf_zip,
+    output wire  [31:0] mul_result,
     
 // data sram interface
     output wire        data_sram_en,
@@ -45,8 +48,20 @@ module EX_Stage(
     wire        ex_inst_ld_hu;
     wire        ex_inst_ld_w;
 
+    wire        ex_res_from_mem;
+    wire        ex_res_from_mul;
+    wire        ex_res_from_div;
+    wire        ex_mul_signed;
+
+    wire        ex_div_r;
+    wire        ex_div_signed;
+    wire [31:0] ex_div_s_result;
+    wire [31:0] ex_div_r_result;
+    wire        ex_div_complete;
+    wire [31:0] ex_div_result;
+
 //stage control signal
-    assign ex_ready_go      = 1'b1;
+    assign ex_ready_go      = ~ex_res_from_div | ex_div_complete;
     assign ex_allowin       = ~ex_valid | ex_ready_go & mem_allowin;     
     assign ex_to_mem_valid  = ex_valid & ex_ready_go;
     always @(posedge clk) begin
@@ -62,21 +77,46 @@ module EX_Stage(
             id_to_ex_reg <= id_to_ex_wire;
     end
     
-    assign {ex_alu_op, alu_src1, alu_src2,
-            ex_rf_we, id_rf_waddr,
+    assign {ex_alu_op, ex_alu_src1, ex_alu_src2,
+            ex_rf_we, ex_rf_waddr,
             ex_pc,
             ex_inst_st_b, ex_inst_st_h, ex_inst_st_w,
             ex_rkd_value,
-            ex_load_unsigned,
-            ex_inst_ld_b, ex_inst_ld_bu, ex_inst_ld_h, ex_inst_ld_hu, ex_inst_ld_w
-            }; = id_to_ex_reg;   
+            ex_inst_ld_b, ex_inst_ld_bu, ex_inst_ld_h, ex_inst_ld_hu, ex_inst_ld_w,
+            ex_res_from_mul, ex_mul_signed, ex_res_from_div, ex_div_signed, ex_div_r
+            } = id_to_ex_reg;   
 
     alu u_alu(
         .alu_op     (ex_alu_op    ),
         .alu_src1   (ex_alu_src1  ),
         .alu_src2   (ex_alu_src2  ),
-        .alu_result (ex_alu_result)
+        .alu_result (ex_alu_result   )
     );
+
+
+    mul u_mul(
+        .mul_clk    (clk          ),
+        .resetn     (resetn       ),
+        .mul_signed (ex_mul_signed),
+        .x          (ex_alu_src1  ),
+        .y          (ex_alu_src2),
+        .result     (mul_result   )
+    );
+
+
+    div u_div(
+        .div_clk    (clk          ),
+        .resetn     (resetn       ),
+        .div        (ex_res_from_div),
+        .div_signed (ex_div_signed),
+        .x          (ex_alu_src1  ),
+        .y          (ex_alu_src2  ),
+        .s          (ex_div_s_result),
+        .r          (ex_div_r_result),
+        .complete   (ex_div_complete)
+    );
+
+    assign ex_div_result = ex_div_r ? ex_div_r_result : ex_div_s_result;
 
     wire addr00 = ex_alu_result[1:0] == 2'b00;
     wire addr01 = ex_alu_result[1:0] == 2'b01;
@@ -90,12 +130,15 @@ module EX_Stage(
     assign ex_to_mem_wire = {ex_rf_we, ex_rf_waddr,
                              ex_pc,
                              ex_alu_result,
-                             ex_inst_ld_b, ex_inst_ld_bu, ex_inst_ld_h, ex_inst_ld_hu, ex_inst_ld_w};
+                             ex_inst_ld_b, ex_inst_ld_bu, ex_inst_ld_h, ex_inst_ld_hu, ex_inst_ld_w,
+                             ex_res_from_mul, ex_res_from_div, ex_div_result};
+    
+    assign ex_res_from_mem = ex_inst_ld_b || ex_inst_ld_bu || ex_inst_ld_h || ex_inst_ld_hu || ex_inst_ld_w;
                              
-    assign ex_rf_zip       = {ex_res_from_mem & ex_valid,
+    assign ex_rf_zip       = {(ex_res_from_mem | ex_res_from_mul) & ex_valid,
                               ex_rf_we & ex_valid,
                               ex_rf_waddr,
-                              ex_alu_result};
+                              ex_res_from_div ? ex_div_result : ex_alu_result};
     
     //data sram interface
     assign data_sram_en    = ex_inst_ld_b || ex_inst_ld_bu || ex_inst_ld_h || ex_inst_ld_hu || ex_inst_ld_w || (|ex_mem_we);

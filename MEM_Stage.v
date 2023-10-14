@@ -1,3 +1,5 @@
+`include "mycpu_head.h"
+
 module MEM_Stage(
     input  wire        clk,
     input  wire        resetn,
@@ -13,6 +15,7 @@ module MEM_Stage(
    
     input  wire [31:0] data_sram_rdata,
     
+    input  wire [31:0] mul_result,
     output wire [37:0] mem_rf_zip
 );
     reg  [`EX_TO_MEM_WIDTH-1:0] ex_to_mem_reg;
@@ -32,6 +35,8 @@ module MEM_Stage(
     wire        mem_inst_ld_h;
     wire        mem_inst_ld_hu;
     wire        mem_inst_ld_w;
+
+    wire [31:0] div_result;
 
 //stage control signal
     assign mem_ready_go     = 1'b1;
@@ -54,22 +59,26 @@ module MEM_Stage(
     assign {mem_rf_we, mem_rf_waddr,
             mem_pc,
             mem_alu_result,
-            mem_inst_ld_b, mem_inst_ld_bu, mem_inst_ld_h, mem_inst_ld_hu, mem_inst_ld_w
+            mem_inst_ld_b, mem_inst_ld_bu, mem_inst_ld_h, mem_inst_ld_hu, mem_inst_ld_w,
+            res_from_mul, res_from_div, div_result
             } = ex_to_mem_reg;
     
 //mem and wb state interface
     assign res_from_mem = mem_inst_ld_b || mem_inst_ld_bu || mem_inst_ld_h || mem_inst_ld_hu || mem_inst_ld_w;
-    assign mem_result = {32{mem_inst_ld_b}} & {24{data_sram_rdata[7]}, data_sram_rdata[7:0]} |
+    assign mem_result = {32{mem_inst_ld_b}} & {{24{data_sram_rdata[7]}}, data_sram_rdata[7:0]} |
                         {32{mem_inst_ld_bu}} & {24'b0, data_sram_rdata[7:0]} |
-                        {32{mem_inst_ld_h}} & {16{data_sram_rdata[15]}, data_sram_rdata[15:0]} |
+                        {32{mem_inst_ld_h}} & {{16{data_sram_rdata[15]}}, data_sram_rdata[15:0]} |
                         {32{mem_inst_ld_hu}} & {16'b0, data_sram_rdata[15:0]} |
                         data_sram_rdata;
 
-    assign mem_rf_wdata     = res_from_mem ? mem_result : mem_alu_result;
+    assign mem_rf_wdata     = res_from_mem ? mem_result : 
+                              res_from_mul ? mul_result : 
+                              res_from_div ? div_result :
+                              mem_alu_result;
     
     assign mem_to_wb_wire = {mem_rf_we,
                              mem_rf_waddr,
-                             mem_rf_wdata
+                             mem_rf_wdata,
                              mem_pc};
                              
     assign mem_rf_zip      = {mem_rf_we & mem_valid,

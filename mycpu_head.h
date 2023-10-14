@@ -1,4 +1,4 @@
 `define IF_TO_ID_WIDTH 64
-`define ID_TO_EX_WIDTH 154
-`define EX_TO_MEM_WIDTH 75
+`define ID_TO_EX_WIDTH 159
+`define EX_TO_MEM_WIDTH 109
 `define MEM_TO_WB_WIDTH 70

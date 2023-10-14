@@ -1,3 +1,5 @@
+`include "mycpu_head.h"
+
 module IF_Stage(
     input  wire        clk,
     input  wire        resetn,
@@ -27,7 +29,6 @@ module IF_Stage(
     wire        to_if_valid;
     
 //IF statge control signal
-
     assign if_ready_go      = 1'b1;
     assign if_allowin       = ~if_valid | if_ready_go & id_allowin;     
     assign if_to_id_valid   = if_valid & if_ready_go;

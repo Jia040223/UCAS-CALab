@@ -1,3 +1,5 @@
+`include "mycpu_head.h"
+
 module WB_Stage(
     input  wire        clk,
     input  wire        resetn,
