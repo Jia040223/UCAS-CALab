@@ -397,8 +397,9 @@ module CLA(
         
         //并行加法器
         genvar i;
+        genvar j;
         generate 
-                for(i = 0; i < 32; i = i + 1) 
+                for(i = 4*j; i < 4*j + 4; i = i + 1) 
                 begin : CLA
                         wire p, g;
                         assign p = ~A[i] & B[i] | A[i] & ~B[i];
