@@ -119,13 +119,13 @@ module EX_Stage(
 
     assign ex_div_result = ex_div_r ? ex_div_r_result : ex_div_s_result;
 
-    wire addr00 = ex_alu_result[1:0] == 2'b00;
-    wire addr01 = ex_alu_result[1:0] == 2'b01;
-    wire addr10 = ex_alu_result[1:0] == 2'b10;
-    wire addr11 = ex_alu_result[1:0] == 2'b11;
+    wire st_addr00 = ex_alu_result[1:0] == 2'b00;
+    wire st_addr01 = ex_alu_result[1:0] == 2'b01;
+    wire st_addr10 = ex_alu_result[1:0] == 2'b10;
+    wire st_addr11 = ex_alu_result[1:0] == 2'b11;
     
-    assign ex_mem_we = {4{ex_inst_st_b}} & {addr11, addr10, addr01, addr00} |
-                       {4{ex_inst_st_h}} & {{2{addr10}}, {2{addr00}}} |
+    assign ex_mem_we = {4{ex_inst_st_b}} & {st_addr11, st_addr10, st_addr01, st_addr00} |
+                       {4{ex_inst_st_h}} & {{2{st_addr10}}, {2{st_addr00}}} |
                        {4{ex_inst_st_w}};
 
     assign ex_to_mem_wire = {ex_rf_we, ex_rf_waddr,
