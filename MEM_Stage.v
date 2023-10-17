@@ -93,7 +93,7 @@ module MEM_Stage(
     wire [15:0] data_sram_rdata_16bit = {16{ld_addr00}} & data_sram_rdata[15: 0] |
                                         {16{ld_addr10}} & data_sram_rdata[31: 16];
 
-    assign res_from_mem = mem_inst_ld_b || mem_inst_ld_bu || mem_inst_ld_h || mem_inst_ld_hu || mem_inst_ld_w;
+    
     assign mem_result = {32{mem_inst_ld_b}} & {{24{data_sram_rdata_8bit[7]}}, data_sram_rdata_8bit} |
                         {32{mem_inst_ld_bu}} & {24'b0, data_sram_rdata_8bit} |
                         {32{mem_inst_ld_h}} & {{16{data_sram_rdata_16bit[15]}}, data_sram_rdata_16bit} |
