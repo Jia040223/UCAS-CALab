@@ -39,6 +39,8 @@ module MEM_Stage(
     wire [31:0] div_result;
     wire        mul_h;
 
+    wire [31:0] shift_rdata;
+
 //stage control signal
     assign mem_ready_go     = 1'b1;
     assign mem_allowin      = ~mem_valid | mem_ready_go & wb_allowin;     
@@ -65,6 +67,19 @@ module MEM_Stage(
             } = ex_to_mem_reg;
     
 //mem and wb state interface
+    assign shift_rdata   = {24'b0, data_sram_rdata} >> {mem_alu_result[1:0], 3'b0};
+
+    assign mem_result[ 7: 0]   =  shift_rdata[ 7: 0];
+
+    assign mem_result[15: 8]   =  mem_inst_ld_b ? {8{shift_rdata[7]}} :
+                                  mem_inst_ld_bu ? 8'b0               :
+                                  shift_rdata[15: 8];
+
+    assign mem_result[31:16]   =  mem_inst_ld_b ? {16{shift_rdata[7]}}  :
+                                  mem_inst_ld_h ? {16{shift_rdata[15]}} :
+                                  mem_inst_ld_w ? shift_rdata[31:16]    :
+                                  16'b0;
+    /*
     wire ld_addr00 = mem_alu_result[1:0] == 2'b00;
     wire ld_addr01 = mem_alu_result[1:0] == 2'b01;
     wire ld_addr10 = mem_alu_result[1:0] == 2'b10;
@@ -84,6 +99,7 @@ module MEM_Stage(
                         {32{mem_inst_ld_h}} & {{16{data_sram_rdata_16bit[15]}}, data_sram_rdata_16bit} |
                         {32{mem_inst_ld_hu}} & {16'b0, data_sram_rdata_16bit} |
                         {32{mem_inst_ld_w}} & data_sram_rdata;
+    */
 
     assign mem_rf_wdata     = res_from_mem ? mem_result : 
                               mul_h        ? mul_result[63:32] :
