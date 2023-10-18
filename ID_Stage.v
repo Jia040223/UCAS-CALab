@@ -240,9 +240,12 @@ module ID_Stage(
         .S(adder_res)  
     );
 
-    assign rj_eq_rd = adder_ZF;
-    assign rj_lt_rd_signed = adder_OF ^ adder_SF;
-    assign rj_lt_rd_unsigned = ~adder_CF;
+    assign rj_eq_rd = (rj_value == rkd_value);
+    assign rj_lt_rd_signed = ($signed(rj_value) < $signed(rkd_value));
+    assign rj_lt_rd_unsigned = (rj_value < rkd_value);
+    //assign rj_eq_rd = adder_ZF;
+    //assign rj_lt_rd_signed = adder_OF ^ adder_SF;
+    //assign rj_lt_rd_unsigned = ~adder_CF;
     assign br_taken = conflict ? 1'b0 :
                       (inst_beq  &&  rj_eq_rd
                     || inst_bne  && !rj_eq_rd
@@ -412,10 +415,10 @@ module adder_32(
         input [31:0] A,
         input [31:0] B,
         input IN,
-        output SF,        //·ûºÅ??
-        output ZF,        //Áã±êÖ¾Î»
-        output CF,        //Carryout±êÖ¾??
-        output OF,        //Overflow±êÖ¾??
+        output SF,        //ï¿½ï¿½ï¿½ï¿½??
+        output ZF,        //ï¿½ï¿½ï¿½Ö¾Î»
+        output CF,        //Carryoutï¿½ï¿½Ö¾??
+        output OF,        //Overflowï¿½ï¿½Ö¾??
         output [31:0] S  
 );
 
@@ -483,7 +486,7 @@ module adder_32(
         assign COUT = p3 & IN | g3;
         assign CIN = c1[31];
 
-        //SF:·ûºÅ?? ZF:Áã±ê?? CF:½øÎ»±ê×¼ OF:Òç³ö±ê×¼       
+        //SF:ï¿½ï¿½ï¿½ï¿½?? ZF:ï¿½ï¿½ï¿½?? CF:ï¿½ï¿½Î»ï¿½ï¿½×¼ OF:ï¿½ï¿½ï¿½ï¿½ï¿½×¼       
         assign SF = S[31];
         assign ZF = ~|S;
         assign CF = ~COUT;
