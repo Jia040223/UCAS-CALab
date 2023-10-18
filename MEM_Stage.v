@@ -71,13 +71,13 @@ module MEM_Stage(
 
     assign mem_result[ 7: 0]   =  shift_rdata[ 7: 0];
 
-    assign mem_result[15: 8]   =  mem_inst_ld_b ? {8{shift_rdata[7]}} :
-                                  mem_inst_ld_bu ? 8'b0               :
-                                  shift_rdata[15: 8];
+    assign mem_result[15: 8]   =  {8{mem_inst_ld_b}} & {8{shift_rdata[7]}} |
+                                  {8{mem_inst_ld_bu}} & 8'b0 |
+                                  {8{~mem_inst_ld_b & ~mem_inst_ld_bu}} & shift_rdata[15: 8];
 
-    assign mem_result[31:16]   =  mem_inst_ld_b ? {16{shift_rdata[7]}}  :
-                                  mem_inst_ld_h ? {16{shift_rdata[15]}} :
-                                  mem_inst_ld_w ? shift_rdata[31:16]    :
+    assign mem_result[31:16]   =  {8{mem_inst_ld_b}} & {16{shift_rdata[7]}}  |
+                                  {8{mem_inst_ld_h}} & {16{shift_rdata[15]}} |
+                                  {8{mem_inst_ld_w}} & shift_rdata[31:16]    |
                                   16'b0;
     /*
     wire ld_addr00 = mem_alu_result[1:0] == 2'b00;
