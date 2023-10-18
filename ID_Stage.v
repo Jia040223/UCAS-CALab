@@ -229,7 +229,7 @@ module ID_Stage(
     wire        adder_OF;
     wire        adder_res;
     
-    /*adder_32 instance_adder32(
+    adder_32 instance_adder32(
         .A(adder_src1),
         .B(adder_src2),
         .IN(adder_IN),
@@ -238,7 +238,7 @@ module ID_Stage(
         .CF(adder_CF),        
         .OF(adder_OF),        
         .S(adder_res)  
-    );*/
+    );
 
     assign rj_eq_rd = adder_ZF;
     assign rj_lt_rd_signed = adder_OF ^ adder_SF;
@@ -412,10 +412,10 @@ module adder_32(
         input [31:0] A,
         input [31:0] B,
         input IN,
-        output SF,        //ç¬¦å·ï¿½?
-        output ZF,        //é›¶æ ‡å¿—ä½
-        output CF,        //Carryoutæ ‡å¿—ï¿½?
-        output OF,        //Overflowæ ‡å¿—ï¿½?
+        output SF,        //·ûºÅ??
+        output ZF,        //Áã±êÖ¾Î»
+        output CF,        //Carryout±êÖ¾??
+        output OF,        //Overflow±êÖ¾??
         output [31:0] S  
 );
 
@@ -483,7 +483,7 @@ module adder_32(
         assign COUT = p3 & IN | g3;
         assign CIN = c1[31];
 
-        //SF:ç¬¦å·ï¿½? ZF:é›¶æ ‡ï¿½? CF:è¿›ä½æ ‡å‡† OF:æº¢å‡ºæ ‡å‡†       
+        //SF:·ûºÅ?? ZF:Áã±ê?? CF:½øÎ»±ê×¼ OF:Òç³ö±ê×¼       
         assign SF = S[31];
         assign ZF = ~|S;
         assign CF = ~COUT;
