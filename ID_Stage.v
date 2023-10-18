@@ -501,6 +501,6 @@ module adder_2(                 //4λ�ӷ���
 );
     assign c1 = g[0] | p[0] & c0;
     assign P = &p;
-    assign G = g[3] | p[3] & g[2] | p[3] & p[2] & g[1] | p[3] & p[2] & p[1] & g[0];
+    assign G = g[1] | p[1] & g[0];
 
 endmodule
