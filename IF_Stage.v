@@ -50,10 +50,10 @@ module IF_Stage(
     assign inst_sram_wdata  = 32'b0;
 
 //pc relavant signals
-    //assign seq_pc           = if_pc + 3'h4; 
+    assign seq_pc           = if_pc + 3'h4; 
     assign nextpc           = br_taken ? br_target : seq_pc; 
 
-    adder_32 instance_adder32(
+    /*adder_32 instance_adder32(
         .A(if_pc),
         .B(32'h4),
         .IN(1'b0),
@@ -62,7 +62,7 @@ module IF_Stage(
         .CF(),        
         .OF(),        
         .S(seq_pc)  
-    );
+    );*/
 
 //if to id stage signal
     always @(posedge clk) begin
