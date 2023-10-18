@@ -240,9 +240,9 @@ module ID_Stage(
         .S(adder_res)  
     );*/
 
-    assign rj_eq_rd = (rj_value == rkd_value);
-    assign rj_lt_rd_signed = ($signed(rj_value) < $signed(rkd_value));
-    assign rj_lt_rd_unsigned = ($unsigned(rj_value) < $unsigned(rkd_value));
+    assign rj_eq_rd = adder_ZF;
+    assign rj_lt_rd_signed = adder_OF ^ adder_SF;
+    assign rj_lt_rd_unsigned = ~adder_CF;
     assign br_taken = conflict ? 1'b0 :
                       (inst_beq  &&  rj_eq_rd
                     || inst_bne  && !rj_eq_rd
@@ -470,12 +470,12 @@ module adder_32(
             end
         endgenerate
 
-        adder_4 adder_floor2 (.c0(CIN), .p(p2), .g(g2),
+        adder_4 adder_floor2 (.c0(IN), .p(p2), .g(g2),
                 .c1(c3[1]), .c2(c3[2]), .c3(c3[3]), .P(p3), .G(g3));
 
         genvar i_result;
         generate
-            for (i_result = 0; i_result < 64; i_result = i_result + 1) begin: calc_Sum
+            for (i_result = 0; i_result < 32; i_result = i_result + 1) begin: calc_Sum
                 Full_Adder sum(.Cin(c1[i_result]), .A(A[i_result]), .B(B[i_result]), .S(S[i_result]), .Cout());
             end
         endgenerate

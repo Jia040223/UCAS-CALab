@@ -75,9 +75,9 @@ module MEM_Stage(
                                   {8{mem_inst_ld_bu}} & 8'b0 |
                                   {8{~mem_inst_ld_b & ~mem_inst_ld_bu}} & shift_rdata[15: 8];
 
-    assign mem_result[31:16]   =  {8{mem_inst_ld_b}} & {16{shift_rdata[7]}}  |
-                                  {8{mem_inst_ld_h}} & {16{shift_rdata[15]}} |
-                                  {8{mem_inst_ld_w}} & shift_rdata[31:16]    |
+    assign mem_result[31:16]   =  {16{mem_inst_ld_b}} & {16{shift_rdata[7]}}  |
+                                  {16{mem_inst_ld_h}} & {16{shift_rdata[15]}} |
+                                  {16{mem_inst_ld_w}} & shift_rdata[31:16]    |
                                   16'b0;
     /*
     wire ld_addr00 = mem_alu_result[1:0] == 2'b00;
@@ -100,6 +100,8 @@ module MEM_Stage(
                         {32{mem_inst_ld_hu}} & {16'b0, data_sram_rdata_16bit} |
                         {32{mem_inst_ld_w}} & data_sram_rdata;
     */
+
+    assign res_from_mem = mem_inst_ld_b || mem_inst_ld_bu || mem_inst_ld_h || mem_inst_ld_hu || mem_inst_ld_w;
 
     assign mem_rf_wdata     = res_from_mem ? mem_result : 
                               mul_h        ? mul_result[63:32] :
