@@ -470,8 +470,8 @@ module adder_32(
             end
         endgenerate
 
-        adder_4 adder_floor2 (.c0(IN), .p(p2), .g(g2),
-                .c1(c3[1]), .c2(c3[2]), .c3(c3[3]), .P(p3), .G(g3));
+        adder_2 adder_floor2 (.c0(IN), .p(p2), .g(g2),
+                .c1(c3[1]), .P(p3), .G(g3));
 
         genvar i_result;
         generate
@@ -488,5 +488,19 @@ module adder_32(
         assign ZF = ~|S;
         assign CF = ~COUT;
         assign OF =  CIN ^ COUT;
+
+endmodule
+
+module adder_2(                 //4λ�ӷ���
+    input c0,
+    input [1:0] p,
+    input [1:0] g,
+    output c1,
+    output P,
+    output G
+);
+    assign c1 = g[0] | p[0] & c0;
+    assign P = &p;
+    assign G = g[3] | p[3] & g[2] | p[3] & p[2] & g[1] | p[3] & p[2] & p[1] & g[0];
 
 endmodule
