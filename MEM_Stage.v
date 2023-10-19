@@ -36,6 +36,10 @@ module MEM_Stage(
     wire        mem_inst_ld_hu;
     wire        mem_inst_ld_w;
 
+    wire [31:0] mem_ld_b_res;
+    wire [31:0] mem_ld_h_res;
+    wire [31:0] mem_ld_w_res;
+
     wire [31:0] div_result;
     wire        mul_h;
 
@@ -67,18 +71,15 @@ module MEM_Stage(
             } = ex_to_mem_reg;
     
 //mem and wb state interface
-    assign shift_rdata   = {24'b0, data_sram_rdata} >> {mem_alu_result[1:0], 3'b0};
+    assign shift_rdata = {24'b0, data_sram_rdata} >> {mem_alu_result[1:0], 3'b0};
 
-    assign mem_result[ 7: 0]   =  shift_rdata[ 7: 0];
+    assign mem_ld_b_res = {24{mem_inst_ld_b & shift_rdata[7]}, shift_rdata[7:0]};
+    assign mem_ld_h_res = {16{mem_inst_ld_h & shift_rdata[15]}, shift_rdata[7:0]};
+    assign mem_ld_w_res = shift_rdata;
 
-    assign mem_result[15: 8]   =  {8{mem_inst_ld_b}} & {8{shift_rdata[7]}} |
-                                  {8{mem_inst_ld_bu}} & 8'b0 |
-                                  {8{~mem_inst_ld_b & ~mem_inst_ld_bu}} & shift_rdata[15: 8];
-
-    assign mem_result[31:16]   =  {16{mem_inst_ld_b}} & {16{shift_rdata[7]}}  |
-                                  {16{mem_inst_ld_h}} & {16{shift_rdata[15]}} |
-                                  {16{mem_inst_ld_w}} & shift_rdata[31:16]    |
-                                  16'b0;
+    assign mem_result = {32{mem_inst_ld_b | mem_inst_ld_bu}} & mem_ld_b_res |
+                        {32{mem_inst_ld_h | mem_inst_ld_hu}} & mem_ld_h_res |
+                        {32{mem_inst_ld_w}} & mem_ld_w_res;
     /*
     wire ld_addr00 = mem_alu_result[1:0] == 2'b00;
     wire ld_addr01 = mem_alu_result[1:0] == 2'b01;
@@ -107,7 +108,7 @@ module MEM_Stage(
                               {32{mul_h}} & mul_result[63:32] |
                               {32{~mul_h & res_from_mul}} & mul_result[31:0] |
                               {32{res_from_div}} & div_result |
-                              {32{~res_from_div & ~res_from_mul & ~res_from_mem}}mem_alu_result;
+                              {32{~res_from_div & ~res_from_mul & ~res_from_mem}} & mem_alu_result;
     
     assign mem_to_wb_wire = {mem_rf_we,
                              mem_rf_waddr,
