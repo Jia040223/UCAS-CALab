@@ -110,6 +110,8 @@ module ID_Stage(
     wire        div_signed;
     wire        div_r;
     wire        mul_h;
+    
+    wire [32:0] sub_res;
         
 //stage control signal
     assign id_ready_go      = ~conflict;
@@ -241,10 +243,15 @@ module ID_Stage(
         .S(adder_res)  
     );
     */
-
     assign rj_eq_rd = (rj_value == rkd_value);
+    assign sub_res = {1'b0, rj_value} + {1'b0, ~rkd_value} + 1'b1;
+    assign rj_lt_rd_signed = (rj_value[31] & ~rkd_value[31])
+                        | ((rj_value[31] ~^ rkd_value[31]) & sub_res[31]);
+    assign rj_lt_rd_unsigned = ~sub_res[32];
+   
+   /*assign rj_eq_rd = (rj_value == rkd_value);
     assign rj_lt_rd_signed = ($signed(rj_value) < $signed(rkd_value));
-    assign rj_lt_rd_unsigned = (rj_value < rkd_value);
+    assign rj_lt_rd_unsigned = (rj_value < rkd_value);*/
     //assign rj_eq_rd = adder_ZF;
     //assign rj_lt_rd_signed = adder_OF ^ adder_SF;
     //assign rj_lt_rd_unsigned = ~adder_CF;
@@ -418,10 +425,10 @@ module adder_32(
         input [31:0] A,
         input [31:0] B,
         input IN,
-        output SF,        //����??
-        output ZF,        //���־�?
-        output CF,        //Carryout��־??
-        output OF,        //Overflow��־??
+        output SF,        //锟斤拷锟斤拷??
+        output ZF,        //锟斤拷锟街疚?
+        output CF,        //Carryout锟斤拷志??
+        output OF,        //Overflow锟斤拷志??
         output [31:0] S  
 );
 
@@ -489,7 +496,7 @@ module adder_32(
         assign COUT = p3 & IN | g3;
         assign CIN = c1[31];
 
-        //SF:����?? ZF:���??? CF:��λ��׼ OF:������?       
+        //SF:锟斤拷锟斤拷?? ZF:锟斤拷锟??? CF:锟斤拷位锟斤拷准 OF:锟斤拷锟斤拷锟阶?       
         assign SF = S[31];
         assign ZF = ~|S;
         assign CF = ~COUT;
@@ -497,7 +504,7 @@ module adder_32(
 
 endmodule
 
-module adder_2(                 //4λ�ӷ���
+module adder_2(                 //4位锟接凤拷锟斤拷
     input c0,
     input [1:0] p,
     input [1:0] g,
