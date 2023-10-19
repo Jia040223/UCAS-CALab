@@ -103,11 +103,11 @@ module MEM_Stage(
 
     assign res_from_mem = mem_inst_ld_b || mem_inst_ld_bu || mem_inst_ld_h || mem_inst_ld_hu || mem_inst_ld_w;
 
-    assign mem_rf_wdata     = res_from_mem ? mem_result : 
-                              mul_h        ? mul_result[63:32] :
-                              res_from_mul ? mul_result[31:0] :
-                              res_from_div ? div_result :
-                              mem_alu_result;
+    assign mem_rf_wdata     = {32{res_from_mem}} & mem_result |
+                              {32{mul_h}} & mul_result[63:32] |
+                              {32{~mul_h & res_from_mul}} & mul_result[31:0] |
+                              {32{res_from_div}} & div_result |
+                              {32{~res_from_div & ~res_from_mul & ~res_from_mem}}mem_alu_result;
     
     assign mem_to_wb_wire = {mem_rf_we,
                              mem_rf_waddr,
