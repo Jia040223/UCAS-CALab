@@ -249,9 +249,10 @@ module ID_Stage(
                         | ((rj_value[31] ~^ rkd_value[31]) & sub_res[31]);
     assign rj_lt_rd_unsigned = ~sub_res[32];
    
-   /*assign rj_eq_rd = (rj_value == rkd_value);
-    assign rj_lt_rd_signed = ($signed(rj_value) < $signed(rkd_value));
-    assign rj_lt_rd_unsigned = (rj_value < rkd_value);*/
+    //assign rj_eq_rd = (rj_value == rkd_value);
+    //assign rj_lt_rd_signed = ($signed(rj_value) < $signed(rkd_value));
+    //assign rj_lt_rd_unsigned = (rj_value < rkd_value);
+    
     //assign rj_eq_rd = adder_ZF;
     //assign rj_lt_rd_signed = adder_OF ^ adder_SF;
     //assign rj_lt_rd_unsigned = ~adder_CF;
