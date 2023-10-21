@@ -71,15 +71,16 @@ module MEM_Stage(
             } = ex_to_mem_reg;
     
 //mem and wb state interface
-    assign shift_rdata = {24'b0, data_sram_rdata} >> {mem_alu_result[1:0], 3'b0};
+    assign shift_rdata   = {24'b0, data_sram_rdata} >> {mem_alu_result[1:0], 3'b0};
 
-    assign mem_ld_b_res = {24{mem_inst_ld_b & shift_rdata[7]}, shift_rdata[7:0]};
-    assign mem_ld_h_res = {16{mem_inst_ld_h & shift_rdata[15]}, shift_rdata[7:0]};
-    assign mem_ld_w_res = shift_rdata;
+    assign mem_result[ 7: 0]   =  shift_rdata[ 7: 0];
 
-    assign mem_result = {32{mem_inst_ld_b | mem_inst_ld_bu}} & mem_ld_b_res |
-                        {32{mem_inst_ld_h | mem_inst_ld_hu}} & mem_ld_h_res |
-                        {32{mem_inst_ld_w}} & mem_ld_w_res;
+    assign mem_result[15: 8]   =  {8{mem_inst_ld_b & shift_rdata[7]}} |
+                                  {8{~mem_inst_ld_b & ~mem_inst_ld_bu}} & shift_rdata[15: 8];
+
+    assign mem_result[31:16]   =  {16{mem_inst_ld_b & shift_rdata[7]}} |
+                                  {16{mem_inst_ld_h & shift_rdata[15]}} |
+                                  {16{mem_inst_ld_w}} & shift_rdata[31:16];
     /*
     wire ld_addr00 = mem_alu_result[1:0] == 2'b00;
     wire ld_addr01 = mem_alu_result[1:0] == 2'b01;
