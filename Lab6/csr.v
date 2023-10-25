@@ -15,10 +15,13 @@ module csr(
     output wire [31:0]       ex_entry
 );
     // CRMD
-    reg [1:0] csr_crmd_plv;
-    reg csr_crmd_ie;
+    reg [1:0]   csr_crmd_plv;
+    reg         csr_crmd_ie;
     wire [31:0] csr_crmd_rvalue;
-    reg          csr_crmd_da;       //CRMD的直接地址翻译使能
+    wire         csr_crmd_da;       //CRMD的直接地址翻译使能
+    wire         csr_crmd_pg;
+    wire [1:0]   csr_crmd_datf;
+    wire [1:0]   csr_crmd_datm;
 
     // PRMD
     reg [1:0] csr_prmd_pplv;
@@ -54,7 +57,6 @@ module csr(
     //CRMD
     always @(posedge clk) begin
         if(reset) begin
-            csr_crmd_da  <= 1'b1;
             csr_crmd_plv <= 2'b0;
             csr_crmd_ie  <= 1'b0;
         end
@@ -72,7 +74,10 @@ module csr(
         end    
     end
 
-
+    assign csr_crmd_da    = 1'b1;
+    assign csr_crmd_pg    = 1'b0;
+    assign csr_crmd_datf  = 2'b0;
+    assign csr_crmd_datm  = 2'b0;
 
     //PRMD
     always @(posedge clk) begin
@@ -142,7 +147,7 @@ module csr(
 
 
     assign ex_entry = csr_eentry_rvalue;
-    assign csr_crmd_rvalue = {28'b0, csr_crmd_da, csr_crmd_ie, csr_crmd_plv};
+    assign csr_crmd_rvalue = {23'b0, csr_crmd_datm, csr_crmd_datm, csr_crmd_pg, csr_crmd_da, csr_crmd_ie, csr_crmd_plv};
     assign csr_prmd_rvalue = {29'b0, csr_prmd_pie, csr_prmd_pplv};
     assign csr_estat_rvalue =  {1'b0, csr_estat_esubcode, csr_estat_ecode, 3'b0, csr_estat_is};
     assign csr_era_rvalue =  csr_era_pc;
