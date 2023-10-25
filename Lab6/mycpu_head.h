@@ -49,4 +49,3 @@
 // `define CSR_TCFG_PERIOD 1
 // `define CSR_TCFG_INITV  31:2
 
-`define ECODE_SYS       6'hb
