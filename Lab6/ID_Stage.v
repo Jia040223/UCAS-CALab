@@ -20,7 +20,8 @@ module ID_Stage(
     input  wire [38:0] mem_rf_zip,
     input  wire [39:0] ex_rf_zip,
 
-    input  wire [31:0] id_flush
+    //nput  wire [31:0] id_flush
+    input  wire       id_flush
 );
     reg  [`IF_TO_ID_DATA_WIDTH-1:0] if_to_id_data_reg; 
     reg  [`IF_TO_ID_EXCEP_WIDTH-1:0] if_to_id_excep_reg;
