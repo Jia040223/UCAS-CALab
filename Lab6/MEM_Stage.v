@@ -19,6 +19,8 @@ module MEM_Stage(
     output wire [37:0] mem_rf_zip
 );
     reg  [`EX_TO_MEM_WIDTH-1:0] ex_to_mem_reg;
+
+    reg         csr_ld_ALE;
     
     wire [31:0] mem_pc;
     wire        mem_ready_go;

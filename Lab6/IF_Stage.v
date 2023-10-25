@@ -19,6 +19,8 @@ module IF_Stage(
 );
     wire [31:0] if_inst;
     reg  [31:0] if_pc;
+
+    reg         csr_ADEF;
     
     wire        if_ready_go;
     reg         if_valid;

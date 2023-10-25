@@ -219,8 +219,17 @@ module ID_Stage(
     wire inst_bgeu   = op_31_26_d[6'h1b];
 
     //inst_u12i
-    wire inst_lu12i_w= op_31_26_d[6'h05] & ~inst[25];
+    wire inst_lu12i_w = op_31_26_d[6'h05] & ~inst[25];
     wire inst_pcaddul2i = op_31_26_d[6'h07] & ~inst[25];
+
+    wire inst_break = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h14];
+    wire inst_syscall = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h16];
+
+    wire inst_csrrd = op_31_26_d[6'h01] & (op_25_22[3:2] == 2'b0) & (rj == 5'b0);
+    wire inst_csrwr = op_31_26_d[6'h01] & (op_25_22[3:2] == 2'b0) & (rj == 5'b1);
+    wire inst_csrxchg = op_31_26_d[6'h01] & op_25_22[3:2] == 2'b0 & (|rj[4:1]);
+    wire inst_ertn = op_31_26_d[6'h01] & op_25_22_d[4'h9] & op_21_20_d[2'h0] & op_19_15_d[5'h10] 
+                    & (rk == 5'h0e) & (rj == 5'h00) & (rd == 5'h00);
 
     wire [31:0] adder_src1 = rj_value;
     wire [31:0] adder_src2 = ~rkd_value;

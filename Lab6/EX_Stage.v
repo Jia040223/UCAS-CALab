@@ -22,6 +22,8 @@ module EX_Stage(
     output wire [31:0] data_sram_wdata
 );
     reg  [`ID_TO_EX_WIDTH-1:0] id_to_ex_reg;
+
+    reg         csr_st_ALE;
     
     wire        ex_ready_go;
     reg         ex_valid;
