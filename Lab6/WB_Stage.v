@@ -31,14 +31,6 @@ module WB_Stage(
     wire [ 4:0] wb_rf_waddr;
     wire        wb_rf_we;
 
-    wire        wb_inst_csrrd;
-    wire        wb_inst_csrwr;
-    wire        wb_inst_csrxchg;
-    wire [13:0] wb_csr_num;
-    wire        wb_excep;
-    wire [31:0] wb_rj_value;
-    wire [31:0] wb_rkd_value;
-
     wire        wb_res_from_csr;
     wire [13:0] wb_csr_num;
     wire        wb_csr_we;
