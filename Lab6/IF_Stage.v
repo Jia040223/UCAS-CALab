@@ -18,7 +18,7 @@ module IF_Stage(
     output wire [`IF_TO_ID_DATA_WIDTH-1:0] if_to_id_data,
     output wire [`IF_TO_ID_EXCEP_WIDTH-1:0] if_to_id_excep,
 
-    input  wire [31:0] ex_entry,
+    input wire [`WB_TO_IF_CSR_DATA_WIDTH -1:0] wb_to_if_csr_data,
     input  wire        if_flush
 );
     wire [31:0] if_inst;
@@ -31,11 +31,16 @@ module IF_Stage(
     
     wire        if_allowin;
     wire        to_if_valid;
+
+    wire [31:0] csr_rvalue;
+    wire [31:0] ex_entry;
+    wire        wb_ertn_flush_valid;
+    wire        wb_csr_ex_valid;
     
 //IF statge control signal
     assign if_ready_go      = 1'b1;
-    assign if_allowin       = ~if_valid | if_ready_go & id_allowin;     
-    assign if_to_id_valid   = if_valid & if_ready_go;
+    assign if_allowin       = ~if_valid | if_ready_go & id_allowin | if_flush;     
+    assign if_to_id_valid   = if_valid & if_ready_go & ~if_flush;
     assign to_if_valid      = resetn;
     
     always @(posedge clk) begin
@@ -55,7 +60,10 @@ module IF_Stage(
 
 //pc relavant signals
     assign seq_pc           = if_pc + 3'h4; 
-    assign nextpc           = br_taken ? br_target : seq_pc; 
+    assign nextpc           =   wb_ertn_flush_valid ? ws_csr_rvalue  //era
+                              : wb_csr_ex_valid ? ws_ex_entry
+                              : br_taken ? br_target 
+                              : seq_pc; 
 
 //if to id stage signal
     always @(posedge clk) begin
@@ -65,6 +73,8 @@ module IF_Stage(
             if_pc <= nextpc;
     end
     
+    assign {wb_ertn_flush_valid, wb_csr_ex_valid, ex_entry, csr_rvalue} = wb_to_if_csr_data;
+
     assign if_inst          = inst_sram_rdata;
     
     assign if_to_id_data    = {if_inst,     // 32-63

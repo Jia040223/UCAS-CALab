@@ -18,7 +18,10 @@ module MEM_Stage(
     input  wire [31:0] data_sram_rdata,
     
     input  wire [63:0] mul_result,
-    output wire [37:0] mem_rf_zip
+    output wire [37:0] mem_rf_zip,
+
+    input  wire        mem_flush,
+    output wire        ms_to_es_ex
 );
     reg  [`EX_TO_MEM_DATA_WIDTH-1:0] ex_to_mem_data_reg;
     reg  [`EX_TO_MEM_EXCEP_WIDTH-1:0] ex_to_mem_excep_reg;
@@ -60,8 +63,8 @@ module MEM_Stage(
 
 //stage control signal
     assign mem_ready_go     = 1'b1;
-    assign mem_allowin      = ~mem_valid | mem_ready_go & wb_allowin;     
-    assign mem_to_wb_valid  = mem_valid & mem_ready_go;
+    assign mem_allowin      = ~mem_valid | mem_ready_go & wb_allowin | mem_flush;     
+    assign mem_to_wb_valid  = mem_valid & mem_ready_go & ~mem_flush;
 
     always @(posedge clk) begin
         if(~resetn)
@@ -120,6 +123,8 @@ module MEM_Stage(
 
     assign mem_to_wb_excep = {mem_res_from_csr, mem_csr_num, mem_csr_we, mem_csr_wmask, mem_csr_wvalue, 
                               mem_ertn_flush, mem_csr_ex, mem_csr_ecode, mem_csr_esubcode};
+    assign ms_to_es_ex =  (mem_ertn_flush | mem_csr_ex) & ms_valid;
+endmodule
     
 endmodule
 

@@ -72,7 +72,8 @@ module mycpu_top(
         .if_to_id_data(if_to_id_data),
         .if_to_id_excep(if_to_id_excep),
 
-        .ex_entry(ex_entry)
+        .wb_to_if_csr_data(wb_to_if_csr_data),
+        .if_flush(wb_flush)
     );
 
     ID_Stage my_ID_Stage
@@ -94,7 +95,9 @@ module mycpu_top(
       
         .wb_rf_zip(wb_rf_zip),
         .mem_rf_zip(mem_rf_zip),
-        .ex_rf_zip(ex_rf_zip)
+        .ex_rf_zip(ex_rf_zip),
+
+        .id_flush(wb_flush)
     );
 
     EX_Stage my_EX_Stage
@@ -118,7 +121,9 @@ module mycpu_top(
         .data_sram_addr(data_sram_addr),
         .data_sram_wdata(data_sram_wdata),
         
-        .ex_rf_zip(ex_rf_zip)
+        .ex_rf_zip(ex_rf_zip),
+        .ex_flush(wb_flush),
+        .ms_to_es_ex(ms_to_es_ex)
      );
 
     MEM_Stage my_MEM_Stage
@@ -139,7 +144,9 @@ module mycpu_top(
         .mul_result(mul_result),
         .data_sram_rdata(data_sram_rdata),
         
-        .mem_rf_zip(mem_rf_zip)
+        .mem_rf_zip(mem_rf_zip),
+        .mem_flush(wb_flush),
+        .ms_to_es_ex(ms_to_es_ex)
     ) ;
 
     WB_Stage my_WB_Stage
@@ -159,7 +166,8 @@ module mycpu_top(
 
         .wb_rf_zip(wb_rf_zip),
 
-        .ex_entry(ex_entry)
+        .wb_to_if_csr_data(wb_to_if_csr_data),
+        .wb_flush(wb_flush)
     );
     
 endmodule

@@ -16,7 +16,7 @@ module WB_Stage(
     // id and wb state interface
     output wire [37:0] wb_rf_zip,
 
-    output wire [31:0] ex_extry,
+    output wire [`WB_TO_IF_CSR_DATA_WIDTH -1:0] wb_to_if_csr_data,
     //flush
     output wire        wb_flush
 );    
@@ -51,6 +51,8 @@ module WB_Stage(
 
     wire [31:0] csr_rvalue;
     wire [31:0] ex_entry;
+    wire        wb_ertn_flush_valid;
+    wire        wb_csr_ex_valid;
 //stage control signal
 
     assign wb_ready_go      = 1'b1;
@@ -109,6 +111,8 @@ module WB_Stage(
     );
 
     assign wb_flush = wb_ertn_flush_valid | wb_csr_ex_valid;
+
+    assign wb_to_if_csr_data = {wb_ertn_flush_valid, wb_csr_ex_valid, ex_entry, csr_rvalue};
 
 //trace debug interface
     assign debug_wb_pc = wb_pc;

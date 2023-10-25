@@ -124,8 +124,8 @@ module ID_Stage(
     
     assign conflict         =  id_delay & (conflict_r1_ex & need_r1|conflict_r2_ex & need_r2);  
     
-    assign id_allowin       = ~id_valid | id_ready_go & ex_allowin;     
-    assign id_to_ex_valid  = id_valid & id_ready_go;
+    assign id_allowin       = ~id_valid | id_ready_go & ex_allowin | id_flush;     
+    assign id_to_ex_valid  = id_valid & id_ready_go & ~id_flush;
     always @(posedge clk) begin
         if(~resetn)
             id_valid <= 1'b0;
