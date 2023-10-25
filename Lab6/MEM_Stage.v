@@ -57,7 +57,7 @@ module MEM_Stage(
     wire [31:0] mem_csr_wmask;
     wire [31:0] mem_csr_wvalue;
     wire        mem_ertn_flush;
-    wire        mem_csr_ex;
+    wire        mem_excep;
     wire [ 5:0] mem_csr_ecode;
     wire [ 8:0] mem_csr_esubcode;
 
@@ -89,7 +89,7 @@ module MEM_Stage(
             } = ex_to_mem_data_reg;
 
     assign {mem_res_from_csr, mem_csr_num, mem_csr_we, mem_csr_wmask, mem_csr_wvalue, 
-            mem_ertn_flush, mem_csr_ex, mem_csr_ecode, mem_csr_esubcode
+            mem_ertn_flush, mem_excep, mem_csr_ecode, mem_csr_esubcode
             } = ex_to_mem_excep_reg;
     
 //mem and wb state interface
@@ -123,8 +123,8 @@ module MEM_Stage(
                               mem_rf_wdata};
 
     assign mem_to_wb_excep = {mem_res_from_csr, mem_csr_num, mem_csr_we, mem_csr_wmask, mem_csr_wvalue, 
-                              mem_ertn_flush, mem_csr_ex, mem_csr_ecode, mem_csr_esubcode};
-    assign mem_to_exe_ex =  (mem_ertn_flush | mem_csr_ex) & mem_valid;
+                              mem_ertn_flush, mem_excep, mem_csr_ecode, mem_csr_esubcode};
+    assign mem_to_exe_ex =  (mem_ertn_flush | mem_excep) & mem_valid;
   
 endmodule
 

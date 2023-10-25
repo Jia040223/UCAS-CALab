@@ -35,7 +35,7 @@ module WB_Stage(
     wire        wb_inst_csrwr;
     wire        wb_inst_csrxchg;
     wire [13:0] wb_csr_num;
-    wire        wb_csr_ex;
+    wire        wb_excep;
     wire [31:0] wb_rj_value;
     wire [31:0] wb_rkd_value;
 
@@ -45,14 +45,14 @@ module WB_Stage(
     wire [31:0] wb_csr_wmask;
     wire [31:0] wb_csr_wvalue;
     wire        wb_ertn_flush;
-    wire        wb_csr_ex;
+    wire        wb_excep;
     wire [ 5:0] wb_csr_ecode;
     wire [ 8:0] wb_csr_esubcode;
 
     wire [31:0] csr_rvalue;
     wire [31:0] ex_entry;
     wire        wb_ertn_flush_valid;
-    wire        wb_csr_ex_valid;
+    wire        wb_excep_valid;
 //stage control signal
 
     assign wb_ready_go      = 1'b1;
@@ -80,7 +80,7 @@ module WB_Stage(
            } = mem_to_wb_data_reg;
     
     assign {wb_res_from_csr, wb_csr_num, wb_csr_we, wb_csr_wmask, wb_csr_wvalue, 
-            wb_ertn_flush, wb_csr_ex, wb_csr_ecode, wb_csr_esubcode
+            wb_ertn_flush, wb_excep, wb_csr_ecode, wb_csr_esubcode
             } = mem_to_wb_excep_reg;
 
 //id and wb state interface
@@ -92,7 +92,7 @@ module WB_Stage(
                         
 //csr
     assign wb_ertn_flush_valid = wb_ertn_flush & wb_valid;
-    assign wb_csr_ex_valid = wb_csr_ex & wb_valid;
+    assign wb_excep_valid = wb_excep & wb_valid;
 
     csr my_csr(
         .clk(clk),
@@ -102,7 +102,7 @@ module WB_Stage(
         .csr_wmask(wb_csr_wmask),
         .csr_wvalue(wb_csr_wvalue),
         .ertn_flush(wb_ertn_flush_valid),
-        .wb_ex(wb_csr_ex_valid),
+        .wb_ex(wb_excep_valid),
         .wb_ecode(wb_csr_ecode), 
         .wb_esubcode(wb_csr_esubcode), 
         .wb_pc(wb_pc),
@@ -110,9 +110,9 @@ module WB_Stage(
         .ex_entry(ex_entry)
     );
 
-    assign wb_flush = wb_ertn_flush_valid | wb_csr_ex_valid;
+    assign wb_flush = wb_ertn_flush_valid | wb_excep_valid;
 
-    assign wb_to_if_csr_data = {wb_ertn_flush_valid, wb_csr_ex_valid, ex_entry, csr_rvalue};
+    assign wb_to_if_csr_data = {wb_ertn_flush_valid, wb_excep_valid, ex_entry, csr_rvalue};
 
 //trace debug interface
     assign debug_wb_pc = wb_pc;
