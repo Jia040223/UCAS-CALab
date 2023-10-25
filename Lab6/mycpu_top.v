@@ -29,10 +29,15 @@ module mycpu_top(
     wire        ex_to_mem_valid;
     wire        mem_to_wb_valid;
     
-    wire [`IF_TO_ID_WIDTH  - 1:0] if_to_id_wire;
-    wire [`ID_TO_EX_WIDTH  - 1:0] id_to_ex_wire;
-    wire [`EX_TO_MEM_WIDTH - 1:0] ex_to_mem_wire;
-    wire [`MEM_TO_WB_WIDTH - 1:0] mem_to_wb_wire;
+    wire [`IF_TO_ID_DATA_WIDTH  - 1:0] if_to_id_data;
+    wire [`ID_TO_EX_DATA_WIDTH  - 1:0] id_to_ex_data;
+    wire [`EX_TO_MEM_DATA_WIDTH - 1:0] ex_to_mem_data;
+    wire [`MEM_TO_WB_DATA_WIDTH - 1:0] mem_to_wb_data;
+
+    wire [`IF_TO_ID_EXCEP_WIDTH  - 1:0] if_to_id_excep;
+    wire [`ID_TO_EX_EXCEP_WIDTH  - 1:0] id_to_ex_excep;
+    wire [`EX_TO_MEM_EXCEP_WIDTH - 1:0] ex_to_mem_excep;
+    wire [`MEM_TO_WB_EXCEP_WIDTH - 1:0] mem_to_wb_excep;
     
     wire        ex_mem_we;
     wire        ex_res_from_mem;
@@ -63,7 +68,8 @@ module mycpu_top(
         .br_target(br_target),
         
         .if_to_id_valid(if_to_id_valid),
-        .if_to_id_wire(if_to_id_wire)
+        .if_to_id_data(if_to_id_data),
+        .if_to_id_excep(if_to_id_excep)
     );
 
     ID_Stage my_ID_Stage
@@ -75,11 +81,13 @@ module mycpu_top(
         .br_taken(br_taken),
         .br_target(br_target),
         .if_to_id_valid(if_to_id_valid),
-        .if_to_id_wire(if_to_id_wire),
+        .if_to_id_data(if_to_id_data),
+        .if_to_id_excep(if_to_id_excep),
 
         .ex_allowin(ex_allowin),
-        .id_to_ex_wire(id_to_ex_wire),
         .id_to_ex_valid(id_to_ex_valid),
+        .id_to_ex_data(id_to_ex_data),
+        .id_to_ex_excep(id_to_ex_excep),
       
         .wb_rf_zip(wb_rf_zip),
         .mem_rf_zip(mem_rf_zip),
@@ -92,12 +100,14 @@ module mycpu_top(
         .resetn(resetn),
         
         .ex_allowin(ex_allowin),
-        .id_to_ex_wire(id_to_ex_wire),
         .id_to_ex_valid(id_to_ex_valid),
+        .id_to_ex_data(id_to_ex_data),
+        .id_to_ex_excep(id_to_ex_excep),
         
         .mem_allowin(mem_allowin),
         .ex_to_mem_valid(ex_to_mem_valid),
-        .ex_to_mem_wire(ex_to_mem_wire),
+        .ex_to_mem_data(ex_to_mem_data),
+        .ex_to_mem_excep(ex_to_mem_excep),
         .mul_result(mul_result),
    
         .data_sram_en(data_sram_en),
@@ -114,12 +124,14 @@ module mycpu_top(
         .resetn(resetn),
 
         .mem_allowin(mem_allowin),
-        .ex_to_mem_wire(ex_to_mem_wire),
         .ex_to_mem_valid(ex_to_mem_valid),
+        .ex_to_mem_data(ex_to_mem_data),
+        .ex_to_mem_excep(ex_to_mem_excep),
         
         .wb_allowin(wb_allowin),
-        .mem_to_wb_wire(mem_to_wb_wire),
         .mem_to_wb_valid(mem_to_wb_valid),
+        .mem_to_wb_data(mem_to_wb_data),
+        .mem_to_wb_excep(mem_to_wb_excep),
         
         .mul_result(mul_result),
         .data_sram_rdata(data_sram_rdata),
@@ -133,15 +145,18 @@ module mycpu_top(
         .resetn(resetn),
 
         .wb_allowin(wb_allowin),
-        .mem_to_wb_wire(mem_to_wb_wire),
         .mem_to_wb_valid(mem_to_wb_valid),
+        .mem_to_wb_data(mem_to_wb_data),
+        .mem_to_wb_excep(mem_to_wb_excep),
 
         .debug_wb_pc(debug_wb_pc),
         .debug_wb_rf_we(debug_wb_rf_we),
         .debug_wb_rf_wnum(debug_wb_rf_wnum),
         .debug_wb_rf_wdata(debug_wb_rf_wdata),
 
-        .wb_rf_zip(wb_rf_zip)
+        .wb_rf_zip(wb_rf_zip),
+
+        .wb_to_csr_excep(wb_to_csr_excep)
     );
     
 endmodule

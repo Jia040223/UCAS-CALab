@@ -8,17 +8,20 @@ module ID_Stage(
     output wire        br_taken,
     output wire [31:0] br_target,
     input  wire        if_to_id_valid,
-    input  wire [`IF_TO_ID_WIDTH-1:0] if_to_id_wire,
+    input  wire [`IF_TO_ID_DATA_WIDTH-1:0] if_to_id_data,
+    input  wire [`IF_TO_ID_EXCEP_WIDTH-1:0] if_to_id_excep,
     // id and exe state interface
     input  wire        ex_allowin,
-    output wire [`ID_TO_EX_WIDTH-1:0] id_to_ex_wire,
+    output wire [`ID_TO_EX_DATA_WIDTH-1:0] id_to_ex_data,
+    output wire [`ID_TO_EX_EXCEP_WIDTH-1:0] id_to_ex_excep,
     output wire        id_to_ex_valid,  
     // id and wb state interface
     input  wire [37:0] wb_rf_zip, // {wb_rf_we, wb_rf_waddr, wb_rf_wdata}
-    input wire  [37:0] mem_rf_zip,
-    input wire  [38:0] ex_rf_zip
+    input  wire [37:0] mem_rf_zip,
+    input  wire [38:0] ex_rf_zip
 );
-    reg  [`IF_TO_ID_WIDTH-1:0] if_to_id_reg; 
+    reg  [`IF_TO_ID_DATA_WIDTH-1:0] if_to_id_data_reg; 
+    reg  [`IF_TO_ID_EXCEP_WIDTH-1:0] if_to_id_excep_reg,
     
     wire [31:0] id_pc;
     wire [31:0] id_rkd_value;
@@ -132,11 +135,12 @@ module ID_Stage(
 //if to id stage signal
     always @(posedge clk) begin
         if(if_to_id_valid & id_allowin) begin
-            if_to_id_reg <= if_to_id_wire;
+            if_to_id_data_reg <= if_to_id_data;
+            if_to_id_excep_reg <= if_to_id_excep;
         end
     end
     
-    assign {inst, id_pc} = if_to_id_reg;
+    assign {inst, id_pc} = if_to_id_data_reg;
                                            
 //decode instruction
     assign op_31_26  = inst[31:26];
@@ -401,7 +405,7 @@ module ID_Stage(
     
     assign mul_h      = inst_mulh_w | inst_mulh_wu;
         
-    assign id_to_ex_wire = {alu_op, alu_src1, alu_src2,
+    assidata = {alu_op, alu_src1, alu_src2,
                             id_rf_we, id_rf_waddr,
                             id_pc,
                             inst_st_b, inst_st_h, inst_st_w,

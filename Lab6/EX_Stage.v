@@ -5,11 +5,13 @@ module EX_Stage(
     input  wire        resetn,
     // id and exe state interface
     output wire        ex_allowin,
-    input  wire [`ID_TO_EX_WIDTH-1:0] id_to_ex_wire,
+    input  wire [`ID_TO_EX_DATA_WIDTH-1:0] id_to_ex_data,
+    input  wire [`ID_TO_EX_EXCEP_WIDTH-1:0] id_to_ex_excep,
     input  wire        id_to_ex_valid,
     // exe and mem state interface
     input  wire        mem_allowin,
-    output wire [`EX_TO_MEM_WIDTH-1:0] ex_to_mem_wire, 
+    output wire [`EX_TO_MEM_DATA_WIDTH-1:0] ex_to_mem_data,
+    output wire [`EX_TO_MEM_EXCEP_WIDTH-1:0] ex_to_mem_excep, 
     output wire        ex_to_mem_valid,
     
     input  wire  [38:0] ex_rf_zip,
@@ -21,10 +23,9 @@ module EX_Stage(
     output wire [31:0] data_sram_addr,
     output wire [31:0] data_sram_wdata
 );
-    reg  [`ID_TO_EX_WIDTH-1:0] id_to_ex_reg;
+    reg  [`ID_TO_EX_DATA_WIDTH-1:0] id_to_ex_data_reg;
+    reg  [`ID_TO_EX_EXCEP_WIDTH-1:0] id_to_ex_excep_reg;
 
-    reg         csr_st_ALE;
-    
     wire        ex_ready_go;
     reg         ex_valid;
 
@@ -76,8 +77,10 @@ module EX_Stage(
 
 //id and exe state interface
     always @(posedge clk) begin
-        if(id_to_ex_valid & ex_allowin)
-            id_to_ex_reg <= id_to_ex_wire;
+        if(id_to_ex_valid & ex_allowin) begin
+            id_to_ex_data_reg <= id_to_ex_data;
+            id_to_ex_excep_reg <= id_to_ex_excep;
+        end
     end
     
     assign {ex_alu_op, ex_alu_src1, ex_alu_src2,
@@ -87,7 +90,7 @@ module EX_Stage(
             ex_rkd_value,
             ex_inst_ld_b, ex_inst_ld_bu, ex_inst_ld_h, ex_inst_ld_hu, ex_inst_ld_w,
             ex_res_from_mul, ex_mul_signed, ex_mul_h, ex_res_from_div, ex_div_signed, ex_div_r
-            } = id_to_ex_reg;   
+            } = id_to_ex_data_reg;   
 
     alu u_alu(
         .alu_op     (ex_alu_op    ),
@@ -130,7 +133,7 @@ module EX_Stage(
                        {4{ex_inst_st_h}} & {{2{st_addr10}}, {2{st_addr00}}} |
                        {4{ex_inst_st_w}};
 
-    assign ex_to_mem_wire = {ex_rf_we, ex_rf_waddr,
+    assign ex_to_mem_data = {ex_rf_we, ex_rf_waddr,
                              ex_pc,
                              ex_alu_result,
                              ex_inst_ld_b, ex_inst_ld_bu, ex_inst_ld_h, ex_inst_ld_hu, ex_inst_ld_w,

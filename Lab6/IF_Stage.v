@@ -15,12 +15,16 @@ module IF_Stage(
     input  wire [31:0] br_target,
     //if to id stage signal
     output wire        if_to_id_valid,
-    output wire [`IF_TO_ID_WIDTH-1:0] if_to_id_wire
+    output wire [`IF_TO_ID_DATA_WIDTH-1:0] if_to_id_data,
+    output wire [`IF_TO_ID_EXCEP_WIDTH-1:0] if_to_id_excep
 );
     wire [31:0] if_inst;
     reg  [31:0] if_pc;
 
-    reg         csr_ADEF;
+    always@(posedge clk) begin
+        if(if_pc[0] | if_pc[1])
+            csr_ADEF <= 1'b1;
+    end
     
     wire        if_ready_go;
     reg         if_valid;
@@ -65,7 +69,7 @@ module IF_Stage(
     
     assign if_inst          = inst_sram_rdata;
     
-    assign if_to_id_wire    = {if_inst,     // 32-63
+    assign if_to_id_data    = {if_inst,     // 32-63
                                if_pc};      // 0-31
                                
     

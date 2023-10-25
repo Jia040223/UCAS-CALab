@@ -5,7 +5,8 @@ module WB_Stage(
     input  wire        resetn,
     // mem and wb state interface
     output wire        wb_allowin,
-    input  wire [`MEM_TO_WB_WIDTH-1:0] mem_to_wb_wire, // {mem_rf_we, mem_rf_waddr, mem_rf_wdata}
+    input  wire [`MEM_TO_WB_DATA_WIDTH-1:0] mem_to_wb_data,
+    input  wire [`MEM_TO_WB_EXCEP_WIDTH-1:0] mem_to_wb_excep,
     input  wire        mem_to_wb_valid,  
     // trace debug interface
     output wire [31:0] debug_wb_pc,
@@ -13,16 +14,19 @@ module WB_Stage(
     output wire [ 4:0] debug_wb_rf_wnum,
     output wire [31:0] debug_wb_rf_wdata,
     // id and wb state interface
-    output wire [37:0] wb_rf_zip  // {rf_we, rf_waddr, rf_wdata}
+    output wire [37:0] wb_rf_zip,
+
+    output wire [`WB_TO_CSR_WIDTH-1:0] wb_to_csr_excep
 );    
-    reg   [`MEM_TO_WB_WIDTH-1:0] mem_to_wb_reg;
+    reg  [`MEM_TO_WB_DATA_WIDTH-1:0] mem_to_wb_data_reg;
+    reg  [`MEM_TO_WB_EXCEP_WIDTH-1:0] mem_to_wb_excep_reg; 
     
-    wire         wb_ready_go;
-    reg          wb_valid;
-    wire  [31:0] wb_pc;
-    wire  [31:0] wb_rf_wdata;
-    wire  [4 :0] wb_rf_waddr;
-    wire         wb_rf_we;
+    wire        wb_ready_go;
+    reg         wb_valid;
+    wire [31:0] wb_pc;
+    wire [31:0] wb_rf_wdata;
+    wire [ 4:0] wb_rf_waddr;
+    wire        wb_rf_we;
 //stage control signal
 
     assign wb_ready_go      = 1'b1;
@@ -37,15 +41,17 @@ module WB_Stage(
 
 //mem and wb state interface
     always @(posedge clk) begin
-        if(mem_to_wb_valid & wb_allowin)
-            mem_to_wb_reg <= mem_to_wb_wire;
+        if(mem_to_wb_valid & wb_allowin)begin
+            mem_to_wb_data_reg <= mem_to_wb_data;
+            mem_to_wb_excep_reg <= mem_to_wb_excep;
+        end
     end
     
     assign {wb_rf_we,
             wb_rf_waddr,
             wb_rf_wdata,
             wb_pc
-           } = mem_to_wb_reg;
+           } = mem_to_wb_data_reg;
 
 //id and wb state interface
     assign wb_rf_zip = {wb_rf_we & wb_valid,
