@@ -8,3 +8,10 @@
 `define EX_TO_MEM_EXCEP_WIDTH 5
 `define MEM_TO_WB_EXCEP_WIDTH 5
 `define WB_TO_CSR_WIDTH 5
+
+`define ECODE_ADEF 0x8
+`define ECODE_ALE 0x9
+`define ECODE_SYS 0xb
+`define ECODE_BRK 0xc
+`define ECODE_INE 0xd
+

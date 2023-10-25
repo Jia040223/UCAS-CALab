@@ -72,5 +72,6 @@ module IF_Stage(
     assign if_to_id_data    = {if_inst,     // 32-63
                                if_pc};      // 0-31
                                
+    assign if_to_id_excep = 0;
     
 endmodule

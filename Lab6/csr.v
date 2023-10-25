@@ -1,4 +1,4 @@
-`include "csr.h"
+`include "mycpu_head.h"
 module csr(
     input  wire              clk,
     input  wire              reset,
