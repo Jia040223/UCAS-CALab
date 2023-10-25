@@ -1,7 +1,7 @@
 `include "mycpu_head.h"
 module csr(
     input  wire              clk,
-    input  wire              reset,
+    input  wire              resetn,
     input  wire [13:0]       csr_num,
     input  wire              csr_we,
     input  wire [31:0]       csr_wmask,
@@ -56,7 +56,7 @@ module csr(
 
     //CRMD
     always @(posedge clk) begin
-        if(reset) begin
+        if(~resetn) begin
             csr_crmd_plv <= 2'b0;
             csr_crmd_ie  <= 1'b0;
         end
@@ -93,7 +93,7 @@ module csr(
     
     // ESTAT
     always @(posedge clk) begin
-        if (reset) begin
+        if (~resetn) begin
             csr_estat_is[1:0] <= 2'b0;
         end
         else if (csr_we && csr_num==`CSR_ESTAT) begin

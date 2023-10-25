@@ -113,9 +113,9 @@ module ID_Stage(
     wire        div_signed;
     wire        div_r;
     wire        mul_h;
-    
-    wire [13:0] csr_num;
-    wire        csr_ex;
+
+    wire [ 5:0] if_csr_ecode;
+    wire [ 8:0] if_csr_esubcode; 
         
 //stage control signal
     assign id_ready_go      = ~conflict;
@@ -142,6 +142,8 @@ module ID_Stage(
     end
     
     assign {inst, id_pc} = if_to_id_data_reg;
+
+    assign {if_csr_ecode, if_csr_esubcode} = if_to_id_excep_reg;
                                            
 //decode instruction
     assign op_31_26  = inst[31:26];
@@ -157,8 +159,6 @@ module ID_Stage(
     assign i20  = inst[24: 5];
     assign i16  = inst[25:10];
     assign i26  = {inst[ 9: 0], inst[25:10]};
-
-    assign csr_num = inst[23:10];
 
     decoder_6_64 u_dec0(.in(op_31_26 ), .out(op_31_26_d ));
     decoder_4_16 u_dec1(.in(op_25_22 ), .out(op_25_22_d ));
@@ -409,6 +409,17 @@ module ID_Stage(
                             inst_ld_b, inst_ld_bu, inst_ld_h, inst_ld_hu, inst_ld_w,
                             res_from_mul, mul_signed, mul_h, res_from_div, div_signed, div_r};
 
-    assign id_to_ex_excep = {inst_csrrd, inst_csrwr, inst_csrxchg, csr_num, csr_ex, rj_value};
     
+    wire [13:0] id_csr_num = inst[23:10];
+    wire        id_csr_we = inst_csrwr | inst_csrxchg;
+    wire [31:0] id_csr_wmask = (inst_csrxchg)? rj_value : 32'hffffffff;
+    wire [31:0] id_csr_wvalue = rkd_value;
+    wire        id_ertn_flush = inst_ertn;
+    wire        id_csr_ex;
+    wire [ 5:0] id_csr_ecode = (inst_syscall)? `ECODE_SYS : if_csr_ecode;
+    wire [ 8:0] id_csr_esubcode = if_csr_esubcode;
+
+    assign id_to_ex_excep = {id_csr_num, id_csr_we, id_csr_wmask, id_csr_wvalue, 
+                             id_ertn_flush, id_csr_ex, id_csr_ecode, id_csr_esubcode};
+
 endmodule

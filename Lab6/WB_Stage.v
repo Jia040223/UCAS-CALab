@@ -27,6 +27,14 @@ module WB_Stage(
     wire [31:0] wb_rf_wdata;
     wire [ 4:0] wb_rf_waddr;
     wire        wb_rf_we;
+
+    wire        wb_inst_csrrd;
+    wire        wb_inst_csrwr;
+    wire        wb_inst_csrxchg;
+    wire [13:0] wb_csr_num;
+    wire        wb_csr_ex;
+    wire [31:0] wb_rj_value;
+    wire [31:0] wb_rkd_value;
 //stage control signal
 
     assign wb_ready_go      = 1'b1;
@@ -53,6 +61,10 @@ module WB_Stage(
             wb_pc
            } = mem_to_wb_data_reg;
 
+    assign {wb_csr_num, wb_csr_we, wb_csr_wmask, wb_csr_wvalue, 
+            wb_ertn_flush, wb_csr_ex, wb_csr_ecode, wb_csr_esubcode
+            } = mem_to_wb_excep_reg;
+
 //id and wb state interface
     assign wb_rf_zip = {wb_rf_we & wb_valid,
                         wb_rf_waddr,
@@ -64,6 +76,24 @@ module WB_Stage(
     assign debug_wb_rf_we = {4{wb_rf_we & wb_valid}};
     assign debug_wb_rf_wnum = wb_rf_waddr;
 
-modu
+    wire        wb_csr_we;
+    wire [31:0] wb_csr_wmask;
+    wire [31:0] wb_csr_wvalue;
+
+    csr my_csr(
+        .clk(clk),
+        .resetn(resetn),
+        .csr_num(wb_csr_num),
+        .csr_we(wb_csr_we),
+        .csr_wmask(wb_csr_wmask),
+        .csr_wvalue(wb_csr_wvalue),
+        .ertn_flush(wb_ertn_flush),
+        .wb_ex(wb_csr_ex),
+        .wb_ecode(wb_csr_ecode), 
+        .wb_esubcode(wb_csr_esubcode), 
+        .wb_pc(wb_pc),
+        .csr_rvalue,
+        .ex_entry
+    );
     
 endmodule

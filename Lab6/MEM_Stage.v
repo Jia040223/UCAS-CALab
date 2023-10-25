@@ -48,13 +48,14 @@ module MEM_Stage(
 
     wire [31:0] shift_rdata;
 
-    wire        mem_inst_csrrd;
-    wire        mem_inst_csrwr;
-    wire        mem_inst_csrxchg;
     wire [13:0] mem_csr_num;
+    wire        mem_csr_we;
+    wire [31:0] mem_csr_wmask;
+    wire [31:0] mem_csr_wvalue;
+    wire        mem_ertn_flush;
     wire        mem_csr_ex;
-    wire [31:0] mem_rj_value;
-    wire [31:0] mem_rkd_value;
+    wire [ 5:0] mem_csr_ecode;
+    wire [ 8:0] mem_csr_esubcode;
 
 //stage control signal
     assign mem_ready_go     = 1'b1;
@@ -83,9 +84,9 @@ module MEM_Stage(
             res_from_mul, mul_h, res_from_div, div_result
             } = ex_to_mem_data_reg;
 
-    assign {mem_inst_csrrd, mem_inst_csrwr, mem_inst_csrxchg, 
-            mem_csr_num, mem_csr_ex, 
-            mem_rj_value, mem_rkd_value} = ex_to_mem_excep_reg;
+    assign {mem_csr_num, mem_csr_we, mem_csr_wmask, mem_csr_wvalue, 
+            mem_ertn_flush, mem_csr_ex, mem_csr_ecode, mem_csr_esubcode
+            } = ex_to_mem_excep_reg;
     
 //mem and wb state interface
     assign shift_rdata   = {24'b0, data_sram_rdata} >> {mem_alu_result[1:0], 3'b0};
@@ -116,9 +117,8 @@ module MEM_Stage(
                               mem_rf_waddr,
                               mem_rf_wdata};
 
-    assign mem_to_wb_excep = {mem_inst_csrrd, mem_inst_csrwr, mem_inst_csrxchg, 
-                              mem_csr_num, mem_csr_ex, 
-                              mem_rj_value, mem_rkd_value};
+    assign mem_to_wb_excep = {mem_csr_num, mem_csr_we, mem_csr_wmask, mem_csr_wvalue, 
+                              mem_ertn_flush, mem_csr_ex, mem_csr_ecode, mem_csr_esubcode};
     
 endmodule
 

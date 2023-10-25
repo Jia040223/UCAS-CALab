@@ -64,12 +64,14 @@ module EX_Stage(
     wire        ex_div_complete;
     wire [31:0] ex_div_result;
 
-    wire        ex_inst_csrrd;
-    wire        ex_inst_csrwr;
-    wire        ex_inst_csrxchg;
     wire [13:0] ex_csr_num;
+    wire        ex_csr_we;
+    wire [31:0] ex_csr_wmask;
+    wire [31:0] ex_csr_wvalue;
+    wire        ex_ertn_flush;
     wire        ex_csr_ex;
-    wire [31:0] ex_rj_value;
+    wire [ 5:0] ex_csr_ecode;
+    wire [ 8:0] ex_csr_esubcode;
 
 //stage control signal
     assign ex_ready_go      = ~ex_res_from_div | ex_div_complete;
@@ -99,9 +101,9 @@ module EX_Stage(
             ex_res_from_mul, ex_mul_signed, ex_mul_h, ex_res_from_div, ex_div_signed, ex_div_r
             } = id_to_ex_data_reg;   
 
-    assign {ex_inst_csrrd, ex_inst_csrwr, ex_inst_csrxchg, 
-            ex_csr_num, ex_csr_ex,
-            ex_rj_value} = id_to_ex_excep_reg;
+    assign {ex_csr_num, ex_csr_we, ex_csr_wmask, ex_csr_wvalue, 
+            ex_ertn_flush, ex_csr_ex, ex_csr_ecode, ex_csr_esubcode
+            } = id_to_ex_excep_reg;
 
     alu u_alu(
         .alu_op     (ex_alu_op    ),
@@ -157,9 +159,8 @@ module EX_Stage(
                               ex_rf_waddr,
                               ex_res_from_div ? ex_div_result : ex_alu_result};
     
-    assign ex_to_mem_excep = {ex_inst_csrrd, ex_inst_csrwr, ex_inst_csrxchg, 
-                              ex_csr_num, ex_csr_ex, 
-                              ex_rj_value, ex_rkd_value};
+    assign ex_to_mem_excep = {ex_csr_num, ex_csr_we, ex_csr_wmask, ex_csr_wvalue, 
+                              ex_ertn_flush, ex_csr_ex, ex_csr_ecode, ex_csr_esubcode};
 
     //data sram interface
     assign data_sram_en    = ex_inst_ld_b || ex_inst_ld_bu || ex_inst_ld_h || ex_inst_ld_hu || ex_inst_ld_w || (|ex_mem_we);

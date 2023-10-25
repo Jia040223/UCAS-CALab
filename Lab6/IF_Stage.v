@@ -67,6 +67,8 @@ module IF_Stage(
     assign if_to_id_data    = {if_inst,     // 32-63
                                if_pc};      // 0-31
                                
-    assign if_to_id_excep = 0;
+    wire [ 5:0] if_csr_ecode = 6'h00;
+    wire [ 8:0] if_csr_esubcode = 9'h000;
+    assign if_to_id_excep = {if_csr_ecode, if_csr_esubcode};
 
 endmodule
