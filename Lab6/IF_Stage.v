@@ -20,11 +20,6 @@ module IF_Stage(
 );
     wire [31:0] if_inst;
     reg  [31:0] if_pc;
-
-    always@(posedge clk) begin
-        if(if_pc[0] | if_pc[1])
-            csr_ADEF <= 1'b1;
-    end
     
     wire        if_ready_go;
     reg         if_valid;
@@ -73,5 +68,5 @@ module IF_Stage(
                                if_pc};      // 0-31
                                
     assign if_to_id_excep = 0;
-    
+
 endmodule

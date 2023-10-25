@@ -63,5 +63,7 @@ module WB_Stage(
     assign debug_wb_rf_wdata = wb_rf_wdata;
     assign debug_wb_rf_we = {4{wb_rf_we & wb_valid}};
     assign debug_wb_rf_wnum = wb_rf_waddr;
+
+modu
     
 endmodule
