@@ -17,8 +17,8 @@ module ID_Stage(
     output wire        id_to_ex_valid,  
     // id and wb state interface
     input  wire [37:0] wb_rf_zip, // {wb_rf_we, wb_rf_waddr, wb_rf_wdata}
-    input  wire [37:0] mem_rf_zip,
-    input  wire [38:0] ex_rf_zip,
+    input  wire [38:0] mem_rf_zip,
+    input  wire [39:0] ex_rf_zip,
 
     input  wire [31:0] id_flush
 );
@@ -118,11 +118,15 @@ module ID_Stage(
 
     wire [ 5:0] if_csr_ecode;
     wire [ 8:0] if_csr_esubcode; 
+
+    wire        ex_res_from_csr;
+    wire        mem_res_from_csr;
         
 //stage control signal
     assign id_ready_go      = ~conflict;
     
-    assign conflict         =  id_delay & (conflict_r1_ex & need_r1|conflict_r2_ex & need_r2);  
+    assign conflict         =  (id_delay | ex_res_from_csr) & (conflict_r1_ex & need_r1|conflict_r2_ex & need_r2) | 
+                                mem_res_from_csr & (conflict_r1_mem & need_r1|conflict_r2_mem & need_r2);  
     
     assign id_allowin       = ~id_valid | id_ready_go & ex_allowin | id_flush;     
     assign id_to_ex_valid  = id_valid & id_ready_go & ~id_flush;
@@ -344,11 +348,13 @@ module ID_Stage(
             wb_rf_waddr, 
             wb_rf_wdata} = wb_rf_zip;
             
-    assign {mem_rf_we, 
+    assign {mem_res_from_csr,
+            mem_rf_we, 
             mem_rf_waddr,
             mem_rf_wdata} = mem_rf_zip;
             
-    assign {id_delay,
+    assign {ex_res_from_csr,
+            id_delay,
             ex_rf_we, 
             ex_rf_waddr, 
             ex_rf_wdata} = ex_rf_zip;

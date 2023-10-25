@@ -18,7 +18,7 @@ module MEM_Stage(
     input  wire [31:0] data_sram_rdata,
     
     input  wire [63:0] mul_result,
-    output wire [37:0] mem_rf_zip,
+    output wire [38:0] mem_rf_zip,
 
     input  wire        mem_flush,
     output wire        ms_to_es_ex
@@ -117,7 +117,8 @@ module MEM_Stage(
                              mem_rf_wdata,
                              mem_pc};
                              
-    assign mem_rf_zip      = {mem_rf_we & mem_valid,
+    assign mem_rf_zip      = {mem_res_from_csr,
+                              mem_rf_we & mem_valid,
                               mem_rf_waddr,
                               mem_rf_wdata};
 

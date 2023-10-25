@@ -14,7 +14,7 @@ module EX_Stage(
     output wire [`EX_TO_MEM_EXCEP_WIDTH-1:0] ex_to_mem_excep, 
     output wire        ex_to_mem_valid,
     
-    input  wire  [38:0] ex_rf_zip,
+    input  wire  [39:0] ex_rf_zip,
     output wire  [63:0] mul_result,
     
 // data sram interface
@@ -158,7 +158,8 @@ module EX_Stage(
     
     assign ex_res_from_mem = ex_inst_ld_b || ex_inst_ld_bu || ex_inst_ld_h || ex_inst_ld_hu || ex_inst_ld_w;
                              
-    assign ex_rf_zip       = {(ex_res_from_mem | ex_res_from_mul) & ex_valid,
+    assign ex_rf_zip       = {ex_res_from_csr,
+                              (ex_res_from_mem | ex_res_from_mul) & ex_valid,
                               ex_rf_we & ex_valid,
                               ex_rf_waddr,
                               ex_res_from_div ? ex_div_result : ex_alu_result};
