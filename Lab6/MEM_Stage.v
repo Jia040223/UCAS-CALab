@@ -5,7 +5,7 @@ module MEM_Stage(
     input  wire        resetn,
     // exe and mem state interface
     output wire        mem_allowin,
-    input  wire [`EX_TO_MEM_DATA_WIDTH-1:0] ex_to_mem_data
+    input  wire [`EX_TO_MEM_DATA_WIDTH-1:0] ex_to_mem_data,
     input  wire [`EX_TO_MEM_EXCEP_WIDTH-1:0] ex_to_mem_excep, 
     input  wire        ex_to_mem_valid,
 
@@ -123,8 +123,7 @@ module MEM_Stage(
 
     assign mem_to_wb_excep = {mem_res_from_csr, mem_csr_num, mem_csr_we, mem_csr_wmask, mem_csr_wvalue, 
                               mem_ertn_flush, mem_csr_ex, mem_csr_ecode, mem_csr_esubcode};
-    assign ms_to_es_ex =  (mem_ertn_flush | mem_csr_ex) & ms_valid;
-endmodule
-    
+    assign ms_to_es_ex =  (mem_ertn_flush | mem_csr_ex) & mem_valid;
+  
 endmodule
 

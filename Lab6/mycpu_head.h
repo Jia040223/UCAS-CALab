@@ -8,13 +8,13 @@
 `define EX_TO_MEM_EXCEP_WIDTH 97
 `define MEM_TO_WB_EXCEP_WIDTH 97
 
-`define WS_TO_FS_CSR_DATA_WD   66
+`define WB_TO_IF_CSR_DATA_WIDTH   66
 
-`define ECODE_ADEF 0x8
-`define ECODE_ALE 0x9
-`define ECODE_SYS 0xb
-`define ECODE_BRK 0xc
-`define ECODE_INE 0xd
+`define ECODE_ADEF 6'h8
+`define ECODE_ALE 6'h9
+`define ECODE_SYS 6'hb
+`define ECODE_BRK 6'hc
+`define ECODE_INE 6'hd
 
 // exp12
 `define CSR_CRMD        14'h0

@@ -23,7 +23,7 @@ module ID_Stage(
     input  wire [31:0] id_flush
 );
     reg  [`IF_TO_ID_DATA_WIDTH-1:0] if_to_id_data_reg; 
-    reg  [`IF_TO_ID_EXCEP_WIDTH-1:0] if_to_id_excep_reg,
+    reg  [`IF_TO_ID_EXCEP_WIDTH-1:0] if_to_id_excep_reg;
     
     wire [31:0] id_pc;
     wire [31:0] id_rkd_value;

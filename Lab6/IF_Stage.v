@@ -60,8 +60,8 @@ module IF_Stage(
 
 //pc relavant signals
     assign seq_pc           = if_pc + 3'h4; 
-    assign nextpc           =   wb_ertn_flush_valid ? ws_csr_rvalue  //era
-                              : wb_csr_ex_valid ? ws_ex_entry
+    assign nextpc           =   wb_ertn_flush_valid ? csr_rvalue  //era
+                              : wb_csr_ex_valid ? ex_entry
                               : br_taken ? br_target 
                               : seq_pc; 
 
