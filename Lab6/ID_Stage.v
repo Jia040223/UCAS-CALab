@@ -230,32 +230,13 @@ module ID_Stage(
     wire        adder_CF;
     wire        adder_OF;
     wire        adder_res;
-   
-   /*
-    adder_32 instance_adder32(
-        .A(adder_src1),
-        .B(adder_src2),
-        .IN(adder_IN),
-        .SF(adder_SF),    
-        .ZF(adder_ZF),     
-        .CF(adder_CF),        
-        .OF(adder_OF),        
-        .S(adder_res)  
-    );
-    */
+  
     assign rj_eq_rd = (rj_value == rkd_value);
     assign sub_res = {1'b0, rj_value} + {1'b0, ~rkd_value} + 1'b1;
     assign rj_lt_rd_signed = (rj_value[31] & ~rkd_value[31])
                         | ((rj_value[31] ~^ rkd_value[31]) & sub_res[31]);
     assign rj_lt_rd_unsigned = ~sub_res[32];
-   
-    //assign rj_eq_rd = (rj_value == rkd_value);
-    //assign rj_lt_rd_signed = ($signed(rj_value) < $signed(rkd_value));
-    //assign rj_lt_rd_unsigned = (rj_value < rkd_value);
-    
-    //assign rj_eq_rd = adder_ZF;
-    //assign rj_lt_rd_signed = adder_OF ^ adder_SF;
-    //assign rj_lt_rd_unsigned = ~adder_CF;
+
     assign br_taken = conflict ? 1'b0 :
                       (inst_beq  &&  rj_eq_rd
                     || inst_bne  && !rj_eq_rd
@@ -420,102 +401,3 @@ module ID_Stage(
                             res_from_mul, mul_signed, mul_h, res_from_div, div_signed, div_r};                            
     
 endmodule
-
-/*
-module adder_32(                
-        input [31:0] A,
-        input [31:0] B,
-        input IN,
-        output SF,        //锟斤拷锟斤拷??
-        output ZF,        //锟斤拷锟街疚?
-        output CF,        //Carryout锟斤拷志??
-        output OF,        //Overflow锟斤拷志??
-        output [31:0] S  
-);
-
-        wire [31:0] p0;
-        wire [31:0] g0;
-        wire [31:0] c1;
-        wire [7:0] p1;
-        wire [7:0] g1;
-        wire [7:0] c2;
-        wire [1:0] p2;
-        wire [1:0] g2;
-        wire [1:0] c3;
-        wire p3;
-        wire g3;
-
-        wire CIN;
-        wire COUT;
-
-        assign p0 = A | B;
-        assign g0 = A & B;
-        assign c1[0] = IN;
-        assign c2[0] = IN;
-        assign c3[0] = IN;
-
-        genvar ic1;
-        generate
-            for (ic1 = 1; ic1 < 2; ic1 = ic1 + 1) begin: value_c2
-                assign c2[ic1 * 4] = c3[ic1];
-            end
-        endgenerate
-
-        genvar ic0;
-        generate
-            for (ic0 = 1; ic0 < 8; ic0 = ic0 + 1) begin: value_c1
-                assign c1[ic0 * 4] = c2[ic0];
-            end
-        endgenerate
-
-        genvar i0;
-        generate
-            for (i0 = 0; i0 < 8; i0 = i0 + 1) begin: floor0
-                adder_4 adder_floor0(.c0(c2[i0]), .p(p0[i0 * 4 + 3 : i0 * 4]), .g(g0[i0 * 4 + 3 : i0 * 4]),
-                .c1(c1[i0 * 4 + 1]), .c2(c1[i0 * 4 + 2]), .c3(c1[i0 * 4 + 3]), .P(p1[i0]), .G(g1[i0]));
-            end
-        endgenerate
-
-        genvar i1;
-        generate
-            for (i1 = 0; i1 < 2; i1 = i1 + 1) begin: floor1
-                adder_4 adder_floor1(.c0(c3[i1]), .p(p1[i1 * 4 + 3 : i1 * 4]), .g(g1[i1 * 4 + 3 : i1 * 4]),
-                .c1(c2[i1 * 4 + 1]), .c2(c2[i1 * 4 + 2]), .c3(c2[i1 * 4 + 3]), .P(p2[i1]), .G(g2[i1]));
-            end
-        endgenerate
-
-        adder_2 adder_floor2 (.c0(IN), .p(p2), .g(g2),
-                .c1(c3[1]), .P(p3), .G(g3));
-
-        genvar i_result;
-        generate
-            for (i_result = 0; i_result < 32; i_result = i_result + 1) begin: calc_Sum
-                Full_Adder sum(.Cin(c1[i_result]), .A(A[i_result]), .B(B[i_result]), .S(S[i_result]), .Cout());
-            end
-        endgenerate
-
-        assign COUT = p3 & IN | g3;
-        assign CIN = c1[31];
-
-        //SF:锟斤拷锟斤拷?? ZF:锟斤拷锟??? CF:锟斤拷位锟斤拷准 OF:锟斤拷锟斤拷锟阶?       
-        assign SF = S[31];
-        assign ZF = ~|S;
-        assign CF = ~COUT;
-        assign OF =  CIN ^ COUT;
-
-endmodule
-
-module adder_2(                 //4位锟接凤拷锟斤拷
-    input c0,
-    input [1:0] p,
-    input [1:0] g,
-    output c1,
-    output P,
-    output G
-);
-    assign c1 = g[0] | p[0] & c0;
-    assign P = &p;
-    assign G = g[1] | p[1] & g[0];
-
-endmodule
-*/

@@ -1,5 +1,3 @@
-`timescale 1ns / 1ps
-
 module mul(
     input  wire         mul_clk,
     input  wire         resetn,
@@ -38,19 +36,6 @@ module mul(
             c_reg <= c;
     end
 
-    /*
-    bug[2-1]
-    assign add_B = {c_wal[62:0], c[15]};
-
-    adder_64 adder_64(
-        .Cin(c[16]),
-        .A(s[63:0]),
-        .B(add_B),
-        .S(result_adder_64),
-        .Cout()
-    );
-    */
-
     assign add_B = {c_wal[62:0], c_reg[15]};
     adder_64 adder_64(
         .Cin(c_reg[16]),
@@ -62,8 +47,6 @@ module mul(
 
     assign result = (~resetn | reset) ? 0 : result_adder_64;
 
-    //bug[1]
-    //booth_2 b0(.y2(B[1]), .y1(B[0]), .y0(1'b0), .x({{34{A[31]}}, A[33:0]}), .p(p[0]), .c(c[0]));
     booth_2 b0(.y2(B[1]), .y1(B[0]), .y0(1'b0), .x({{34{A[33]}}, A[33:0]}), .p(p[0]), .c(c[0]));
 
     genvar i_mul;
@@ -77,8 +60,6 @@ module mul(
     Wallace wallace0(.mul_clk(mul_clk), .resetn(resetn), .n({p[16][0], p[15][0],
             p[14][0], p[13][0], p[12][0], p[11][0], p[10][0], p[9][0], p[8][0], 
             p[7][0], p[6][0], p[5][0], p[4][0], p[3][0], p[2][0], p[1][0], p[0][0]}), 
-    //[bug2-2]
-    //        .Cin({c_reg[14:11], c[10:0]}), .Cout({s[0], c_wal[0], cout[0]}));
             .Cin({c_reg[14:11], c[10:0]}), .Cout({s[0], c_wal[0], cout[0]}));
     genvar i_wal;
     generate

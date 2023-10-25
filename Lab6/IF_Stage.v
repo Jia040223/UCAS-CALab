@@ -53,17 +53,6 @@ module IF_Stage(
     assign seq_pc           = if_pc + 3'h4; 
     assign nextpc           = br_taken ? br_target : seq_pc; 
 
-    /*adder_32 instance_adder32(
-        .A(if_pc),
-        .B(32'h4),
-        .IN(1'b0),
-        .SF(),    
-        .ZF(),     
-        .CF(),        
-        .OF(),        
-        .S(seq_pc)  
-    );*/
-
 //if to id stage signal
     always @(posedge clk) begin
         if(~resetn)
