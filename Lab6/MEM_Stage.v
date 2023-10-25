@@ -123,7 +123,7 @@ module MEM_Stage(
 
     assign mem_to_wb_excep = {mem_res_from_csr, mem_csr_num, mem_csr_we, mem_csr_wmask, mem_csr_wvalue, 
                               mem_ertn_flush, mem_csr_ex, mem_csr_ecode, mem_csr_esubcode};
-    assign ms_to_es_ex =  (mem_ertn_flush | mem_csr_ex) & ms_valid;
+    assign ms_to_es_ex =  (mem_ertn_flush | mem_csr_ex) & mem_valid;
   
 endmodule
 
