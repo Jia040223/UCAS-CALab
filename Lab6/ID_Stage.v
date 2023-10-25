@@ -409,7 +409,7 @@ module ID_Stage(
                             inst_ld_b, inst_ld_bu, inst_ld_h, inst_ld_hu, inst_ld_w,
                             res_from_mul, mul_signed, mul_h, res_from_div, div_signed, div_r};
 
-    
+    wire        id_res_from_csr = inst_csrrd | inst_csrwr | inst_csrxchg;
     wire [13:0] id_csr_num = inst[23:10];
     wire        id_csr_we = inst_csrwr | inst_csrxchg;
     wire [31:0] id_csr_wmask = (inst_csrxchg)? rj_value : 32'hffffffff;
@@ -419,7 +419,7 @@ module ID_Stage(
     wire [ 5:0] id_csr_ecode = (inst_syscall)? `ECODE_SYS : if_csr_ecode;
     wire [ 8:0] id_csr_esubcode = if_csr_esubcode;
 
-    assign id_to_ex_excep = {id_csr_num, id_csr_we, id_csr_wmask, id_csr_wvalue, 
+    assign id_to_ex_excep = {id_res_from_csr, id_csr_num, id_csr_we, id_csr_wmask, id_csr_wvalue, 
                              id_ertn_flush, id_csr_ex, id_csr_ecode, id_csr_esubcode};
 
 endmodule

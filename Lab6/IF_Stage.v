@@ -16,7 +16,9 @@ module IF_Stage(
     //if to id stage signal
     output wire        if_to_id_valid,
     output wire [`IF_TO_ID_DATA_WIDTH-1:0] if_to_id_data,
-    output wire [`IF_TO_ID_EXCEP_WIDTH-1:0] if_to_id_excep
+    output wire [`IF_TO_ID_EXCEP_WIDTH-1:0] if_to_id_excep,
+
+    input  wire [31:0] ex_entry;
 );
     wire [31:0] if_inst;
     reg  [31:0] if_pc;

@@ -38,7 +38,8 @@ module mycpu_top(
     wire [`ID_TO_EX_EXCEP_WIDTH  - 1:0] id_to_ex_excep;
     wire [`EX_TO_MEM_EXCEP_WIDTH - 1:0] ex_to_mem_excep;
     wire [`MEM_TO_WB_EXCEP_WIDTH - 1:0] mem_to_wb_excep;
-    
+    wire [31:0] ex_entry;
+
     wire        ex_mem_we;
     wire        ex_res_from_mem;
     wire [31:0] ex_rkd_value;
@@ -69,7 +70,9 @@ module mycpu_top(
         
         .if_to_id_valid(if_to_id_valid),
         .if_to_id_data(if_to_id_data),
-        .if_to_id_excep(if_to_id_excep)
+        .if_to_id_excep(if_to_id_excep),
+
+        .ex_entry(ex_entry)
     );
 
     ID_Stage my_ID_Stage
@@ -156,7 +159,7 @@ module mycpu_top(
 
         .wb_rf_zip(wb_rf_zip),
 
-        .wb_to_csr_excep(wb_to_csr_excep)
+        .ex_entry(ex_entry)
     );
     
 endmodule

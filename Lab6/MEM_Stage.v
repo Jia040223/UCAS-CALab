@@ -48,6 +48,7 @@ module MEM_Stage(
 
     wire [31:0] shift_rdata;
 
+    wire        mem_res_from_csr;
     wire [13:0] mem_csr_num;
     wire        mem_csr_we;
     wire [31:0] mem_csr_wmask;
@@ -84,7 +85,7 @@ module MEM_Stage(
             res_from_mul, mul_h, res_from_div, div_result
             } = ex_to_mem_data_reg;
 
-    assign {mem_csr_num, mem_csr_we, mem_csr_wmask, mem_csr_wvalue, 
+    assign {mem_res_from_csr, mem_csr_num, mem_csr_we, mem_csr_wmask, mem_csr_wvalue, 
             mem_ertn_flush, mem_csr_ex, mem_csr_ecode, mem_csr_esubcode
             } = ex_to_mem_excep_reg;
     
@@ -117,7 +118,7 @@ module MEM_Stage(
                               mem_rf_waddr,
                               mem_rf_wdata};
 
-    assign mem_to_wb_excep = {mem_csr_num, mem_csr_we, mem_csr_wmask, mem_csr_wvalue, 
+    assign mem_to_wb_excep = {mem_res_from_csr, mem_csr_num, mem_csr_we, mem_csr_wmask, mem_csr_wvalue, 
                               mem_ertn_flush, mem_csr_ex, mem_csr_ecode, mem_csr_esubcode};
     
 endmodule
