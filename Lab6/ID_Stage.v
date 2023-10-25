@@ -18,7 +18,9 @@ module ID_Stage(
     // id and wb state interface
     input  wire [37:0] wb_rf_zip, // {wb_rf_we, wb_rf_waddr, wb_rf_wdata}
     input  wire [37:0] mem_rf_zip,
-    input  wire [38:0] ex_rf_zip
+    input  wire [38:0] ex_rf_zip,
+
+    input  wire [31:0] id_flush
 );
     reg  [`IF_TO_ID_DATA_WIDTH-1:0] if_to_id_data_reg; 
     reg  [`IF_TO_ID_EXCEP_WIDTH-1:0] if_to_id_excep_reg,
@@ -298,7 +300,7 @@ module ID_Stage(
     assign jirl_offs = {{14{i16[15]}}, i16[15:0], 2'b0};
 
     assign src_reg_is_rd = inst_beq | inst_bne | inst_blt | inst_bge | inst_bltu | inst_bgeu |
-                           inst_st_b | inst_st_h | inst_st_w;
+                           inst_st_b | inst_st_h | inst_st_w | inst_csrwr | inst_csrxchg;
 
     assign src1_is_pc    = inst_jirl | inst_bl | inst_pcaddul2i;
 
@@ -328,7 +330,8 @@ module ID_Stage(
 
     assign dst_is_r1     = inst_bl;
     assign gr_we         = ~(inst_st_b | inst_st_h | inst_st_w | 
-                             inst_beq | inst_bne | inst_b | inst_blt | inst_bge | inst_bltu | inst_bgeu);
+                             inst_beq | inst_bne | inst_b | inst_blt | inst_bge | inst_bltu | inst_bgeu |
+                             inst_syscall | inst_ertn);
     assign dest          = dst_is_r1 ? 5'd1 : rd;
 
 //regfile control
@@ -363,12 +366,12 @@ module ID_Stage(
                      inst_mul_w | inst_mulh_w | inst_mulh_wu | inst_div_w | inst_mod_w | inst_div_wu | inst_mod_wu |
                      inst_ld_b | inst_ld_h | inst_ld_w | inst_ld_bu | inst_ld_hu |
                      inst_st_b | inst_st_h | inst_st_w |
-                     inst_beq | inst_bne | inst_blt | inst_bge | inst_bltu | inst_bgeu;
+                     inst_beq | inst_bne | inst_blt | inst_bge | inst_bltu | inst_bgeu | inst_csrxchg;
                     
     assign need_r2 = inst_add_w | inst_sub_w | inst_slt | inst_sltu | inst_and | inst_or | inst_nor | inst_xor | 
                      inst_st_b | inst_st_h | inst_st_w | inst_sll_w | inst_srl_w | inst_sra_w | 
                      inst_mul_w | inst_mulh_w | inst_mulh_wu | inst_div_w | inst_mod_w | inst_div_wu | inst_mod_wu |
-                     inst_beq | inst_bne | inst_blt | inst_bge | inst_bltu | inst_bgeu;
+                     inst_beq | inst_bne | inst_blt | inst_bge | inst_bltu | inst_bgeu | inst_csrwr | inst_csrxchg;
 
     regfile u_regfile(
     .clk    (clk      ),
@@ -410,12 +413,13 @@ module ID_Stage(
                             res_from_mul, mul_signed, mul_h, res_from_div, div_signed, div_r};
 
     wire        id_res_from_csr = inst_csrrd | inst_csrwr | inst_csrxchg;
-    wire [13:0] id_csr_num = inst[23:10];
+    wire [13:0] id_csr_num = inst_ertn ? `CSR_ERA : 
+                             inst_syscall ? `CSR_EENTRY : inst[23:10];
     wire        id_csr_we = inst_csrwr | inst_csrxchg;
     wire [31:0] id_csr_wmask = (inst_csrxchg)? rj_value : 32'hffffffff;
     wire [31:0] id_csr_wvalue = rkd_value;
     wire        id_ertn_flush = inst_ertn;
-    wire        id_csr_ex;
+    wire        id_csr_ex = inst_syscall;
     wire [ 5:0] id_csr_ecode = (inst_syscall)? `ECODE_SYS : if_csr_ecode;
     wire [ 8:0] id_csr_esubcode = if_csr_esubcode;
 

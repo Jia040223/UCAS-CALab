@@ -16,7 +16,9 @@ module WB_Stage(
     // id and wb state interface
     output wire [37:0] wb_rf_zip,
 
-    output wire [31:0] ex_extry;
+    output wire [31:0] ex_extry,
+    //flush
+    output wire        wb_flush
 );    
     reg  [`MEM_TO_WB_DATA_WIDTH-1:0] mem_to_wb_data_reg;
     reg  [`MEM_TO_WB_EXCEP_WIDTH-1:0] mem_to_wb_excep_reg; 
@@ -24,6 +26,7 @@ module WB_Stage(
     wire        wb_ready_go;
     reg         wb_valid;
     wire [31:0] wb_pc;
+    wire [31:0] wb_rf_result;
     wire [31:0] wb_rf_wdata;
     wire [ 4:0] wb_rf_waddr;
     wire        wb_rf_we;
@@ -70,28 +73,24 @@ module WB_Stage(
     
     assign {wb_rf_we,
             wb_rf_waddr,
-            wb_rf_wdata,
+            wb_rf_result,
             wb_pc
            } = mem_to_wb_data_reg;
-
+    
     assign {wb_res_from_csr, wb_csr_num, wb_csr_we, wb_csr_wmask, wb_csr_wvalue, 
             wb_ertn_flush, wb_csr_ex, wb_csr_ecode, wb_csr_esubcode
             } = mem_to_wb_excep_reg;
 
 //id and wb state interface
+    assign wb_rf_wdata = (wb_res_from_csr)? csr_rvalue : wb_rf_result;
+
     assign wb_rf_zip = {wb_rf_we & wb_valid,
                         wb_rf_waddr,
                         wb_rf_wdata};
                         
-//trace debug interface
-    assign debug_wb_pc = wb_pc;
-    assign debug_wb_rf_wdata = (wb_res_from_csr)? csr_rvalue : wb_rf_wdata;
-    assign debug_wb_rf_we = {4{wb_rf_we & wb_valid}};
-    assign debug_wb_rf_wnum = wb_rf_waddr;
-
-    wire        wb_csr_we;
-    wire [31:0] wb_csr_wmask;
-    wire [31:0] wb_csr_wvalue;
+//csr
+    assign wb_ertn_flush_valid = wb_ertn_flush & wb_valid;
+    assign wb_csr_ex_valid = wb_csr_ex & wb_valid;
 
     csr my_csr(
         .clk(clk),
@@ -100,13 +99,21 @@ module WB_Stage(
         .csr_we(wb_csr_we),
         .csr_wmask(wb_csr_wmask),
         .csr_wvalue(wb_csr_wvalue),
-        .ertn_flush(wb_ertn_flush),
-        .wb_ex(wb_csr_ex),
+        .ertn_flush(wb_ertn_flush_valid),
+        .wb_ex(wb_csr_ex_valid),
         .wb_ecode(wb_csr_ecode), 
         .wb_esubcode(wb_csr_esubcode), 
         .wb_pc(wb_pc),
         .csr_rvalue(csr_rvalue),
         .ex_entry(ex_entry)
     );
+
+    assign wb_flush = wb_ertn_flush_valid | wb_csr_ex_valid;
+
+//trace debug interface
+    assign debug_wb_pc = wb_pc;
+    assign debug_wb_rf_wdata = wb_rf_wdata;
+    assign debug_wb_rf_we = {4{wb_rf_we & wb_valid}};
+    assign debug_wb_rf_wnum = wb_rf_waddr;
     
 endmodule
