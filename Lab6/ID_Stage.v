@@ -405,12 +405,14 @@ module ID_Stage(
     
     assign mul_h      = inst_mulh_w | inst_mulh_wu;
         
-    assidata = {alu_op, alu_src1, alu_src2,
+    assign id_to_ex_data = {alu_op, alu_src1, alu_src2,
                             id_rf_we, id_rf_waddr,
                             id_pc,
                             inst_st_b, inst_st_h, inst_st_w,
                             id_rkd_value,
                             inst_ld_b, inst_ld_bu, inst_ld_h, inst_ld_hu, inst_ld_w,
-                            res_from_mul, mul_signed, mul_h, res_from_div, div_signed, div_r};                            
+                            res_from_mul, mul_signed, mul_h, res_from_div, div_signed, div_r};
+
+    assign id_to_ex_excep =                        
     
 endmodule
