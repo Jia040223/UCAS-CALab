@@ -52,6 +52,15 @@ module mycpu_top(
 
     wire        br_taken;
     wire [31:0] br_target;
+    
+    wire if_flush;
+    wire id_flush;
+    wire ex_flush;
+    wire mem_flush;
+    wire wb_flush;
+    wire mem_to_exe_ex;
+    
+    wire [`WB_TO_IF_CSR_DATA_WIDTH -1:0]  wb_to_if_csr_data;
 
     IF_Stage my_IF_Stage
     (
@@ -123,7 +132,7 @@ module mycpu_top(
         
         .ex_rf_zip(ex_rf_zip),
         .ex_flush(wb_flush),
-        .ms_to_es_ex(ms_to_es_ex)
+        .mem_to_exe_ex(mem_to_exe_ex)
      );
 
     MEM_Stage my_MEM_Stage
@@ -146,7 +155,7 @@ module mycpu_top(
         
         .mem_rf_zip(mem_rf_zip),
         .mem_flush(wb_flush),
-        .ms_to_es_ex(ms_to_es_ex)
+        .mem_to_exe_ex(mem_to_exe_ex)
     ) ;
 
     WB_Stage my_WB_Stage

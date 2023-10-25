@@ -24,7 +24,7 @@ module EX_Stage(
     output wire [31:0] data_sram_wdata,
 
     input  wire        ex_flush,
-    input  wire        ms_to_es_ex
+    input  wire        mem_to_exe_ex
 );
     reg  [`ID_TO_EX_DATA_WIDTH-1:0] id_to_ex_data_reg;
     reg  [`ID_TO_EX_EXCEP_WIDTH-1:0] id_to_ex_excep_reg;
@@ -169,7 +169,7 @@ module EX_Stage(
 
     //data sram interface
     assign data_sram_en    = (ex_inst_ld_b || ex_inst_ld_bu || ex_inst_ld_h || ex_inst_ld_hu || ex_inst_ld_w || (|ex_mem_we)) 
-                              & ~ms_to_es_ex & ~ex_flush;
+                              & ~mem_to_exe_ex & ~ex_flush;
     assign data_sram_we    = ex_mem_we;
     assign data_sram_addr  = {ex_alu_result[31:2], 2'b0};
     assign data_sram_wdata = (ex_inst_st_b)? {4{ex_rkd_value[ 7:0]}} :

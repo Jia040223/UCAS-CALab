@@ -21,7 +21,7 @@ module MEM_Stage(
     output wire [38:0] mem_rf_zip,
 
     input  wire        mem_flush,
-    output wire        ms_to_es_ex
+    output wire        mem_to_exe_ex
 );
     reg  [`EX_TO_MEM_DATA_WIDTH-1:0] ex_to_mem_data_reg;
     reg  [`EX_TO_MEM_EXCEP_WIDTH-1:0] ex_to_mem_excep_reg;
@@ -124,7 +124,7 @@ module MEM_Stage(
 
     assign mem_to_wb_excep = {mem_res_from_csr, mem_csr_num, mem_csr_we, mem_csr_wmask, mem_csr_wvalue, 
                               mem_ertn_flush, mem_csr_ex, mem_csr_ecode, mem_csr_esubcode};
-    assign ms_to_es_ex =  (mem_ertn_flush | mem_csr_ex) & mem_valid;
+    assign mem_to_exe_ex =  (mem_ertn_flush | mem_csr_ex) & mem_valid;
   
 endmodule
 

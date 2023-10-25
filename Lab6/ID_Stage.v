@@ -238,7 +238,6 @@ module ID_Stage(
     wire inst_break = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h14];
     wire inst_syscall = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h16];
 
-    //inst_exception
     wire inst_csrrd = op_31_26_d[6'h01] & (op_25_22[3:2] == 2'b0) & (rj == 5'b0);
     wire inst_csrwr = op_31_26_d[6'h01] & (op_25_22[3:2] == 2'b0) & (rj == 5'b1);
     wire inst_csrxchg = op_31_26_d[6'h01] & op_25_22[3:2] == 2'b0 & (|rj[4:1]);
@@ -419,7 +418,6 @@ module ID_Stage(
                             inst_ld_b, inst_ld_bu, inst_ld_h, inst_ld_hu, inst_ld_w,
                             res_from_mul, mul_signed, mul_h, res_from_div, div_signed, div_r};
 
-    //exceptional control
     wire        id_res_from_csr = inst_csrrd | inst_csrwr | inst_csrxchg;
     wire [13:0] id_csr_num = inst_ertn ? `CSR_ERA : 
                              inst_syscall ? `CSR_EENTRY : inst[23:10];
