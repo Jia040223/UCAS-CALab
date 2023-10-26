@@ -42,10 +42,6 @@ module MEM_Stage(
     wire        mem_inst_ld_hu;
     wire        mem_inst_ld_w;
 
-    wire [31:0] mem_ld_b_res;
-    wire [31:0] mem_ld_h_res;
-    wire [31:0] mem_ld_w_res;
-
     wire [31:0] div_result;
     wire        mul_h;
 
