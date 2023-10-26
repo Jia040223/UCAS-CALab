@@ -96,3 +96,4 @@ module alu(
                     | ({32{op_srl|op_sra}} & sr_result);
 
 endmodule
+
