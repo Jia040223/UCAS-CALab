@@ -426,11 +426,11 @@ module ID_Stage(
     wire [31:0] id_csr_wmask = (inst_csrxchg)? rj_value : 32'hffffffff;
     wire [31:0] id_csr_wvalue = rkd_value;
     wire        id_ertn_flush = inst_ertn;
-    wire        id_excep = inst_syscall;
+    wire        id_csr_ex = inst_syscall;
     wire [ 5:0] id_csr_ecode = (inst_syscall)? `ECODE_SYS : if_csr_ecode;
     wire [ 8:0] id_csr_esubcode = if_csr_esubcode;
 
     assign id_to_ex_excep = {id_res_from_csr, id_csr_num, id_csr_we, id_csr_wmask, id_csr_wvalue, 
-                             id_ertn_flush, id_excep, id_csr_ecode, id_csr_esubcode};
+                             id_ertn_flush, id_csr_ex, id_csr_ecode, id_csr_esubcode};
 
 endmodule

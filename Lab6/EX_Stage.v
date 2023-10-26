@@ -14,7 +14,7 @@ module EX_Stage(
     output wire [`EX_TO_MEM_EXCEP_WIDTH-1:0] ex_to_mem_excep, 
     output wire        ex_to_mem_valid,
     
-    input  wire  [39:0] ex_rf_zip,
+    output wire  [39:0] ex_rf_zip,
     output wire  [63:0] mul_result,
     
 // data sram interface
