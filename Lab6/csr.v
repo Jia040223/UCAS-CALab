@@ -189,7 +189,7 @@ module csr(
 
    // ECFG
     always @(posedge clk) begin
-        if(reset)
+        if(~resetn)
             csr_ecfg_lie <= 13'b0;
         else if(csr_we && csr_num == `CSR_ECFG)
             csr_ecfg_lie <= csr_wmask[`CSR_ECFG_LIE] & csr_wvalue[`CSR_ECFG_LIE]
@@ -206,7 +206,7 @@ module csr(
 
     // TID
     always @(posedge clk) begin
-        if (reset)
+        if (~resetn)
             csr_tid_tid <= coreid_in;
         else if (csr_we && csr_num==`CSR_TID)
             csr_tid_tid <= csr_wmask[`CSR_TID_TID] & csr_wvalue[`CSR_TID_TID]
@@ -215,7 +215,7 @@ module csr(
 
     // TCFG
     always @(posedge clk) begin
-        if (reset)
+        if (~resetn)
             csr_tcfg_en <= 1'b0;
         else if (csr_we && csr_num==`CSR_TCFG)
             csr_tcfg_en <= csr_wmask[`CSR_TCFG_EN] & csr_wvalue[`CSR_TCFG_EN] 
@@ -234,7 +234,7 @@ module csr(
                             | ~csr_wmask[31:0] & {csr_tcfg_initval, csr_tcfg_periodic, csr_tcfg_en};
 
     always @(posedge clk) begin
-        if (reset)
+        if (~resetn)
             timer_cnt <= 32'hffffffff;
         else if (csr_we && csr_num == `CSR_TCFG && tcfg_next_value[`CSR_TCFG_EN])
             timer_cnt <= {tcfg_next_value[`CSR_TCFG_INITV], 2'b0};
@@ -282,7 +282,7 @@ module csr(
                         | {32{csr_num == `CSR_TVAL  }} & csr_tval_rvalue
                         | {32{csr_num == `CSR_TICLR }} & csr_ticlr_rvalue;
                   
-    assign has_int = ((csr_estat_is[11:0] & csr_ecfg_lie[11:0]) != 12'b0) && (csr_crmd_ie == 1'b1);
+    assign has_int = (|(csr_estat_is[12:0] & csr_ecfg_lie[12:0])) && (csr_crmd_ie == 1'b1);
                   
                    
 endmodule

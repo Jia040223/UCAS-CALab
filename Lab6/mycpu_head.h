@@ -1,20 +1,21 @@
-`define IF_TO_ID_DATA_WIDTH 64
-`define ID_TO_EX_DATA_WIDTH 160
-`define EX_TO_MEM_DATA_WIDTH 110
-`define MEM_TO_WB_DATA_WIDTH 70
+`define IF_TO_ID_DATA_WIDTH     64
+`define ID_TO_EX_DATA_WIDTH     160
+`define EX_TO_MEM_DATA_WIDTH    110
+`define MEM_TO_WB_DATA_WIDTH    70
 
-`define IF_TO_ID_EXCEP_WIDTH 1
-`define ID_TO_EX_EXCEP_WIDTH 85
-`define EX_TO_MEM_EXCEP_WIDTH 86
-`define MEM_TO_WB_EXCEP_WIDTH 118
+`define IF_TO_ID_EXCEP_WIDTH    1
+`define ID_TO_EX_EXCEP_WIDTH    86
+`define EX_TO_MEM_EXCEP_WIDTH   87
+`define MEM_TO_WB_EXCEP_WIDTH   119
 
-`define WB_TO_IF_CSR_DATA_WIDTH   66
+`define WB_TO_IF_CSR_DATA_WIDTH 66
 
-`define ECODE_ADEF 6'h8
-`define ECODE_ALE 6'h9
-`define ECODE_SYS 6'hb
-`define ECODE_BRK 6'hc
-`define ECODE_INE 6'hd
+`define ECODE_INT   6'h0
+`define ECODE_ADEF  6'h8
+`define ECODE_ALE   6'h9
+`define ECODE_SYS   6'hb
+`define ECODE_BRK   6'hc
+`define ECODE_INE   6'hd
 
 `define ESUBCODE_ADEF 9'h0
 

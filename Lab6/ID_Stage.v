@@ -21,7 +21,8 @@ module ID_Stage(
     input  wire [39:0] ex_rf_zip,
 
     //nput  wire [31:0] id_flush
-    input  wire       id_flush
+    input  wire       id_flush,
+    input  wire       has_int
 );
     reg  [`IF_TO_ID_DATA_WIDTH-1:0] if_to_id_data_reg; 
     reg  [`IF_TO_ID_EXCEP_WIDTH-1:0] if_to_id_excep_reg;
@@ -452,7 +453,7 @@ module ID_Stage(
 //    wire [ 8:0] id_csr_esubcode = if_csr_esubcode;
 
     assign id_to_ex_excep = {id_res_from_csr, id_csr_num, id_csr_we, id_csr_wmask, id_csr_wvalue, 
-                             id_ertn_flush, id_excp_adef, inst_syscall, inst_break,
+                             id_ertn_flush, has_int, id_excp_adef, inst_syscall, inst_break,
                              id_excp_ine};
 
 endmodule

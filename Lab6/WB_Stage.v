@@ -18,7 +18,8 @@ module WB_Stage(
 
     output wire [`WB_TO_IF_CSR_DATA_WIDTH -1:0] wb_to_if_csr_data,
     //flush
-    output wire        wb_flush
+    output wire        wb_flush,
+    output wire        has_int
 );    
     reg  [`MEM_TO_WB_DATA_WIDTH-1:0] mem_to_wb_data_reg;
     reg  [`MEM_TO_WB_EXCEP_WIDTH-1:0] mem_to_wb_excep_reg; 
@@ -47,12 +48,16 @@ module WB_Stage(
     wire        wb_excep_valid;
 
     wire [31:0] wb_vaddr;
-
+    wire        wb_has_int;
     wire        wb_excp_adef;
     wire        wb_excp_syscall;
     wire        wb_excp_break;
     wire        wb_excp_ale;
     wire        wb_excp_ine;
+
+    wire        ipi_int_in;
+    wire [ 7:0] hw_int_in;
+    wire [31:0] coreid_in;
 //stage control signal
 
     assign wb_ready_go      = 1'b1;
@@ -79,15 +84,16 @@ module WB_Stage(
             wb_pc
            } = mem_to_wb_data_reg;
 
-    assign wb_excep = wb_excp_adef | wb_excp_syscall | wb_excp_break | wb_excp_ale | wb_excp_ine;
+    assign wb_excep = wb_excp_adef | wb_excp_syscall | wb_excp_break | wb_excp_ale | wb_excp_ine | wb_has_int;
     
     assign {wb_res_from_csr, wb_csr_num, wb_csr_we, wb_csr_wmask, wb_csr_wvalue, 
 //            wb_ertn_flush, wb_excep, wb_csr_ecode, wb_csr_esubcode
-            wb_ertn_flush, wb_excp_adef, wb_excp_syscall, wb_excp_break,
+            wb_ertn_flush, wb_has_int, wb_excp_adef, wb_excp_syscall, wb_excp_break,
             wb_excp_ale, wb_vaddr, wb_excp_ine
             } = mem_to_wb_excep_reg;
 
-    assign wb_csr_ecode = wb_excp_adef      ? `ECODE_ADE :
+    assign wb_csr_ecode = wb_has_int        ? `ECODE_INT
+                          wb_excp_adef      ? `ECODE_ADE :
                           wb_excp_ine       ? `ECODE_INE :
                           wb_excp_syscall   ? `ECODE_SYS :
                           wb_excp_break     ? `ECODE_BRK :
@@ -102,8 +108,12 @@ module WB_Stage(
                         wb_rf_wdata};
                         
 //csr
-    assign wb_ertn_flush_valid = wb_ertn_flush & wb_valid;
-    assign wb_excep_valid = wb_excep & wb_valid;
+    assign wb_ertn_flush_valid  = wb_ertn_flush & wb_valid;
+    assign wb_excep_valid       = wb_excep & wb_valid;
+
+    assign ipi_int_in   = 1'b0;
+    assign hw_int_in    = 8'b0;
+    assign coreid_in    = 32'b0;
 
     csr my_csr(
         .clk(clk),
@@ -120,6 +130,10 @@ module WB_Stage(
         .csr_rvalue(csr_rvalue),
         .ex_entry(ex_entry),
 
+        .has_int(has_int)
+        .ipi_int_in(ipi_int_in),
+        .hw_int_in(hw_int_in),
+        .coreid_in(coreid_in),
         .wb_vaddr(wb_vaddr)
     );
 
