@@ -73,7 +73,6 @@ module EX_Stage(
     wire [31:0] ex_csr_wmask;
     wire [31:0] ex_csr_wvalue;
     wire        ex_ertn_flush;
-    wire        ex_excep;
 //    wire [ 5:0] ex_csr_ecode;
 //    wire [ 8:0] ex_csr_esubcode;
     wire        ex_excp_adef;
@@ -111,7 +110,7 @@ module EX_Stage(
             } = id_to_ex_data_reg;   
 
     assign {ex_res_from_csr, ex_csr_num, ex_csr_we, ex_csr_wmask, ex_csr_wvalue, 
-            ex_ertn_flush, ex_excep, ex_excp_adef, ex_excp_syscall, ex_excp_break,
+            ex_ertn_flush, ex_excp_adef, ex_excp_syscall, ex_excp_break,
             ex_excp_ine
             } = id_to_ex_excep_reg;
 
@@ -175,7 +174,7 @@ module EX_Stage(
                                          (ex_inst_ld_w | ex_inst_st_w) & (|ex_alu_result[1:0]));
 
     assign ex_to_mem_excep = {ex_res_from_csr, ex_csr_num, ex_csr_we, ex_csr_wmask, ex_csr_wvalue, 
-                              ex_ertn_flush, ex_excep, ex_excp_adef, ex_excp_syscall, ex_excp_break,
+                              ex_ertn_flush, ex_excp_adef, ex_excp_syscall, ex_excp_break,
                               ex_excp_ale, ex_excp_ine};
 
     //data sram interface
