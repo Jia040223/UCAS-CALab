@@ -45,6 +45,14 @@ module WB_Stage(
     wire [31:0] ex_entry;
     wire        wb_ertn_flush_valid;
     wire        wb_excep_valid;
+
+    wire [31:0] wb_vaddr;
+
+    wire        wb_excp_adef;
+    wire        wb_excp_syscall;
+    wire        wb_excp_break;
+    wire        wb_excp_ale;
+    wire        wb_excp_ine;
 //stage control signal
 
     assign wb_ready_go      = 1'b1;
@@ -72,9 +80,18 @@ module WB_Stage(
            } = mem_to_wb_data_reg;
     
     assign {wb_res_from_csr, wb_csr_num, wb_csr_we, wb_csr_wmask, wb_csr_wvalue, 
-            wb_ertn_flush, wb_excep, wb_csr_ecode, wb_csr_esubcode
+//            wb_ertn_flush, wb_excep, wb_csr_ecode, wb_csr_esubcode
+            wb_ertn_flush, wb_excep, wb_excp_adef, wb_excp_syscall, wb_excp_break,
+            wb_excp_ale, wb_vaddr, wb_excp_ine
             } = mem_to_wb_excep_reg;
 
+    assign wb_csr_ecode = wb_excp_adef      ? `ECODE_ADE :
+                          wb_excp_ine       ? `ECODE_INE :
+                          wb_excp_syscall   ? `ECODE_SYS :
+                          wb_excp_break     ? `ECODE_BRK :
+                          wb_excp_ale       ? `ECODE_ALE :
+                          6'b0;
+    assign wb_csr_esubcode = 9'b0;
 //id and wb state interface
     assign wb_rf_wdata = (wb_res_from_csr)? csr_rvalue : wb_rf_result;
 
@@ -99,7 +116,9 @@ module WB_Stage(
         .wb_esubcode(wb_csr_esubcode), 
         .wb_pc(wb_pc),
         .csr_rvalue(csr_rvalue),
-        .ex_entry(ex_entry)
+        .ex_entry(ex_entry),
+
+        .wb_vaddr(wb_vaddr)
     );
 
     assign wb_flush = wb_ertn_flush_valid | wb_excep_valid;

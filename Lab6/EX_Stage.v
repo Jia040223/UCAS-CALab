@@ -74,8 +74,13 @@ module EX_Stage(
     wire [31:0] ex_csr_wvalue;
     wire        ex_ertn_flush;
     wire        ex_excep;
-    wire [ 5:0] ex_csr_ecode;
-    wire [ 8:0] ex_csr_esubcode;
+//    wire [ 5:0] ex_csr_ecode;
+//    wire [ 8:0] ex_csr_esubcode;
+    wire        ex_excp_adef;
+    wire        ex_excp_syscall;
+    wire        ex_excp_break;
+    wire        ex_excp_ale;
+    wire        ex_excp_ine;
 
 //stage control signal
     assign ex_ready_go      = ~ex_res_from_div | ex_div_complete;
@@ -106,7 +111,8 @@ module EX_Stage(
             } = id_to_ex_data_reg;   
 
     assign {ex_res_from_csr, ex_csr_num, ex_csr_we, ex_csr_wmask, ex_csr_wvalue, 
-            ex_ertn_flush, ex_excep, ex_csr_ecode, ex_csr_esubcode
+            ex_ertn_flush, ex_excep, ex_excp_adef, ex_excp_syscall, ex_excp_break,
+            ex_excp_ine
             } = id_to_ex_excep_reg;
 
     alu u_alu(
@@ -164,12 +170,17 @@ module EX_Stage(
                               ex_rf_waddr,
                               ex_res_from_div ? ex_div_result : ex_alu_result};
     
+    //ALE exception
+    assign ex_excp_ale     = ex_valid & ((ex_inst_ld_h | ex_inst_ld_hu | ex_inst_st_h) & ex_alu_result[0] |
+                                         (ex_inst_ld_w | ex_inst_st_w) & (|ex_alu_result[1:0]));
+
     assign ex_to_mem_excep = {ex_res_from_csr, ex_csr_num, ex_csr_we, ex_csr_wmask, ex_csr_wvalue, 
-                              ex_ertn_flush, ex_excep, ex_csr_ecode, ex_csr_esubcode};
+                              ex_ertn_flush, ex_excep, ex_excp_adef, ex_excp_syscall, ex_excp_break,
+                              ex_excp_ale, ex_excp_ine};
 
     //data sram interface
     assign data_sram_en    = (ex_inst_ld_b || ex_inst_ld_bu || ex_inst_ld_h || ex_inst_ld_hu || ex_inst_ld_w || (|ex_mem_we)) 
-                              & ~mem_to_exe_ex & ~ex_flush;
+                              & ~mem_to_exe_ex & ~ex_flush & ~ex_excp_ale;
     assign data_sram_we    = ex_mem_we;
     assign data_sram_addr  = {ex_alu_result[31:2], 2'b0};
     assign data_sram_wdata = (ex_inst_st_b)? {4{ex_rkd_value[ 7:0]}} :

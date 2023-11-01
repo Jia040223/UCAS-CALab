@@ -3,10 +3,10 @@
 `define EX_TO_MEM_DATA_WIDTH 110
 `define MEM_TO_WB_DATA_WIDTH 70
 
-`define IF_TO_ID_EXCEP_WIDTH 15
-`define ID_TO_EX_EXCEP_WIDTH 97
-`define EX_TO_MEM_EXCEP_WIDTH 97
-`define MEM_TO_WB_EXCEP_WIDTH 97
+`define IF_TO_ID_EXCEP_WIDTH 1
+`define ID_TO_EX_EXCEP_WIDTH 85
+`define EX_TO_MEM_EXCEP_WIDTH 86
+`define MEM_TO_WB_EXCEP_WIDTH 118
 
 `define WB_TO_IF_CSR_DATA_WIDTH   66
 
@@ -15,6 +15,8 @@
 `define ECODE_SYS 6'hb
 `define ECODE_BRK 6'hc
 `define ECODE_INE 6'hd
+
+`define ESUBCODE_ADEF 9'h0
 
 // exp12
 `define CSR_CRMD        14'h0

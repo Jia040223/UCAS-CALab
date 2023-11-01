@@ -36,6 +36,7 @@ module IF_Stage(
     wire [31:0] ex_entry;
     wire        wb_ertn_flush_valid;
     wire        wb_csr_ex_valid;
+    wire        if_adef_excep;
     
 //IF statge control signal
     assign if_ready_go      = 1'b1;
@@ -64,6 +65,7 @@ module IF_Stage(
                               : wb_csr_ex_valid ? ex_entry
                               : br_taken ? br_target 
                               : seq_pc; 
+    assign if_adef_excep    = if_valid & (|nextpc[1:0]);
 
 //if to id stage signal
     always @(posedge clk) begin
@@ -80,8 +82,7 @@ module IF_Stage(
     assign if_to_id_data    = {if_inst,     // 32-63
                                if_pc};      // 0-31
                                
-    wire [ 5:0] if_csr_ecode = 6'h00;
-    wire [ 8:0] if_csr_esubcode = 9'h000;
-    assign if_to_id_excep = {if_csr_ecode, if_csr_esubcode};
+
+    assign if_to_id_excep = if_adef_excep;
 
 endmodule
