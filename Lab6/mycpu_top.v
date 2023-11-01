@@ -180,7 +180,7 @@ module mycpu_top(
 
         .wb_to_if_csr_data(wb_to_if_csr_data),
         .wb_flush(wb_flush),
-        has_int(has_int)
+        .has_int(has_int)
     );
     
 endmodule

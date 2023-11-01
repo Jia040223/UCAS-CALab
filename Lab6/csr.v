@@ -25,7 +25,7 @@ module csr(
     reg [1:0]   csr_crmd_plv;
     reg         csr_crmd_ie;
     wire [31:0] csr_crmd_rvalue;
-    wire         csr_crmd_da;       //CRMD的直接地址翻译使能
+    wire         csr_crmd_da;       //CRMD的直接地�?翻译使能
     wire         csr_crmd_pg;
     wire [1:0]   csr_crmd_datf;
     wire [1:0]   csr_crmd_datm;
@@ -246,7 +246,8 @@ module csr(
         end
     end
     assign csr_tval_timeval = timer_cnt[31:0];
-
+    
+    assign csr_ticlr_clr = 1'b0;
 
     assign ex_entry = csr_eentry_rvalue;
     assign csr_crmd_rvalue = {23'b0, csr_crmd_datm, csr_crmd_datm, csr_crmd_pg, csr_crmd_da, csr_crmd_ie, csr_crmd_plv};

@@ -109,7 +109,7 @@ module EX_Stage(
             ex_inst_st_b, ex_inst_st_h, ex_inst_st_w,
             ex_rkd_value,
             ex_inst_ld_b, ex_inst_ld_bu, ex_inst_ld_h, ex_inst_ld_hu, ex_inst_ld_w,
-            ex_inst_rdcntvl, ex_inst_rdcntvh, ex_inst_rdcntid
+            ex_inst_rdcntvl, ex_inst_rdcntvh, ex_inst_rdcntid,
             ex_res_from_mul, ex_mul_signed, ex_mul_h, ex_res_from_div, ex_div_signed, ex_div_r
             } = id_to_ex_data_reg;   
 

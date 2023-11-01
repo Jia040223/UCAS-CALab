@@ -128,9 +128,6 @@ module ID_Stage(
 
     wire        ex_res_from_csr;
     wire        mem_res_from_csr;
-
-    wire        if_excp_adef;
-    wire        id_excp_ine;
         
 //stage control signal
     assign id_ready_go      = ~conflict;
@@ -225,11 +222,11 @@ module ID_Stage(
     wire inst_mod_wu = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h03];
 
     wire type_calc   = inst_add_w | inst_sub_w | inst_slt | inst_sltu | inst_nor | inst_nor | inst_and | inst_or | inst_xor |
-                       inst_sll | inst_srl_w | inst_sra_w |
+                       inst_sll_w | inst_srl_w | inst_sra_w |
                        inst_mul_w | inst_mulh_w | inst_mulh_wu | inst_div_w | inst_div_wu | inst_mod_w | inst_mod_wu;
     
     wire type_calc_i = inst_slti | inst_sltui | inst_andi | inst_ori | inst_xori |
-                       inst_slli | inst_srli | inst_srai_w | inst_addi_w;
+                       inst_slli_w | inst_srli_w | inst_srai_w | inst_addi_w;
     
     //inst_load
     wire inst_ld_b   = op_31_26_d[6'h0a] & op_25_22_d[4'h0];
@@ -455,7 +452,7 @@ module ID_Stage(
                             inst_st_b, inst_st_h, inst_st_w,
                             id_rkd_value,
                             inst_ld_b, inst_ld_bu, inst_ld_h, inst_ld_hu, inst_ld_w,
-                            inst_rdcntvl, inst_rdcntvh, inst_rdcntid
+                            inst_rdcntvl, inst_rdcntvh, inst_rdcntid, 
                             res_from_mul, mul_signed, mul_h, res_from_div, div_signed, div_r};
 
     wire        id_res_from_csr = inst_csrrd | inst_csrwr | inst_csrxchg | inst_rdcntid;

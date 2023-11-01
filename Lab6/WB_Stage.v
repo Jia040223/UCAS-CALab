@@ -92,8 +92,8 @@ module WB_Stage(
             wb_excp_ale, wb_vaddr, wb_excp_ine
             } = mem_to_wb_excep_reg;
 
-    assign wb_csr_ecode = wb_has_int        ? `ECODE_INT
-                          wb_excp_adef      ? `ECODE_ADE :
+    assign wb_csr_ecode = wb_has_int        ? `ECODE_INT :
+                          wb_excp_adef      ? `ECODE_ADEF :
                           wb_excp_ine       ? `ECODE_INE :
                           wb_excp_syscall   ? `ECODE_SYS :
                           wb_excp_break     ? `ECODE_BRK :
@@ -130,7 +130,7 @@ module WB_Stage(
         .csr_rvalue(csr_rvalue),
         .ex_entry(ex_entry),
 
-        .has_int(has_int)
+        .has_int(has_int),
         .ipi_int_in(ipi_int_in),
         .hw_int_in(hw_int_in),
         .coreid_in(coreid_in),

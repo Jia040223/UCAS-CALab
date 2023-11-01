@@ -112,8 +112,10 @@ module MEM_Stage(
     assign mem_rf_wdata     = {32{res_from_mem}} & mem_result |
                               {32{mul_h}} & mul_result[63:32] |
                               {32{~mul_h & res_from_mul}} & mul_result[31:0] |
-                              {32{res_from_div}} & div_result |
-                              {32{~res_from_div & ~res_from_mul & ~res_from_mem}} & mem_final_result;
+ //bug[1]///////////////////////////////////////////
+//                              {32{res_from_div}} & div_result |
+//                              {32{~res_from_div & ~res_from_mul & ~res_from_mem}} & mem_final_result;
+                                {32{~res_from_mul & ~res_from_mem}} & mem_final_result;
     
     assign mem_to_wb_data = {mem_rf_we,
                              mem_rf_waddr,
