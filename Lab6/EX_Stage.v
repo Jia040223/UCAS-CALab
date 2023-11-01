@@ -24,7 +24,7 @@ module EX_Stage(
     output wire [31:0] data_sram_wdata,
 
     input  wire        ex_flush,
-    input  wire        mem_to_exe_ex
+    input  wire        mem_to_ex_excep
 );
     reg  [`ID_TO_EX_DATA_WIDTH-1:0] id_to_ex_data_reg;
     reg  [`ID_TO_EX_EXCEP_WIDTH-1:0] id_to_ex_excep_reg;
@@ -66,6 +66,7 @@ module EX_Stage(
     wire [31:0] ex_div_r_result;
     wire        ex_div_complete;
     wire [31:0] ex_div_result;
+    wire [31:0] ex_final_result;
 
     wire        ex_res_from_csr;
     wire [13:0] ex_csr_num;
@@ -73,7 +74,6 @@ module EX_Stage(
     wire [31:0] ex_csr_wmask;
     wire [31:0] ex_csr_wvalue;
     wire        ex_ertn_flush;
-    wire        ex_has_int;
 //    wire [ 5:0] ex_csr_ecode;
 //    wire [ 8:0] ex_csr_esubcode;
     wire        ex_excp_adef;
@@ -81,6 +81,8 @@ module EX_Stage(
     wire        ex_excp_break;
     wire        ex_excp_ale;
     wire        ex_excp_ine;
+
+    reg [63:0]  counter;
 
 //stage control signal
     assign ex_ready_go      = ~ex_res_from_div | ex_div_complete;
@@ -107,6 +109,7 @@ module EX_Stage(
             ex_inst_st_b, ex_inst_st_h, ex_inst_st_w,
             ex_rkd_value,
             ex_inst_ld_b, ex_inst_ld_bu, ex_inst_ld_h, ex_inst_ld_hu, ex_inst_ld_w,
+            ex_inst_rdcntvl, ex_inst_rdcntvh, ex_inst_rdcntid
             ex_res_from_mul, ex_mul_signed, ex_mul_h, ex_res_from_div, ex_div_signed, ex_div_r
             } = id_to_ex_data_reg;   
 
@@ -158,17 +161,30 @@ module EX_Stage(
 
     assign ex_to_mem_data = {ex_rf_we, ex_rf_waddr,
                              ex_pc,
-                             ex_alu_result,
+                             ex_final_result,
                              ex_inst_ld_b, ex_inst_ld_bu, ex_inst_ld_h, ex_inst_ld_hu, ex_inst_ld_w,
-                             ex_res_from_mul, ex_mul_h, ex_res_from_div, ex_div_result};
+                             ex_res_from_mul, ex_mul_h, ex_res_from_div};
     
     assign ex_res_from_mem = ex_inst_ld_b || ex_inst_ld_bu || ex_inst_ld_h || ex_inst_ld_hu || ex_inst_ld_w;
+
+    //counter
+    always @(posedge clk) begin
+        if(~resetn)
+            counter <= 64'b0;
+        else
+            counter <= counter + 1;
+    end
+
+    assign ex_final_result = ex_res_from_div ? ex_div_result  :
+                             ex_inst_rdcntvh ? counter[63:32] :
+                             ex_inst_rdcntvl ? counter[31:0]  :
+                             ex_alu_result;
                              
     assign ex_rf_zip       = {ex_res_from_csr,
                               (ex_res_from_mem | ex_res_from_mul) & ex_valid,
                               ex_rf_we & ex_valid,
                               ex_rf_waddr,
-                              ex_res_from_div ? ex_div_result : ex_alu_result};
+                              ex_final_result};
     
     //ALE exception
     assign ex_excp_ale     = ex_valid & ((ex_inst_ld_h | ex_inst_ld_hu | ex_inst_st_h) & ex_alu_result[0] |
@@ -180,7 +196,7 @@ module EX_Stage(
 
     //data sram interface
     assign data_sram_en    = (ex_inst_ld_b || ex_inst_ld_bu || ex_inst_ld_h || ex_inst_ld_hu || ex_inst_ld_w || (|ex_mem_we)) 
-                              & ~mem_to_exe_ex & ~ex_flush & ~ex_excp_ale;
+                              & ~mem_to_ex_excep & ~ex_flush & ~ex_excp_ale;
     assign data_sram_we    = ex_mem_we;
     assign data_sram_addr  = {ex_alu_result[31:2], 2'b0};
     assign data_sram_wdata = (ex_inst_st_b)? {4{ex_rkd_value[ 7:0]}} :

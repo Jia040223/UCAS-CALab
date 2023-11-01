@@ -57,6 +57,10 @@ module ID_Stage(
     wire [ 3:0] op_25_22;
     wire [ 1:0] op_21_20;
     wire [ 4:0] op_19_15;
+    wire [ 2:0] op_12_10;
+    wire [ 4:0] op_09_05;
+    wire [ 1:0] op_14_13;
+
     wire [ 4:0] rd;
     wire [ 4:0] rj;
     wire [ 4:0] rk;
@@ -69,6 +73,9 @@ module ID_Stage(
     wire [15:0] op_25_22_d;
     wire [ 3:0] op_21_20_d;
     wire [31:0] op_19_15_d;
+    wire [7:0]  op_12_10_d;
+    wire [31:0] op_09_05_d;
+    wire [ 3:0] op_14_13_d;
 
     wire        need_ui5;
     wire        need_ui12;
@@ -159,6 +166,9 @@ module ID_Stage(
     assign op_25_22  = inst[25:22];
     assign op_21_20  = inst[21:20];
     assign op_19_15  = inst[19:15];
+    assign op_12_10  = inst[12:10];
+    assign op_09_05  = inst[ 9: 5];
+    assign op_14_13  = inst[14:13];
 
     assign rd   = inst[ 4: 0];
     assign rj   = inst[ 9: 5];
@@ -173,6 +183,9 @@ module ID_Stage(
     decoder_4_16 u_dec1(.in(op_25_22 ), .out(op_25_22_d ));
     decoder_2_4  u_dec2(.in(op_21_20 ), .out(op_21_20_d ));
     decoder_5_32 u_dec3(.in(op_19_15 ), .out(op_19_15_d ));
+    decoder_3_8  u_dec5(.in(op_12_10 ), .out(op_12_10_d ));
+    decoder_5_32 u_dec6(.in(op_09_05 ), .out(op_09_05_d ));
+    decoder_2_4  u_dec4(.in(op_14_13 ), .out(op_14_13_d ));
    
     //inst_calculate_register
     wire inst_add_w  = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h00];
@@ -245,6 +258,7 @@ module ID_Stage(
     wire inst_bltu   = op_31_26_d[6'h1a];
     wire inst_bgeu   = op_31_26_d[6'h1b];
 
+
     wire type_branch = inst_jirl | inst_b | inst_bl | inst_beq | inst_bne | inst_blt | inst_bge |
                        inst_bltu | inst_bgeu;
 
@@ -252,7 +266,11 @@ module ID_Stage(
     wire inst_lu12i_w = op_31_26_d[6'h05] & ~inst[25];
     wire inst_pcaddul2i = op_31_26_d[6'h07] & ~inst[25];
 
-    wire type_others  = inst_lu12i_w | inst_pcaddul2i;
+    wire inst_rdcntid = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h0] & op_19_15_d[5'h0] & op_14_13_d[2'h3] & op_12_10_d[3'h0] & (rd == 5'b0);
+    wire inst_rdcntvl = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h0] & op_19_15_d[5'h0] & op_14_13_d[2'h3] & op_12_10_d[3'h0] & op_09_05_d[5'h0];
+    wire inst_rdcntvh = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h0] & op_19_15_d[5'h0] & op_14_13_d[2'h3] & op_12_10_d[3'h1] & op_09_05_d[5'h0];
+
+    wire type_others  = inst_lu12i_w | inst_pcaddul2i | inst_rdcntid | inst_rdcntvl | inst_rdcntvh;
 
     wire inst_break   = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h14];
     wire inst_syscall = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h16];
@@ -437,9 +455,10 @@ module ID_Stage(
                             inst_st_b, inst_st_h, inst_st_w,
                             id_rkd_value,
                             inst_ld_b, inst_ld_bu, inst_ld_h, inst_ld_hu, inst_ld_w,
+                            inst_rdcntvl, inst_rdcntvh, inst_rdcntid
                             res_from_mul, mul_signed, mul_h, res_from_div, div_signed, div_r};
 
-    wire        id_res_from_csr = inst_csrrd | inst_csrwr | inst_csrxchg;
+    wire        id_res_from_csr = inst_csrrd | inst_csrwr | inst_csrxchg | inst_rdcntid;
     wire [13:0] id_csr_num      = inst_ertn ? `CSR_ERA : 
                                   inst_syscall ? `CSR_EENTRY : inst[23:10];
     wire        id_csr_we       = inst_csrwr | inst_csrxchg;

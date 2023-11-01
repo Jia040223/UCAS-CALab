@@ -58,7 +58,7 @@ module mycpu_top(
     wire ex_flush;
     wire mem_flush;
     wire wb_flush;
-    wire mem_to_exe_ex;
+    wire mem_to_ex_excep;
 
     wire has_int;
     
@@ -135,7 +135,7 @@ module mycpu_top(
         
         .ex_rf_zip(ex_rf_zip),
         .ex_flush(wb_flush),
-        .mem_to_exe_ex(mem_to_exe_ex)
+        .mem_to_ex_excep(mem_to_ex_excep)
      );
 
     MEM_Stage my_MEM_Stage
@@ -158,7 +158,7 @@ module mycpu_top(
         
         .mem_rf_zip(mem_rf_zip),
         .mem_flush(wb_flush),
-        .mem_to_exe_ex(mem_to_exe_ex)
+        .mem_to_ex_excep(mem_to_ex_excep)
     ) ;
 
     WB_Stage my_WB_Stage

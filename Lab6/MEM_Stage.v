@@ -21,7 +21,7 @@ module MEM_Stage(
     output wire [38:0] mem_rf_zip,
 
     input  wire        mem_flush,
-    output wire        mem_to_exe_ex
+    output wire        mem_to_ex_excep  
 );
     reg  [`EX_TO_MEM_DATA_WIDTH-1:0] ex_to_mem_data_reg;
     reg  [`EX_TO_MEM_EXCEP_WIDTH-1:0] ex_to_mem_excep_reg;
@@ -33,7 +33,7 @@ module MEM_Stage(
     wire [31:0] mem_rf_wdata;
     wire        mem_rf_we;
     wire [ 4:0] mem_rf_waddr;
-    wire [31:0] mem_alu_result;
+    wire [31:0] mem_final_result;
 
     wire        res_from_mem;
     wire        mem_inst_ld_b;
@@ -85,9 +85,9 @@ module MEM_Stage(
     
     assign {mem_rf_we, mem_rf_waddr,
             mem_pc,
-            mem_alu_result,
+            mem_final_result,
             mem_inst_ld_b, mem_inst_ld_bu, mem_inst_ld_h, mem_inst_ld_hu, mem_inst_ld_w,
-            res_from_mul, mul_h, res_from_div, div_result
+            res_from_mul, mul_h, res_from_div
             } = ex_to_mem_data_reg;
 
     assign {mem_res_from_csr, mem_csr_num, mem_csr_we, mem_csr_wmask, mem_csr_wvalue, 
@@ -96,7 +96,7 @@ module MEM_Stage(
             } = ex_to_mem_excep_reg;
     
 //mem and wb state interface
-    assign shift_rdata   = {24'b0, data_sram_rdata} >> {mem_alu_result[1:0], 3'b0};
+    assign shift_rdata   = {24'b0, data_sram_rdata} >> {mem_final_result[1:0], 3'b0};
 
     assign mem_result[ 7: 0]   =  shift_rdata[ 7: 0];
 
@@ -113,7 +113,7 @@ module MEM_Stage(
                               {32{mul_h}} & mul_result[63:32] |
                               {32{~mul_h & res_from_mul}} & mul_result[31:0] |
                               {32{res_from_div}} & div_result |
-                              {32{~res_from_div & ~res_from_mul & ~res_from_mem}} & mem_alu_result;
+                              {32{~res_from_div & ~res_from_mul & ~res_from_mem}} & mem_final_result;
     
     assign mem_to_wb_data = {mem_rf_we,
                              mem_rf_waddr,
@@ -127,9 +127,9 @@ module MEM_Stage(
 
     assign mem_to_wb_excep = {mem_res_from_csr, mem_csr_num, mem_csr_we, mem_csr_wmask, mem_csr_wvalue, 
                               mem_ertn_flush, mem_has_int, mem_excp_adef, mem_excp_syscall, mem_excp_break,
-                              mem_excp_ale, mem_alu_result, mem_excp_ine};
+                              mem_excp_ale, mem_final_result, mem_excp_ine};
     assign mem_excep = mem_has_int | mem_excp_adef | mem_excp_syscall | mem_excp_break | mem_excp_ale | mem_excp_ine;
-    assign mem_to_exe_ex =  (mem_ertn_flush | mem_excep) & mem_valid;
+    assign mem_to_ex_excep =  (mem_ertn_flush | mem_excep) & mem_valid;
   
 endmodule
 
