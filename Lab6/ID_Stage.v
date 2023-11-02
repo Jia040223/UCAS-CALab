@@ -39,7 +39,6 @@ module ID_Stage(
     wire [31:0] alu_src2;
     wire        src1_is_pc;
     wire        src2_is_imm;
-    wire [ 3:0] res_from_mem;
     wire        dst_is_r1;
     wire        gr_we;
     wire        src_reg_is_rd;
@@ -255,9 +254,8 @@ module ID_Stage(
     wire inst_bltu   = op_31_26_d[6'h1a];
     wire inst_bgeu   = op_31_26_d[6'h1b];
 
-
-    wire type_branch = inst_jirl | inst_b | inst_bl | inst_beq | inst_bne | inst_blt | inst_bge |
-                       inst_bltu | inst_bgeu;
+    wire type_branch_uncond = inst_jirl | inst_b | inst_bl;
+    wire type_branch_cond = inst_beq | inst_bne | inst_blt | inst_bge | inst_bltu | inst_bgeu;
 
     //inst_u12i
     wire inst_lu12i_w = op_31_26_d[6'h05] & ~inst[25];
@@ -299,12 +297,12 @@ module ID_Stage(
                     || inst_bl
                     || inst_b
                     ) && id_valid;
-    assign br_target = (inst_beq | inst_bne | inst_blt | inst_bge | inst_bltu | inst_bgeu | inst_bl | inst_b) ? (id_pc + br_offs) :
-                                                                                                /*inst_jirl*/ (rj_value + jirl_offs);
+    assign br_target = (type_branch_cond | inst_bl | inst_b) ? (id_pc + br_offs) :
+                                                /*inst_jirl*/ (rj_value + jirl_offs);
     
     assign alu_op[ 0] = inst_add_w | inst_addi_w | 
-                        inst_ld_b | inst_ld_h | inst_ld_w | inst_ld_bu | inst_ld_hu | 
-                        inst_st_b | inst_st_h | inst_st_w |
+                        type_load | 
+                        type_store |
                         | inst_jirl | inst_bl | inst_pcaddul2i;
     assign alu_op[ 1] = inst_sub_w;
     assign alu_op[ 2] = inst_slt | inst_slti;
@@ -321,10 +319,10 @@ module ID_Stage(
     assign need_ui5   =  inst_slli_w | inst_srli_w | inst_srai_w;
     assign need_ui12  =  inst_andi | inst_ori | inst_xori;
     assign need_si12  =  inst_addi_w | 
-                         inst_ld_b | inst_ld_h | inst_ld_w | inst_ld_bu | inst_ld_hu | 
-                         inst_st_b | inst_st_h | inst_st_w |
+                         type_load | 
+                         type_store |
                          inst_slti | inst_sltui;
-    assign need_si16  =  inst_jirl | inst_beq | inst_bne | inst_blt | inst_bge | inst_bltu | inst_bgeu;
+    assign need_si16  =  inst_jirl | type_branch_cond;
     assign need_si20  =  inst_lu12i_w | inst_pcaddul2i;
     assign need_si26  =  inst_b | inst_bl;
     assign src2_is_4  =  inst_jirl | inst_bl;
@@ -339,38 +337,26 @@ module ID_Stage(
 
     assign jirl_offs = {{14{i16[15]}}, i16[15:0], 2'b0};
 
-    assign src_reg_is_rd = inst_beq | inst_bne | inst_blt | inst_bge | inst_bltu | inst_bgeu |
-                           inst_st_b | inst_st_h | inst_st_w | inst_csrwr | inst_csrxchg;
+    assign src_reg_is_rd = type_branch_cond |
+                           type_store | inst_csrwr | inst_csrxchg;
 
     assign src1_is_pc    = inst_jirl | inst_bl | inst_pcaddul2i;
 
-    assign src2_is_imm   = inst_slli_w | inst_srli_w | inst_srai_w |
-                           inst_addi_w |
-                           inst_ld_b | inst_ld_h | inst_ld_w | inst_ld_bu | inst_ld_hu | 
-                           inst_st_b | inst_st_h | inst_st_w |
+    assign src2_is_imm   = type_calc_i |
+                           type_load | 
+                           type_store |
                            inst_lu12i_w|
                            inst_jirl |
                            inst_bl |
-                           inst_pcaddul2i|
-                           inst_andi |
-                           inst_ori |
-                           inst_xori |
-                           inst_slti |
-                           inst_sltui;
+                           inst_pcaddul2i;
 
     assign alu_src1 = src1_is_pc  ? id_pc[31:0] : rj_value;
     assign alu_src2 = src2_is_imm ? imm : rkd_value;
 
-    assign res_from_mem  = {3'b0, inst_ld_b} |
-                           {3'b0, inst_ld_bu} |
-                           {2'b0, {2{inst_ld_h}}} |
-                           {2'b0, {2{inst_ld_hu}}} |
-                           {4{inst_ld_w}};
-    assign load_unsigned = inst_ld_bu || inst_ld_hu;
-
     assign dst_is_r1     = inst_bl;
-    assign gr_we         = ~(inst_st_b | inst_st_h | inst_st_w | 
-                             inst_beq | inst_bne | inst_b | inst_blt | inst_bge | inst_bltu | inst_bgeu |
+    assign gr_we         = ~(type_store | 
+                             type_branch_cond |
+                             inst_b |
                              inst_syscall | inst_ertn);
     assign dest          = dst_is_r1 ? 5'd1 : inst_rdcntid ? rj : rd;
 
@@ -402,18 +388,17 @@ module ID_Stage(
     assign conflict_r1_ex  = (|rf_raddr1) & (rf_raddr1 == ex_rf_waddr)  & ex_rf_we;
     assign conflict_r2_ex  = (|rf_raddr2) & (rf_raddr2 == ex_rf_waddr)  & ex_rf_we;
     
-    assign need_r1 = inst_add_w | inst_sub_w | inst_slt | inst_addi_w | inst_sltu | inst_nor | inst_and | inst_or | inst_xor | 
-                     inst_srli_w | inst_slli_w | inst_srai_w | inst_sll_w | inst_srl_w | inst_sra_w |
-                     inst_slti | inst_sltui | inst_andi | inst_ori |inst_xori |
-                     inst_mul_w | inst_mulh_w | inst_mulh_wu | inst_div_w | inst_mod_w | inst_div_wu | inst_mod_wu |
-                     inst_ld_b | inst_ld_h | inst_ld_w | inst_ld_bu | inst_ld_hu |
-                     inst_st_b | inst_st_h | inst_st_w |
-                     inst_beq | inst_bne | inst_blt | inst_bge | inst_bltu | inst_bgeu | inst_csrxchg;
+    assign need_r1 = type_calc |
+                     type_calc_i |
+                     type_load |
+                     type_store |
+                     type_branch_cond | 
+                     inst_csrxchg;
                     
-    assign need_r2 = inst_add_w | inst_sub_w | inst_slt | inst_sltu | inst_and | inst_or | inst_nor | inst_xor | 
-                     inst_st_b | inst_st_h | inst_st_w | inst_sll_w | inst_srl_w | inst_sra_w | 
-                     inst_mul_w | inst_mulh_w | inst_mulh_wu | inst_div_w | inst_mod_w | inst_div_wu | inst_mod_wu |
-                     inst_beq | inst_bne | inst_blt | inst_bge | inst_bltu | inst_bgeu | inst_csrwr | inst_csrxchg;
+    assign need_r2 = type_calc | 
+                     type_store | 
+                     type_branch_cond | 
+                     inst_csrwr | inst_csrxchg;
 
     regfile u_regfile(
     .clk    (clk      ),
@@ -435,7 +420,6 @@ module ID_Stage(
                         conflict_r2_wb  ? wb_rf_wdata : rf_rdata2; 
 
     assign id_rkd_value = rkd_value;
-    assign id_res_from_mem = res_from_mem;
 
     assign res_from_mul = inst_mul_w | inst_mulh_w | inst_mulh_wu;
     assign res_from_div = inst_div_w | inst_div_wu | inst_mod_w | inst_mod_wu;
@@ -465,7 +449,7 @@ module ID_Stage(
     wire [31:0] id_csr_wvalue   = rkd_value;
     wire        id_ertn_flush   = inst_ertn;
     wire        id_excp_adef    = if_excp_adef;
-    wire        id_excp_ine     = ~(type_calc | type_calc_i | type_branch | type_load | type_store | type_excp | type_others) & id_valid;
+    wire        id_excp_ine     = ~(type_calc | type_calc_i | type_branch_uncond | type_branch_cond | type_load | type_store | type_excp | type_others) & id_valid;
 
 //    wire [ 5:0] id_csr_ecode = (inst_syscall)? `ECODE_SYS : if_csr_ecode;
 //    wire [ 8:0] id_csr_esubcode = if_csr_esubcode;
