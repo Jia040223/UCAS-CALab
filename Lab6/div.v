@@ -1,5 +1,6 @@
 module div(
     input  wire         div_clk,
+    input  wire         div_flush,
     input  wire         resetn,
     input  wire         div,
     input  wire         div_signed,
@@ -28,7 +29,7 @@ module div(
     wire [32:0] final_r;
 
     always @(posedge div_clk) begin
-        if (~resetn)
+        if (~resetn | div_flush)
             counter <= 6'b0;
         else if (div) begin
             if (complete)
@@ -41,13 +42,13 @@ module div(
     assign start = counter == 6'b0;
     assign complete = counter == 6'd33;
 
-    //确定符号，计算被除数和除数的绝对值
+    //确定符号，计算被除数和除数的绝对�?
     assign s_sign = div_signed & (x[31] ^ y[31]);
     assign r_sign = div_signed & x[31];
     assign abs_x = (div_signed & x[31]) ? (~x + 1'b1) : x;
     assign abs_y = (div_signed & y[31]) ? (~y + 1'b1) : y;
 
-    //迭代运算得到商和余数的绝对值
+    //迭代运算得到商和余数的绝对�??
     //准备A和B
     always @(posedge div_clk) begin
         if (~resetn)
@@ -88,7 +89,7 @@ module div(
     assign final_r = test_div_r[32] ? r_reg : test_div_r;
 
 
-    //调整最终的商和余数
+    //调整�?终的商和余数
     assign r = div_signed & r_sign ? (~r_reg + 1'b1) : r_reg;
     assign s = div_signed & s_sign ? (~s_reg + 1'b1) : s_reg;
     

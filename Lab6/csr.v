@@ -192,8 +192,8 @@ module csr(
         if(~resetn)
             csr_ecfg_lie <= 13'b0;
         else if(csr_we && csr_num == `CSR_ECFG)
-            csr_ecfg_lie <= csr_wmask[`CSR_ECFG_LIE] & csr_wvalue[`CSR_ECFG_LIE]
-                        | ~csr_wmask[`CSR_ECFG_LIE] & csr_ecfg_lie;
+            csr_ecfg_lie <= csr_wmask[`CSR_ECFG_LIE] & 13'h1bff & csr_wvalue[`CSR_ECFG_LIE]
+                        | ~csr_wmask[`CSR_ECFG_LIE] & 13'h1bff & csr_ecfg_lie;
     end
 
     // BADV

@@ -103,7 +103,7 @@ module WB_Stage(
 //id and wb state interface
     assign wb_rf_wdata = (wb_res_from_csr)? csr_rvalue : wb_rf_result;
 
-    assign wb_rf_zip = {wb_rf_we & wb_valid,
+    assign wb_rf_zip = {wb_rf_we & wb_valid & ~wb_excep,
                         wb_rf_waddr,
                         wb_rf_wdata};
                         
@@ -144,7 +144,7 @@ module WB_Stage(
 //trace debug interface
     assign debug_wb_pc = wb_pc;
     assign debug_wb_rf_wdata = wb_rf_wdata;
-    assign debug_wb_rf_we = {4{wb_rf_we & wb_valid}};
+    assign debug_wb_rf_we = {4{wb_rf_we & wb_valid & ~wb_excep}};
     assign debug_wb_rf_wnum = wb_rf_waddr;
     
 endmodule

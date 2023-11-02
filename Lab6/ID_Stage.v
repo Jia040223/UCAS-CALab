@@ -372,7 +372,7 @@ module ID_Stage(
     assign gr_we         = ~(inst_st_b | inst_st_h | inst_st_w | 
                              inst_beq | inst_bne | inst_b | inst_blt | inst_bge | inst_bltu | inst_bgeu |
                              inst_syscall | inst_ertn);
-    assign dest          = dst_is_r1 ? 5'd1 : rd;
+    assign dest          = dst_is_r1 ? 5'd1 : inst_rdcntid ? rj : rd;
 
 //regfile control
     assign rf_raddr1 = rj;
@@ -457,7 +457,9 @@ module ID_Stage(
 
     wire        id_res_from_csr = inst_csrrd | inst_csrwr | inst_csrxchg | inst_rdcntid;
     wire [13:0] id_csr_num      = inst_ertn ? `CSR_ERA : 
-                                  inst_syscall ? `CSR_EENTRY : inst[23:10];
+                                  inst_syscall ? `CSR_EENTRY :
+                                  inst_rdcntid ? `CSR_TID : 
+                                  inst[23:10];
     wire        id_csr_we       = inst_csrwr | inst_csrxchg;
     wire [31:0] id_csr_wmask    = (inst_csrxchg)? rj_value : 32'hffffffff;
     wire [31:0] id_csr_wvalue   = rkd_value;
