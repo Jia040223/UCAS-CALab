@@ -138,8 +138,7 @@ module EX_Stage(
 
     div u_div(
         .div_clk    (clk          ),
-        .div_flush  (ex_flush     ),
-        .resetn     (resetn       ),
+        .resetn     (resetn & ~ex_flush),
         .div        (ex_res_from_div),
         .div_signed (ex_div_signed),
         .x          (ex_alu_src1  ),
