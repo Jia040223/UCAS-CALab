@@ -1,6 +1,5 @@
 module div(
     input  wire         div_clk,
-    input  wire         div_flush,
     input  wire         resetn,
     input  wire         div,
     input  wire         div_signed,
@@ -29,7 +28,7 @@ module div(
     wire [32:0] final_r;
 
     always @(posedge div_clk) begin
-        if (~resetn | div_flush)
+        if (~resetn)
             counter <= 6'b0;
         else if (div) begin
             if (complete)
