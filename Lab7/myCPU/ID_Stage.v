@@ -6,6 +6,7 @@ module ID_Stage(
     // if and id state interface
     output wire        id_allowin,
     output wire        br_taken,
+    output wire        br_stall,
     output wire [31:0] br_target,
     input  wire        if_to_id_valid,
     input  wire [`IF_TO_ID_DATA_WIDTH-1:0] if_to_id_data,
@@ -297,6 +298,7 @@ module ID_Stage(
                     || inst_bl
                     || inst_b
                     ) && id_valid;
+    assign br_stall = (type_branch_cond | type_branch_uncond) & conflict;
     assign br_target = (type_branch_cond | inst_bl | inst_b) ? (id_pc + br_offs) :
                                                 /*inst_jirl*/ (rj_value + jirl_offs);
     

@@ -109,6 +109,7 @@ module MEM_Stage(
     assign mem_result[31:16]   =  {16{mem_inst_ld_b & shift_rdata[7]}} |
                                   {16{mem_inst_ld_h & shift_rdata[15]}} |
                                   {16{mem_inst_ld_w}} & shift_rdata[31:16];
+    */
 
     assign res_from_mem = mem_inst_ld_b || mem_inst_ld_bu || mem_inst_ld_h || mem_inst_ld_hu || mem_inst_ld_w;
 
@@ -116,7 +117,6 @@ module MEM_Stage(
                               {32{mul_h}} & mul_result[63:32] |
                               {32{~mul_h & res_from_mul}} & mul_result[31:0] |
                               {32{~res_from_mul & ~res_from_mem}} & mem_final_result;
-    */
 
     assign mem_to_wb_data = {mem_rf_we,
                              mem_rf_waddr,

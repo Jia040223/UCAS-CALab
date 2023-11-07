@@ -87,7 +87,6 @@ module WB_Stage(
     assign wb_excep = wb_excp_adef | wb_excp_syscall | wb_excp_break | wb_excp_ale | wb_excp_ine | wb_has_int;
     
     assign {wb_res_from_csr, wb_csr_num, wb_csr_we, wb_csr_wmask, wb_csr_wvalue, 
-//            wb_ertn_flush, wb_excep, wb_csr_ecode, wb_csr_esubcode
             wb_ertn_flush, wb_has_int, wb_excp_adef, wb_excp_syscall, wb_excp_break,
             wb_excp_ale, wb_vaddr, wb_excp_ine
             } = mem_to_wb_excep_reg;

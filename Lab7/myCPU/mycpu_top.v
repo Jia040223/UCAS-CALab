@@ -59,6 +59,7 @@ module mycpu_top(
     wire [39:0] ex_rf_zip;
 
     wire        br_taken;
+    wire        br_stall;
     wire [31:0] br_target;
     
     wire if_flush;
@@ -89,6 +90,7 @@ module mycpu_top(
 
         .id_allowin(id_allowin),
         .br_taken(br_taken),
+        .br_stall(br_stall),
         .br_target(br_target),
         
         .if_to_id_valid(if_to_id_valid),
@@ -106,6 +108,7 @@ module mycpu_top(
 
         .id_allowin(id_allowin),
         .br_taken(br_taken),
+        .br_stall(br_stall),
         .br_target(br_target),
         .if_to_id_valid(if_to_id_valid),
         .if_to_id_data(if_to_id_data),
@@ -141,7 +144,7 @@ module mycpu_top(
         .mul_result(mul_result),
    
         .data_sram_req(data_sram_req),
-        .data_sram_wr(inst_sram_wr),
+        .data_sram_wr(data_sram_wr),
         .data_sram_size(data_sram_size),
         .data_sram_wstrb(data_sram_wstrb),
         .data_sram_addr(data_sram_addr),
