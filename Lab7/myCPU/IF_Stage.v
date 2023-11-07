@@ -4,10 +4,14 @@ module IF_Stage(
     input  wire        clk,
     input  wire        resetn,
     // inst sram interface
-    output wire        inst_sram_en,
-    output wire [ 3:0] inst_sram_we,
+    output wire        inst_sram_req,
+    output wire        inst_sram_wr,
+    output wire [ 1:0] inst_sram_size,
+    output wire [ 3:0] inst_sram_wstrb,
     output wire [31:0] inst_sram_addr,
     output wire [31:0] inst_sram_wdata,
+    input  wire        inst_sram_addr_ok,
+    input  wire        inst_sram_data_ok,
     input  wire [31:0] inst_sram_rdata,
     // id to if stage signal
     input  wire        id_allowin,
@@ -39,7 +43,7 @@ module IF_Stage(
     wire        if_adef_excep;
     
 //IF statge control signal
-    assign if_ready_go      = 1'b1;
+    assign if_ready_go      = inst_sram_data_ok;
     assign if_allowin       = ~if_valid | if_ready_go & id_allowin | if_flush;     
     assign if_to_id_valid   = if_valid & if_ready_go & ~if_flush;
     assign to_if_valid      = resetn;
@@ -54,10 +58,12 @@ module IF_Stage(
     end
     
 //inst sram signal
-    assign inst_sram_en     = if_allowin & resetn;
-    assign inst_sram_we     = 4'b0;
-    assign inst_sram_addr   = nextpc;
-    assign inst_sram_wdata  = 32'b0;
+    assign inst_sram_req = if_allowin & resetn;
+    assign inst_sram_wr = 1'b0;
+    assign inst_sram_size = 2'b10;
+    assign inst_sram_wstrb = 4'b0;
+    assign inst_sram_addr = nextpc;
+    assign inst_sram_wdata = 32'b0;
 
 //pc relavant signals
     assign seq_pc           = if_pc + 3'h4; 

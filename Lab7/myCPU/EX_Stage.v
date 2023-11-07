@@ -18,10 +18,15 @@ module EX_Stage(
     output wire  [63:0] mul_result,
     
 // data sram interface
-    output wire        data_sram_en,
-    output wire [ 3:0] data_sram_we,
+    output wire        data_sram_req,
+    output wire        data_sram_wr,
+    output wire [ 1:0] data_sram_size,
+    output wire [ 3:0] data_sram_wstrb,
     output wire [31:0] data_sram_addr,
     output wire [31:0] data_sram_wdata,
+    input  wire        data_sram_addr_ok,
+    input  wire        data_sram_data_ok,
+    input  wire [31:0] data_sram_rdata,
 
     input  wire        ex_flush,
     input  wire        mem_to_ex_excep
@@ -41,7 +46,7 @@ module EX_Stage(
     wire [31:0] ex_alu_src2;
 
     wire [31:0] ex_alu_result; 
-    wire [ 3:0] ex_mem_we;
+    wire [ 3:0] ex_mem_strb;
     wire [31:0] ex_rkd_value;
 
     wire        ex_inst_st_b;
@@ -85,7 +90,7 @@ module EX_Stage(
     reg [63:0]  counter;
 
 //stage control signal
-    assign ex_ready_go      = ~ex_res_from_div | ex_div_complete;
+    assign ex_ready_go      = (data_sram_req & data_sram_data_ok) | (ex_res_from_div & ex_div_complete) | ~(data_sram_req | ex_res_from_div);
     assign ex_allowin       = ~ex_valid | ex_ready_go & mem_allowin | ex_flush;     
     assign ex_to_mem_valid  = ex_valid & ex_ready_go & ~ex_flush;
     always @(posedge clk) begin
@@ -155,7 +160,7 @@ module EX_Stage(
     wire st_addr10 = ex_alu_result[1:0] == 2'b10;
     wire st_addr11 = ex_alu_result[1:0] == 2'b11;
     
-    assign ex_mem_we = {4{ex_inst_st_b}} & {st_addr11, st_addr10, st_addr01, st_addr00} |
+    assign ex_mem_strb = {4{ex_inst_st_b}} & {st_addr11, st_addr10, st_addr01, st_addr00} |
                        {4{ex_inst_st_h}} & {{2{st_addr10}}, {2{st_addr00}}} |
                        {4{ex_inst_st_w}};
 
@@ -195,10 +200,12 @@ module EX_Stage(
                               ex_excp_ale, ex_excp_ine};
 
     //data sram interface
-    assign data_sram_en    = (ex_inst_ld_b || ex_inst_ld_bu || ex_inst_ld_h || ex_inst_ld_hu || ex_inst_ld_w || (|ex_mem_we)) 
-                              & ~mem_to_ex_excep & ~ex_flush & ~ex_excp_ale;
-    assign data_sram_we    = ex_mem_we;
-    assign data_sram_addr  = {ex_alu_result[31:2], 2'b0};
+    assign data_sram_req = (ex_inst_ld_b || ex_inst_ld_bu || ex_inst_ld_h || ex_inst_ld_hu || ex_inst_ld_w || (|ex_mem_strb)) 
+                             & ~mem_to_ex_excep & ~ex_flush & ~ex_excp_ale;
+    assign data_sram_wr = ex_inst_st_b | ex_inst_st_h | ex_inst_st_w;
+    assign data_sram_size = {ex_inst_ld_w, (ex_inst_ld_h | ex_inst_ld_hu)};
+    assign data_sram_wstrb = ex_mem_strb;
+    assign data_sram_addr = ex_alu_result;
     assign data_sram_wdata = (ex_inst_st_b)? {4{ex_rkd_value[ 7:0]}} :
                              (ex_inst_st_h)? {2{ex_rkd_value[15:0]}} :
                               ex_rkd_value;
