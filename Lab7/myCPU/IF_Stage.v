@@ -39,8 +39,6 @@ module IF_Stage(
     reg         if_valid;
     wire        if_allowin;
 
-    reg         preif_valid;
-    wire        preif_allowin;
     wire        preif_ready_go;
     wire        to_if_valid;
 
@@ -50,9 +48,17 @@ module IF_Stage(
     wire        wb_csr_ex_valid;
     wire        if_adef_excep;
     
+    
+    reg [31:0] csr_rvalue_reg;
+    reg [31:0] ex_entry_reg;
+    reg [31:0] br_target_reg;
+
+    reg wb_ertn_flush_valid_reg;
+    reg wb_csr_ex_valid_reg;
+    reg br_taken_reg;
+
 //IF statge control signal
-    assign preif_allowin    = ~preif_valid | preif_ready_go & if_allowin | if_flush;
-    assign preif_ready_go   = inst_sram_req & inst_sram_addr_ok | preif_valid;
+    assign preif_ready_go   = inst_sram_req & inst_sram_addr_ok;
     assign to_if_valid      = preif_ready_go & if_allowin & ~if_flush;
 
     assign if_ready_go      = inst_sram_data_ok | if_inst_reg_valid;
@@ -61,37 +67,71 @@ module IF_Stage(
     
     always @(posedge clk) begin
         if(~resetn)
-            preif_valid <= 0; 
-        else if(preif_allowin)
-            preif_valid <= inst_sram_addr_ok;
-        else if(br_taken)
-            preif_valid <= 0;    
-    end
-    
-    always @(posedge clk) begin
-        if(~resetn)
             if_valid <= 0; 
         else if(if_allowin)
-            if_valid <= to_if_valid;// ��reset��������һ��ʱ�������زſ�ʼȡָ
-        else if(br_taken)
+            if_valid <= to_if_valid;            // ��reset��������һ��ʱ�������زſ�ʼȡָ
+        else if(br_taken | br_taken_reg)
             if_valid <= 0;
     end
     
 //inst sram signal
-    assign inst_sram_req = preif_allowin & if_allowin & resetn & ~br_stall;
+    assign inst_sram_req = if_allowin & resetn & ~br_stall;
     assign inst_sram_wr = 1'b0;
     assign inst_sram_size = 2'b10;
     assign inst_sram_wstrb = 4'b0;
     assign inst_sram_addr = nextpc;
     assign inst_sram_wdata = 32'b0;
 
-//pc relavant signals
+//pc relevant signals
     assign seq_pc           = (to_if_valid) ? (if_pc + 3'h4) : if_pc; 
-    assign nextpc           =   wb_ertn_flush_valid ? csr_rvalue  //era
+    assign nextpc           =   wb_ertn_flush_valid_reg ? csr_rvalue_reg
+                              : wb_ertn_flush_valid ? csr_rvalue  //era
+                              : wb_csr_ex_valid_reg ? ex_entry_reg
                               : wb_csr_ex_valid ? ex_entry
+                              : br_taken_reg ? br_target_reg
                               : br_taken ? br_target 
                               : seq_pc; 
     assign if_adef_excep    = if_valid & (|nextpc[1:0]);
+
+// store pc relevant pc if preif_ready_go isn't high and next_pc shouldnt'be pc + 4
+    always @(posedge clk) begin
+        if (~resetn) begin
+            csr_rvalue_reg <= 32'b0;
+            wb_ertn_flush_valid_reg <= 1'b0;
+        end
+        else if(wb_ertn_flush_valid & ~preif_ready_go) begin
+            csr_rvalue_reg <= csr_rvalue;
+            wb_ertn_flush_valid_reg <= 1'b1;
+        end
+        else if (preif_ready_go)
+            wb_ertn_flush_valid_reg <= 1'b0;
+    end
+
+    always @(posedge clk) begin
+        if (~resetn) begin
+            ex_entry_reg <= 32'b0;
+            wb_csr_ex_valid_reg <= 1'b0;
+        end
+        else if(wb_csr_ex_valid & ~preif_ready_go) begin
+            ex_entry_reg <= ex_entry;
+            wb_csr_ex_valid_reg <= 1'b1;
+        end
+        else if (preif_ready_go)
+            wb_csr_ex_valid_reg <= 1'b0;
+    end
+
+    always @(posedge clk) begin
+        if (~resetn) begin
+            br_target_reg <= 32'b0;
+            br_taken_reg <= 1'b0;
+        end
+        else if(br_taken & ~preif_ready_go) begin
+            br_target_reg <= br_target;
+            br_taken_reg <= 1'b1;
+        end
+        else if (preif_ready_go)
+            br_taken_reg <= 1'b0;
+    end
 
 //if to id stage signal
     always @(posedge clk) begin
