@@ -39,6 +39,7 @@ module IF_Stage(
     reg         if_valid;
     wire        if_allowin;
 
+    reg         preif_valid;
     wire        preif_allowin;
     wire        preif_ready_go;
     wire        to_if_valid;
@@ -50,26 +51,34 @@ module IF_Stage(
     wire        if_adef_excep;
     
 //IF statge control signal
-    assign preif_allowin    = 1'b1;
-    assign preif_ready_go   = inst_sram_req & inst_sram_addr_ok;
+    assign preif_allowin    = ~preif_valid | preif_ready_go & if_allowin | if_flush;
+    assign preif_ready_go   = inst_sram_req & inst_sram_addr_ok | preif_valid;
     assign to_if_valid      = preif_ready_go & if_allowin & ~if_flush;
 
-    assign if_ready_go      = inst_sram_data_ok;
+    assign if_ready_go      = inst_sram_data_ok | if_inst_reg_valid;
     assign if_allowin       = ~if_valid | if_ready_go & id_allowin | if_flush;     
     assign if_to_id_valid   = if_valid & if_ready_go & ~if_flush;
     
+    always @(posedge clk) begin
+        if(~resetn)
+            preif_valid <= 0; 
+        else if(preif_allowin)
+            preif_valid <= inst_sram_addr_ok;
+        else if(br_taken)
+            preif_valid <= 0;    
+    end
     
     always @(posedge clk) begin
         if(~resetn)
             if_valid <= 0; 
-        else if(to_if_valid)
-            if_valid <= inst_sram_data_ok;// ��reset��������һ��ʱ�������زſ�ʼȡָ
+        else if(if_allowin)
+            if_valid <= to_if_valid;// ��reset��������һ��ʱ�������زſ�ʼȡָ
         else if(br_taken)
             if_valid <= 0;
     end
     
 //inst sram signal
-    assign inst_sram_req = if_allowin & resetn & ~br_stall;
+    assign inst_sram_req = preif_allowin & if_allowin & resetn & ~br_stall;
     assign inst_sram_wr = 1'b0;
     assign inst_sram_size = 2'b10;
     assign inst_sram_wstrb = 4'b0;
@@ -77,7 +86,7 @@ module IF_Stage(
     assign inst_sram_wdata = 32'b0;
 
 //pc relavant signals
-    assign seq_pc           = (if_to_id_valid) ? (if_pc + 3'h4) : if_pc; 
+    assign seq_pc           = (to_if_valid) ? (if_pc + 3'h4) : if_pc; 
     assign nextpc           =   wb_ertn_flush_valid ? csr_rvalue  //era
                               : wb_csr_ex_valid ? ex_entry
                               : br_taken ? br_target 
@@ -87,7 +96,7 @@ module IF_Stage(
 //if to id stage signal
     always @(posedge clk) begin
         if(~resetn)
-            if_pc <= 32'h1C00_0000;
+            if_pc <= 32'h1BFF_FFFC;
         else if(if_allowin)
             if_pc <= nextpc;
     end
@@ -95,7 +104,7 @@ module IF_Stage(
     always @(posedge clk) begin
         if(~resetn)
             if_inst_reg <= 32'b0;
-        else if(data_sram_data_ok)
+        else if(inst_sram_data_ok)
             if_inst_reg <= if_inst;
     end
 
@@ -112,8 +121,7 @@ module IF_Stage(
     assign if_to_id_inst    = (if_inst_reg_valid)? if_inst_reg : if_inst;
     
     assign if_to_id_data    = {if_to_id_inst,     // 32-63
-                               if_pc};      // 0-31
-                               
+                               if_pc};      // 0-31   
 
     assign if_to_id_excep = if_adef_excep;
 

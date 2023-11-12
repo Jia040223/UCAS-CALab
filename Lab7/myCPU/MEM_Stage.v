@@ -15,6 +15,7 @@ module MEM_Stage(
     output wire [`MEM_TO_WB_EXCEP_WIDTH-1:0] mem_to_wb_excep,
     output wire        mem_to_wb_valid,  
    
+    input  wire        data_sram_data_ok,
     input  wire [31:0] data_sram_rdata,
     
     input  wire [63:0] mul_result,
@@ -35,6 +36,7 @@ module MEM_Stage(
     wire [ 4:0] mem_rf_waddr;
     wire [31:0] mem_final_result;
 
+    wire        mem_data_sram_req;
     wire        res_from_mem;
     wire        mem_inst_ld_b;
     wire        mem_inst_ld_bu;
@@ -55,8 +57,6 @@ module MEM_Stage(
     wire        mem_ertn_flush;
     wire        mem_excep;
     wire        mem_has_int;
-//    wire [ 5:0] mem_csr_ecode;
-//    wire [ 8:0] mem_csr_esubcode;
     wire        mem_excp_adef;
     wire        mem_excp_syscall;
     wire        mem_excp_break;
@@ -64,7 +64,7 @@ module MEM_Stage(
     wire        mem_excp_ine;
 
 //stage control signal
-    assign mem_ready_go     = 1'b1;
+    assign mem_ready_go     = mem_data_sram_req & data_sram_data_ok | ~mem_data_sram_req;
     assign mem_allowin      = ~mem_valid | mem_ready_go & wb_allowin | mem_flush;     
     assign mem_to_wb_valid  = mem_valid & mem_ready_go & ~mem_flush;
 
@@ -87,6 +87,7 @@ module MEM_Stage(
             mem_pc,
             mem_final_result,
             mem_inst_ld_b, mem_inst_ld_bu, mem_inst_ld_h, mem_inst_ld_hu, mem_inst_ld_w,
+            mem_data_sram_req,
             res_from_mul, mul_h, res_from_div
             } = ex_to_mem_data_reg;
 
@@ -97,19 +98,6 @@ module MEM_Stage(
     
 //mem and wb state interface
     assign mem_result = data_sram_rdata;
-
-    /*
-    assign shift_rdata   = {24'b0, data_sram_rdata} >> {mem_final_result[1:0], 3'b0};
-
-    assign mem_result[ 7: 0]   =  shift_rdata[ 7: 0];
-
-    assign mem_result[15: 8]   =  {8{mem_inst_ld_b & shift_rdata[7]}} |
-                                  {8{~mem_inst_ld_b & ~mem_inst_ld_bu}} & shift_rdata[15: 8];
-
-    assign mem_result[31:16]   =  {16{mem_inst_ld_b & shift_rdata[7]}} |
-                                  {16{mem_inst_ld_h & shift_rdata[15]}} |
-                                  {16{mem_inst_ld_w}} & shift_rdata[31:16];
-    */
 
     assign res_from_mem = mem_inst_ld_b || mem_inst_ld_bu || mem_inst_ld_h || mem_inst_ld_hu || mem_inst_ld_w;
 

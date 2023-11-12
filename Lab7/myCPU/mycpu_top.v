@@ -150,8 +150,6 @@ module mycpu_top(
         .data_sram_addr(data_sram_addr),
         .data_sram_wdata(data_sram_wdata),
         .data_sram_addr_ok(data_sram_addr_ok),
-        .data_sram_data_ok(data_sram_data_ok),
-        .data_sram_rdata(data_sram_rdata),
         
         .ex_rf_zip(ex_rf_zip),
         .ex_flush(wb_flush),
@@ -174,6 +172,8 @@ module mycpu_top(
         .mem_to_wb_excep(mem_to_wb_excep),
         
         .mul_result(mul_result),
+        
+        .data_sram_data_ok(data_sram_data_ok),
         .data_sram_rdata(data_sram_rdata),
         
         .mem_rf_zip(mem_rf_zip),

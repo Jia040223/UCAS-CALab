@@ -25,8 +25,6 @@ module EX_Stage(
     output wire [31:0] data_sram_addr,
     output wire [31:0] data_sram_wdata,
     input  wire        data_sram_addr_ok,
-    input  wire        data_sram_data_ok,
-    input  wire [31:0] data_sram_rdata,
 
     input  wire        ex_flush,
     input  wire        mem_to_ex_excep
@@ -79,8 +77,6 @@ module EX_Stage(
     wire [31:0] ex_csr_wmask;
     wire [31:0] ex_csr_wvalue;
     wire        ex_ertn_flush;
-//    wire [ 5:0] ex_csr_ecode;
-//    wire [ 8:0] ex_csr_esubcode;
     wire        ex_excp_adef;
     wire        ex_excp_syscall;
     wire        ex_excp_break;
@@ -90,7 +86,7 @@ module EX_Stage(
     reg [63:0]  counter;
 
 //stage control signal
-    assign ex_ready_go      = (data_sram_req & data_sram_data_ok) | (ex_res_from_div & ex_div_complete) | ~(data_sram_req | ex_res_from_div);
+    assign ex_ready_go      = (data_sram_req & data_sram_addr_ok) | (ex_res_from_div & ex_div_complete) | ~(data_sram_req | ex_res_from_div);
     assign ex_allowin       = ~ex_valid | ex_ready_go & mem_allowin | ex_flush;     
     assign ex_to_mem_valid  = ex_valid & ex_ready_go & ~ex_flush;
     always @(posedge clk) begin
@@ -168,6 +164,7 @@ module EX_Stage(
                              ex_pc,
                              ex_final_result,
                              ex_inst_ld_b, ex_inst_ld_bu, ex_inst_ld_h, ex_inst_ld_hu, ex_inst_ld_w,
+                             data_sram_req,
                              ex_res_from_mul, ex_mul_h, ex_res_from_div};
     
     assign ex_res_from_mem = ex_inst_ld_b || ex_inst_ld_bu || ex_inst_ld_h || ex_inst_ld_hu || ex_inst_ld_w;
@@ -201,7 +198,7 @@ module EX_Stage(
 
     //data sram interface
     assign data_sram_req = (ex_inst_ld_b || ex_inst_ld_bu || ex_inst_ld_h || ex_inst_ld_hu || ex_inst_ld_w || (|ex_mem_strb)) 
-                             & ~mem_to_ex_excep & ~ex_flush & ~ex_excp_ale;
+                             & ~mem_to_ex_excep & ~ex_flush & ~ex_excp_ale & ex_valid;
     assign data_sram_wr = ex_inst_st_b | ex_inst_st_h | ex_inst_st_w;
     assign data_sram_size = {ex_inst_ld_w, (ex_inst_ld_h | ex_inst_ld_hu)};
     assign data_sram_wstrb = ex_mem_strb;
