@@ -62,6 +62,7 @@ module MEM_Stage(
     wire        mem_excp_break;
     wire        mem_excp_ale;
     wire        mem_excp_ine;
+    
 
 //stage control signal
     assign mem_ready_go     = mem_data_sram_req & data_sram_data_ok | ~mem_data_sram_req;
@@ -97,7 +98,16 @@ module MEM_Stage(
             } = ex_to_mem_excep_reg;
     
 //mem and wb state interface
-    assign mem_result = data_sram_rdata;
+    assign shift_rdata   = {24'b0, data_sram_rdata} >> {mem_final_result[1:0], 3'b0};
+    
+    assign mem_result[ 7: 0]   =  shift_rdata[ 7: 0];
+
+    assign mem_result[15: 8]   =  {8{mem_inst_ld_b & shift_rdata[7]}} |
+                                  {8{~mem_inst_ld_b & ~mem_inst_ld_bu}} & shift_rdata[15: 8];
+
+    assign mem_result[31:16]   =  {16{mem_inst_ld_b & shift_rdata[7]}} |
+                                  {16{mem_inst_ld_h & shift_rdata[15]}} |
+                                  {16{mem_inst_ld_w}} & shift_rdata[31:16];    
 
     assign res_from_mem = mem_inst_ld_b || mem_inst_ld_bu || mem_inst_ld_h || mem_inst_ld_hu || mem_inst_ld_w;
 
@@ -123,4 +133,3 @@ module MEM_Stage(
     assign mem_to_ex_excep =  (mem_ertn_flush | mem_excep) & mem_valid;
   
 endmodule
-

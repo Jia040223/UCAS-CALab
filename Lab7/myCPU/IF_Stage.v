@@ -60,7 +60,7 @@ module IF_Stage(
 
 //IF statge control signal
     assign preif_ready_go   = inst_sram_req & inst_sram_addr_ok;
-    assign to_if_valid      = preif_ready_go & if_allowin & ~if_flush;
+    assign to_if_valid      = preif_ready_go & if_allowin;
 
     assign if_ready_go      = (inst_sram_data_ok | if_inst_reg_valid) & ~inst_cancel;
     assign if_allowin       = ~if_valid | if_ready_go & id_allowin | if_flush;     
