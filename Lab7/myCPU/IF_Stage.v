@@ -34,7 +34,8 @@ module IF_Stage(
 
     reg  [31:0] if_inst_reg;
     reg         if_inst_reg_valid;
-    reg inst_cancel;    
+    reg [3:0]   inst_cancel_num; 
+    wire        inst_cancel;   
 
     wire        if_ready_go;
     reg         if_valid;
@@ -84,7 +85,7 @@ module IF_Stage(
     assign inst_sram_wdata = 32'b0;
 
 //pc relevant signals
-    assign seq_pc           = (to_if_valid) ? (if_pc + 3'h4) : if_pc; 
+    assign seq_pc           = if_pc + 3'h4; 
     assign nextpc           =   wb_ertn_flush_valid_reg ? csr_rvalue_reg
                               : wb_ertn_flush_valid ? csr_rvalue  //era
                               : wb_csr_ex_valid_reg ? ex_entry_reg
@@ -138,7 +139,7 @@ module IF_Stage(
     always @(posedge clk) begin
         if(~resetn)
             if_pc <= 32'h1BFF_FFFC;
-        else if(if_allowin)
+        else if(to_if_valid & if_allowin)
             if_pc <= nextpc;
     end
     
@@ -146,12 +147,14 @@ module IF_Stage(
 
     always @(posedge clk) begin
         if (~resetn)
-            inst_cancel <= 1'b0;
+            inst_cancel_num <= 4'b0;
         else if ((wb_csr_ex_valid | wb_ertn_flush_valid | br_taken) & if_valid & ~if_ready_go)
-            inst_cancel <= 1'b1;
+            inst_cancel_num <= inst_cancel_num + 4'b1;
         else if (inst_cancel & inst_sram_data_ok)
-            inst_cancel <= 1'b0;
+            inst_cancel_num <= inst_cancel_num - 4'b1;
     end
+    
+    assign inst_cancel = |inst_cancel_num;
 
     always @(posedge clk) begin
         if (~resetn) begin
