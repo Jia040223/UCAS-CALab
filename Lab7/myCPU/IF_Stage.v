@@ -57,7 +57,7 @@ module IF_Stage(
     reg wb_ertn_flush_valid_reg;
     reg wb_csr_ex_valid_reg;
     reg br_taken_reg;
-
+    
 //IF statge control signal
     assign preif_ready_go   = inst_sram_req & inst_sram_addr_ok;
     assign to_if_valid      = preif_ready_go & if_allowin;
@@ -74,7 +74,7 @@ module IF_Stage(
         else if(br_taken | br_taken_reg)
             if_valid <= 0;
     end
-    
+       
 //inst sram signal
     assign inst_sram_req = if_allowin & resetn & ~br_stall;
     assign inst_sram_wr = 1'b0;
@@ -147,7 +147,7 @@ module IF_Stage(
     always @(posedge clk) begin
         if (~resetn)
             inst_cancel <= 1'b0;
-        else if ((wb_csr_ex_valid | wb_ertn_flush_valid | br_taken) & ~if_allowin & ~if_ready_go)
+        else if ((wb_csr_ex_valid | wb_ertn_flush_valid | br_taken) & if_valid & ~if_ready_go)
             inst_cancel <= 1'b1;
         else if (inst_cancel & inst_sram_data_ok)
             inst_cancel <= 1'b0;
