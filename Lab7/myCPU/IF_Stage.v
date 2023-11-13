@@ -62,7 +62,7 @@ module IF_Stage(
     assign preif_ready_go   = inst_sram_req & inst_sram_addr_ok;
     assign to_if_valid      = preif_ready_go & if_allowin & ~if_flush;
 
-    assign if_ready_go      = inst_sram_data_ok | if_inst_reg_valid;
+    assign if_ready_go      = (inst_sram_data_ok | if_inst_reg_valid) & ~inst_cancel;
     assign if_allowin       = ~if_valid | if_ready_go & id_allowin | if_flush;     
     assign if_to_id_valid   = if_valid & if_ready_go & ~if_flush;
     
@@ -70,7 +70,7 @@ module IF_Stage(
         if(~resetn)
             if_valid <= 0; 
         else if(if_allowin)
-            if_valid <= to_if_valid;            // 锟斤拷reset锟斤拷锟斤拷锟斤拷锟斤拷一锟斤拷时锟斤拷锟斤拷锟斤拷锟截才匡拷始取指
+            if_valid <= to_if_valid;            // 锟斤拷reset锟斤拷锟斤拷锟斤拷锟斤拷�?锟斤拷时锟斤拷锟斤拷锟斤拷锟截才匡拷始取�?
         else if(br_taken | br_taken_reg)
             if_valid <= 0;
     end
@@ -147,10 +147,10 @@ module IF_Stage(
     always @(posedge clk) begin
         if (~resetn)
             inst_cancel <= 1'b0;
-        else if (wb_csr_ex_valid & wb_ertn_flush_valid & br_taken & ~if_allowin & ~if_ready_go)
+        else if ((wb_csr_ex_valid | wb_ertn_flush_valid | br_taken) & ~if_allowin & ~if_ready_go)
             inst_cancel <= 1'b1;
         else if (inst_cancel & inst_sram_data_ok)
-            inst_cancel <= 1'b1;
+            inst_cancel <= 1'b0;
     end
 
     always @(posedge clk) begin
@@ -158,7 +158,7 @@ module IF_Stage(
             if_inst_reg <= 32'b0;
             if_inst_reg_valid <= 1'b0;
         end
-        else if (if_to_id_valid & id_allowin | wb_csr_ex_valid & wb_ertn_flush_valid & br_taken)
+        else if (if_to_id_valid & id_allowin | (wb_csr_ex_valid | wb_ertn_flush_valid | br_taken)) //inst has been passed to ID or canceled
             if_inst_reg_valid <= 1'b0;
         else if (~if_inst_reg_valid & inst_sram_data_ok & ~inst_cancel) begin
             if_inst_reg_valid <= 1'b1;
@@ -166,7 +166,7 @@ module IF_Stage(
         end
     end
 
-    assign if_inst          = inst_sram_rdata;
+    assign if_inst          = (inst_sram_data_ok & ~inst_cancel) ? inst_sram_rdata : if_inst_reg;
     assign if_to_id_inst    = (if_inst_reg_valid)? if_inst_reg : if_inst;
     
     assign if_to_id_data    = {if_to_id_inst,     // 32-63
