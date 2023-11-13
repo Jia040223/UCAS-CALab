@@ -200,7 +200,7 @@ module EX_Stage(
     assign data_sram_req = (ex_inst_ld_b || ex_inst_ld_bu || ex_inst_ld_h || ex_inst_ld_hu || ex_inst_ld_w || (|ex_mem_strb)) 
                              & ~mem_to_ex_excep & ~ex_flush & ~ex_excp_ale & ex_valid;
     assign data_sram_wr = ex_inst_st_b | ex_inst_st_h | ex_inst_st_w;
-    assign data_sram_size = {ex_inst_ld_w, (ex_inst_ld_h | ex_inst_ld_hu)};
+    assign data_sram_size = {ex_inst_ld_w | ex_inst_st_w, (ex_inst_ld_h | ex_inst_ld_hu |ex_inst_st_h)};
     assign data_sram_wstrb = ex_mem_strb;
     assign data_sram_addr = ex_alu_result;
     assign data_sram_wdata = (ex_inst_st_b)? {4{ex_rkd_value[ 7:0]}} :
