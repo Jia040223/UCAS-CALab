@@ -298,7 +298,7 @@ module ID_Stage(
                     || inst_bl
                     || inst_b
                     ) && id_valid;
-    assign br_stall = (type_branch_cond | type_branch_uncond) & conflict;
+    assign br_stall = type_branch_cond & conflict;
     assign br_target = (type_branch_cond | inst_bl | inst_b) ? (id_pc + br_offs) :
                                                 /*inst_jirl*/ (rj_value + jirl_offs);
     
