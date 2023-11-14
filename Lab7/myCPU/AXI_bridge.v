@@ -42,11 +42,6 @@ module AXI_bridge(
     input  wire [ 1:0] bresp  ,
     input  wire        bvalid ,
     output wire        bready ,
-    // trace debug interface
-    output wire [31:0] debug_wb_pc,
-    output wire [ 3:0] debug_wb_rf_we,
-    output wire [ 4:0] debug_wb_rf_wnum,
-    output wire [31:0] debug_wb_rf_wdata,
 
     // inst sram interface
     input  wire        inst_sram_req,
@@ -68,11 +63,6 @@ module AXI_bridge(
     output wire        data_sram_addr_ok,
     output wire        data_sram_data_ok,
     output wire [31:0] data_sram_rdata,
-    // trace debug interface
-    input wire [31:0] debug_wb_pc,
-    input wire [ 3:0] debug_wb_rf_we,
-    input wire [ 4:0] debug_wb_rf_wnum,
-    input wire [31:0] debug_wb_rf_wdata
 );
 
     assign arid    = (data_sram_req)? 4'b1 : 4'b0;
