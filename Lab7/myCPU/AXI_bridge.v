@@ -66,21 +66,22 @@ module AXI_bridge(
 );
 
     assign arid    = (data_sram_req)? 4'b1 : 4'b0;
-    assign araddr  = (arid)? data_sram_addr : inst_sram_addr;
+    assign araddr  = (arid[0])? data_sram_addr : inst_sram_addr;
     assign arlen   = 8'b0;
-    assign arsize  = (arid)? data_sram_size : inst_sram_size;
+    assign arsize  = (arid[0])? data_sram_size : inst_sram_size;
     assign arburst = 2'b01;
     assign arlock  = 2'b0;
     assign arcache = 4'b0;
     assign arprot  = 3'b0;
-    assign arvalid = inst_sram_req | data_sram_req;
+    assign arvalid = inst_sram_req & ~inst_sram_wr | 
+                     data_sram_req & ~data_sram_wr;
     
     assign rready  =
     
     assign awid    = 4'b1;
-    assign awaddr  = (arid)? data_sram_addr : inst_sram_addr;
+    assign awaddr  = (arid[0])? data_sram_addr : inst_sram_addr;
     assign awlen   = 8'b0;
-    assign awsize  = (arid)? data_sram_size : inst_sram_size;
+    assign awsize  = (arid[0])? data_sram_size : inst_sram_size;
     assign awburst = 2'b01;
     assign awlock  = 2'b0;
     assign awcache = 4'b0;
@@ -88,18 +89,18 @@ module AXI_bridge(
     assign awvalid = inst_sram_wr | data_sram_wr;
     
     assign wid     = 1'b1;
-    assign wdata   = (arid)? data_sram_wdata : inst_sram_wdata;
-    assign wstrb   = (arid)? data_sram_wstrb : inst_sram_wstrb;
+    assign wdata   = (arid[0])? data_sram_wdata : inst_sram_wdata;
+    assign wstrb   = (arid[0])? data_sram_wstrb : inst_sram_wstrb;
     assign wlast   = 1'b1;
     assign wvalid  = inst_sram_wr | data_sram_wr;
     
     assign bready  =
 
-    assign inst_sram_addr_ok =
-    assign inst_sram_data_ok =
-    assign inst_sram_rdata   = 
-    assign data_sram_addr_ok =
-    assign data_sram_data_ok =
-    assign data_sram_rdata   =
+    assign inst_sram_addr_ok = ~arid[0] & (arvalid & arready | awvalid & awready & wready);
+    assign inst_sram_data_ok = ~arid[0] & (arvalid & rvalid | awvalid & bvalid);
+    assign inst_sram_rdata   = rdata
+    assign data_sram_addr_ok = arid[0] & (arvalid & arready | awvalid & awready & wready);
+    assign data_sram_data_ok = arid[0] & (arvalid & rvalid | awvalid & bvalid);
+    assign data_sram_rdata   = rdata
 
 endmodule
