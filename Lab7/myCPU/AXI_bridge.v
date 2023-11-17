@@ -177,7 +177,7 @@ module AXI_bridge(
             `STATE_IDLE: begin
                 if (~aresetn)
                     r_next_state = `STATE_IDLE;
-                else if (arvalid & arready & (|read_wait_counter))
+                else if (arvalid & arready | (|read_wait_counter))
                     r_next_state = `STATE_R_RDY;
                 else
                     r_next_state = `STATE_IDLE;
