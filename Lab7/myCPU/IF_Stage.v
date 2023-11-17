@@ -23,7 +23,7 @@ module IF_Stage(
     output wire [`IF_TO_ID_DATA_WIDTH-1:0] if_to_id_data,
     output wire [`IF_TO_ID_EXCEP_WIDTH-1:0] if_to_id_excep,
 
-    input wire [`WB_TO_IF_CSR_DATA_WIDTH -1:0] wb_to_if_csr_data,
+    input  wire [`WB_TO_IF_CSR_DATA_WIDTH -1:0] wb_to_if_csr_data,
     input  wire        if_flush
 );
     wire [31:0] if_inst;
@@ -55,9 +55,9 @@ module IF_Stage(
     reg [31:0] ex_entry_reg;
     reg [31:0] br_target_reg;
 
-    reg wb_ertn_flush_valid_reg;
-    reg wb_csr_ex_valid_reg;
-    reg br_taken_reg;
+    reg        wb_ertn_flush_valid_reg;
+    reg        wb_csr_ex_valid_reg;
+    reg        br_taken_reg;
     
 //IF statge control signal
     assign preif_ready_go   = inst_sram_req & inst_sram_addr_ok;

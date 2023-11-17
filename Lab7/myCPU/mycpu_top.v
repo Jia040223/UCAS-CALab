@@ -176,7 +176,7 @@ module mycpu_top(
         .data_sram_wdata(data_sram_wdata),
         .data_sram_addr_ok(data_sram_addr_ok),
         .data_sram_data_ok(data_sram_data_ok),
-        .data_sram_rdata(data_sram_rdata),
+        .data_sram_rdata(data_sram_rdata)
     );
 
     IF_Stage my_IF_Stage

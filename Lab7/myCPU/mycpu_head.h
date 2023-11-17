@@ -61,4 +61,18 @@
 `define ECODE_INE       6'hd
 `define ESUBCODE_ADEF   9'h0
 
+// exp 15
+`define STATE_IDLE      5'b00001
+`define STATE_AR_REQ    3'b010
+`define STATE_AR_ACK    3'b100
 
+`define STATE_R_RDY     3'b010
+`define STATE_R_ACK     3'b100
+
+`define STATE_W_REQ     5'b00010
+`define STATE_W_ADDR    5'b00100
+`define STATE_W_DATA    5'b01000
+`define STATE_W_ACK     5'b10000
+
+`define STATE_B_REQ     3'b010
+`define STATE_B_ACK     3'b100

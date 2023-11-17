@@ -334,7 +334,7 @@ module ID_Stage(
                 (need_ui5 || need_si12) ? {{20{i12[11]}}, i12[11:0]} :
                  {20'b0, i12[11:0]};
 
-   assign br_offs = need_si26 ? {{ 4{i26[25]}}, i26[25:0], 2'b0} :
+    assign br_offs = need_si26 ? {{ 4{i26[25]}}, i26[25:0], 2'b0} :
                                 {{14{i16[15]}}, i16[15:0], 2'b0} ;
 
     assign jirl_offs = {{14{i16[15]}}, i16[15:0], 2'b0};
@@ -452,9 +452,6 @@ module ID_Stage(
     wire        id_ertn_flush   = inst_ertn;
     wire        id_excp_adef    = if_excp_adef;
     wire        id_excp_ine     = ~(type_calc | type_calc_i | type_branch_uncond | type_branch_cond | type_load | type_store | type_excp | type_others) & id_valid;
-
-//    wire [ 5:0] id_csr_ecode = (inst_syscall)? `ECODE_SYS : if_csr_ecode;
-//    wire [ 8:0] id_csr_esubcode = if_csr_esubcode;
 
     assign id_to_ex_excep = {id_res_from_csr, id_csr_num, id_csr_we, id_csr_wmask, id_csr_wvalue, 
                              id_ertn_flush, has_int, id_excp_adef, inst_syscall, inst_break,

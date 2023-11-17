@@ -70,7 +70,7 @@ module EX_Stage(
     wire        ex_div_complete;
     wire [31:0] ex_div_result;
     wire [31:0] ex_final_result;
-    reg ex_div_complete_reg;
+    reg         ex_div_complete_reg;
 
     wire        ex_res_from_csr;
     wire [13:0] ex_csr_num;
@@ -84,9 +84,9 @@ module EX_Stage(
     wire        ex_excp_ale;
     wire        ex_excp_ine;
 
-    reg [63:0]  counter;
-    wire ex_mem_wait;
-    wire [1:0] ex_sram_size;
+    reg  [63:0] counter;
+    wire        ex_mem_wait;
+    wire [ 1:0] ex_sram_size;
 
 //stage control signal
     assign ex_ready_go      = (data_sram_req & data_sram_addr_ok) | (ex_res_from_div & ex_div_complete) | ~(data_sram_req | ex_res_from_div);
