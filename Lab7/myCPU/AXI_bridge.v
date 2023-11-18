@@ -275,11 +275,11 @@ module AXI_bridge(
                     w_next_state = `STATE_W_DATA;
             end
 
-            `STATE_AR_ACK: begin
+            `STATE_W_ACK: begin
                 if (bvalid & bready)
                     w_next_state = `STATE_IDLE;
                 else
-                    w_next_state = `STATE_AR_ACK;
+                    w_next_state = `STATE_W_ACK;
             end
         endcase
     end
@@ -294,7 +294,7 @@ module AXI_bridge(
             awaddr <= 32'b0;
             awsize <= 3'b0;
             {awid, awlen, awburst, awlock, awcache, awprot} <=
-            {4'b0, 8'b0, 2'b01, 2'b0, 4'b0, 3'b0};
+            {4'b1, 8'b0, 2'b01, 2'b0, 4'b0, 3'b0};
         end
         else if (state_w_idle) begin
             if (data_sram_req & data_sram_wr) begin

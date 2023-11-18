@@ -19,7 +19,7 @@ module MEM_Stage(
     input  wire [31:0] data_sram_rdata,
     
     input  wire [63:0] mul_result,
-    output wire [38:0] mem_rf_zip,
+    output wire [39:0] mem_rf_zip,
 
     input  wire        mem_flush,
     output wire        mem_to_ex_excep  
@@ -49,6 +49,7 @@ module MEM_Stage(
 
     wire [31:0] shift_rdata;
 
+    wire        mem_res_from_mem;
     wire        mem_res_from_csr;
     wire [13:0] mem_csr_num;
     wire        mem_csr_we;
@@ -120,8 +121,11 @@ module MEM_Stage(
                              mem_rf_waddr,
                              mem_rf_wdata,
                              mem_pc};
+                       
+    assign mem_res_from_mem = res_from_mem & ~mem_to_wb_valid & mem_valid;
                              
-    assign mem_rf_zip      = {mem_res_from_csr,
+    assign mem_rf_zip      = {mem_res_from_mem,
+                              mem_res_from_csr,
                               mem_rf_we & mem_valid,
                               mem_rf_waddr,
                               mem_rf_wdata};

@@ -76,7 +76,7 @@ module mycpu_top(
     wire [63:0] mul_result;
     
     wire [37:0] wb_rf_zip;
-    wire [38:0] mem_rf_zip;
+    wire [39:0] mem_rf_zip;
     wire [39:0] ex_rf_zip;
 
     wire        br_taken;
