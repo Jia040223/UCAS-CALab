@@ -63,7 +63,7 @@ module IF_Stage(
     
 //IF statge control signal
     assign preif_ready_go   = inst_sram_req & inst_sram_addr_ok;
-    assign to_if_valid      = preif_ready_go & if_allowin & ~preif_cancel;
+    assign to_if_valid      = preif_ready_go & if_allowin & ~preif_cancel & ~if_flush;
 
     assign if_ready_go      = (inst_sram_data_ok | if_inst_reg_valid) & ~inst_cancel;
     assign if_allowin       = ~if_valid | if_ready_go & id_allowin | if_flush;     
@@ -103,7 +103,7 @@ module IF_Stage(
             csr_rvalue_reg <= 32'b0;
             wb_ertn_flush_valid_reg <= 1'b0;
         end
-        else if(wb_ertn_flush_valid & ~preif_ready_go) begin
+        else if(wb_ertn_flush_valid) begin
             csr_rvalue_reg <= csr_rvalue;
             wb_ertn_flush_valid_reg <= 1'b1;
         end
@@ -116,7 +116,7 @@ module IF_Stage(
             ex_entry_reg <= 32'b0;
             wb_csr_ex_valid_reg <= 1'b0;
         end
-        else if(wb_csr_ex_valid & ~preif_ready_go) begin
+        else if(wb_csr_ex_valid) begin
             ex_entry_reg <= ex_entry;
             wb_csr_ex_valid_reg <= 1'b1;
         end
@@ -129,7 +129,7 @@ module IF_Stage(
             br_target_reg <= 32'b0;
             br_taken_reg <= 1'b0;
         end
-        else if(br_taken & ~preif_ready_go) begin
+        else if(br_taken) begin
             br_target_reg <= br_target;
             br_taken_reg <= 1'b1;
         end
