@@ -193,6 +193,7 @@ module mycpu_top(
         .inst_sram_addr_ok(inst_sram_addr_ok),
         .inst_sram_data_ok(inst_sram_data_ok),
         .inst_sram_rdata(inst_sram_rdata),
+        .axi_arid(arid),
 
         .id_allowin(id_allowin),
         .br_taken(br_taken),

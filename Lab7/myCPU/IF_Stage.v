@@ -13,6 +13,8 @@ module IF_Stage(
     input  wire        inst_sram_addr_ok,
     input  wire        inst_sram_data_ok,
     input  wire [31:0] inst_sram_rdata,
+
+    input  wire [ 3:0] axi_arid,
     // id to if stage signal
     input  wire        id_allowin,
     input  wire        br_taken,
@@ -36,6 +38,7 @@ module IF_Stage(
     reg         if_inst_reg_valid;
     reg [3:0]   inst_cancel_num; 
     wire        inst_cancel;   
+    reg         preif_cancel;
 
     wire        if_ready_go;
     reg         if_valid;
@@ -50,7 +53,6 @@ module IF_Stage(
     wire        wb_csr_ex_valid;
     wire        if_adef_excep;
     
-    
     reg [31:0] csr_rvalue_reg;
     reg [31:0] ex_entry_reg;
     reg [31:0] br_target_reg;
@@ -61,7 +63,7 @@ module IF_Stage(
     
 //IF statge control signal
     assign preif_ready_go   = inst_sram_req & inst_sram_addr_ok;
-    assign to_if_valid      = preif_ready_go & if_allowin;
+    assign to_if_valid      = preif_ready_go & if_allowin & ~preif_cancel;
 
     assign if_ready_go      = (inst_sram_data_ok | if_inst_reg_valid) & ~inst_cancel;
     assign if_allowin       = ~if_valid | if_ready_go & id_allowin | if_flush;     
@@ -77,7 +79,7 @@ module IF_Stage(
     end
        
 //inst sram signal
-    assign inst_sram_req = if_allowin & resetn & ~br_stall;
+    assign inst_sram_req = if_allowin & resetn & ~br_stall & ~preif_cancel;
     assign inst_sram_wr = 1'b0;
     assign inst_sram_size = 2'b10;
     assign inst_sram_wstrb = 4'b0;
@@ -148,13 +150,22 @@ module IF_Stage(
     always @(posedge clk) begin
         if (~resetn)
             inst_cancel_num <= 4'b0;
-        else if ((wb_csr_ex_valid | wb_ertn_flush_valid | br_taken) & if_valid & ~if_ready_go)
+        else if ((wb_csr_ex_valid | wb_ertn_flush_valid | br_taken) & ((if_valid & ~if_ready_go) | inst_sram_req))
             inst_cancel_num <= inst_cancel_num + 4'b1;
         else if (inst_cancel & inst_sram_data_ok)
             inst_cancel_num <= inst_cancel_num - 4'b1;
     end
     
     assign inst_cancel = |inst_cancel_num;
+
+    always @(posedge clk) begin
+        if (~resetn)
+            preif_cancel <= 1'b0;
+        else if ((wb_csr_ex_valid | wb_ertn_flush_valid | br_taken) & ~preif_cancel & ~axi_arid[0])
+            preif_cancel <= 1'b1;
+        else if (inst_sram_data_ok)
+            preif_cancel <= 1'b0;
+    end
 
     always @(posedge clk) begin
         if (~resetn) begin
