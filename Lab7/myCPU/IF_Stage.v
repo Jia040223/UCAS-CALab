@@ -66,7 +66,7 @@ module IF_Stage(
     assign to_if_valid      = preif_ready_go & if_allowin & ~preif_cancel & ~if_flush;
 
     assign if_ready_go      = (inst_sram_data_ok | if_inst_reg_valid) & ~inst_cancel;
-    assign if_allowin       = ~if_valid | if_ready_go & id_allowin | if_flush;     
+    assign if_allowin       = ~if_valid | if_ready_go & id_allowin;     
     assign if_to_id_valid   = if_valid & if_ready_go & ~if_flush;
     
     always @(posedge clk) begin
@@ -74,7 +74,7 @@ module IF_Stage(
             if_valid <= 0; 
         else if(if_allowin)
             if_valid <= to_if_valid;            
-        else if(br_taken | br_taken_reg)
+        else if(br_taken | br_taken_reg | if_flush)
             if_valid <= 0;
     end
        
@@ -129,7 +129,7 @@ module IF_Stage(
             br_target_reg <= 32'b0;
             br_taken_reg <= 1'b0;
         end
-        else if(br_taken & ~br_stall) begin
+        else if(br_taken) begin
             br_target_reg <= br_target;
             br_taken_reg <= 1'b1;
         end
@@ -147,24 +147,24 @@ module IF_Stage(
     
     assign {wb_ertn_flush_valid, wb_csr_ex_valid, ex_entry, csr_rvalue} = wb_to_if_csr_data;
 
-    reg if_flush_reg;
-
     always @(posedge clk) begin
-        if(~resetn)
-            if_flush_reg <= 1'b0;
-        else if(if_flush)
-            if_flush_reg <= 1'b1;
-        else if(to_if_valid & if_allowin)
-            if_flush_reg <= 1'b0;
+        if (~resetn)
+            inst_cancel_num <= 4'b0;
+        else if ((wb_csr_ex_valid | wb_ertn_flush_valid | br_taken) & ((if_valid & ~if_ready_go)))
+            inst_cancel_num <= inst_cancel_num + 4'b1;
+        else if (inst_cancel & inst_sram_data_ok)
+            inst_cancel_num <= inst_cancel_num - 4'b1;
     end
-    assign inst_cancel = if_flush | if_flush_reg | br_taken & ~br_stall | br_taken_reg;
 
+    assign inst_cancel = |inst_cancel_num;
+    
+    reg br_stall_reg;
     always @(posedge clk) begin
-        if (reset) begin
+        if (~resetn) begin
             br_stall_reg <= 1'b0;
         end else if (br_stall) begin
             br_stall_reg <= br_stall;
-        end else if (to_fs_valid && fs_allowin)begin
+        end else if (to_if_valid && if_allowin)begin
             br_stall_reg <= 1'b0;
         end
     end
@@ -172,9 +172,9 @@ module IF_Stage(
     always @(posedge clk) begin
         if (~resetn)
             preif_cancel <= 1'b0;
-        else if (inst_sram_req & (wb_csr_ex_valid | wb_ertn_flush_valid | br_taken | (br_stall | br_stall_reg) & inst_sram_addr_ok ) & ~preif_cancel & ~axi_arid[0])
+        else if (inst_sram_req & (wb_csr_ex_valid | wb_ertn_flush_valid | br_taken ) & ~axi_arid[0])
             preif_cancel <= 1'b1;
-        else if (inst_sram_data_ok)
+        else if (inst_sram_data_ok & ~inst_cancel)
             preif_cancel <= 1'b0;
     end
 
@@ -186,7 +186,7 @@ module IF_Stage(
         end
         else if (if_to_id_valid & id_allowin | (wb_csr_ex_valid | wb_ertn_flush_valid | br_taken)) //inst has been passed to ID or canceled
             if_inst_reg_valid <= 1'b0;
-        else if (~if_inst_reg_valid & inst_sram_data_ok & ~inst_cancel) begin
+        else if (~if_inst_reg_valid & inst_sram_data_ok & ~inst_cancel & ~preif_cancel) begin
             if_inst_reg_valid <= 1'b1;
             if_inst_reg <= if_to_id_inst;
         end
