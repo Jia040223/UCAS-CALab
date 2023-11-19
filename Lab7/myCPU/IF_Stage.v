@@ -172,7 +172,7 @@ module IF_Stage(
     always @(posedge clk) begin
         if (~resetn)
             preif_cancel <= 1'b0;
-        else if (inst_sram_req & (wb_csr_ex_valid | wb_ertn_flush_valid | br_taken ) & ~axi_arid[0])
+        else if ((inst_sram_req | br_stall) &  & (wb_csr_ex_valid | wb_ertn_flush_valid | br_taken | (br_stall | br_stall_reg) & inst_sram_addr_ok ) & ~axi_arid[0])
             preif_cancel <= 1'b1;
         else if (inst_sram_data_ok & ~inst_cancel)
             preif_cancel <= 1'b0;

@@ -117,7 +117,7 @@ module AXI_bridge(
             `STATE_IDLE: begin
                 if (~aresetn | data_conflict)
                     ar_next_state = `STATE_IDLE;
-                else if ((inst_sram_req & ~inst_sram_wr | data_sram_req & ~data_sram_wr) & ~(&read_wait_counter))
+                else if ((inst_sram_req & ~inst_sram_wr | data_sram_req & ~data_sram_wr) & ~(read_wait_counter[0]))
                     ar_next_state = `STATE_AR_REQ;
                 else
                     ar_next_state = `STATE_IDLE;
