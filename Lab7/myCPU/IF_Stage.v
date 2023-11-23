@@ -61,7 +61,7 @@ module IF_Stage(
     reg        wb_csr_ex_valid_reg;
     reg        br_taken_reg;
     
-//IF statge control signal
+//IF stage control signal
     assign preif_ready_go   = inst_sram_req & inst_sram_addr_ok;
     assign to_if_valid      = preif_ready_go & if_allowin & ~preif_cancel & ~if_flush;
 
@@ -89,7 +89,7 @@ module IF_Stage(
 //pc relevant signals
     assign seq_pc           = if_pc + 3'h4; 
     assign nextpc           =   wb_ertn_flush_valid_reg ? csr_rvalue_reg
-                              : wb_ertn_flush_valid ? csr_rvalue  //era
+                              : wb_ertn_flush_valid ? csr_rvalue  
                               : wb_csr_ex_valid_reg ? ex_entry_reg
                               : wb_csr_ex_valid ? ex_entry
                               : br_taken_reg ? br_target_reg

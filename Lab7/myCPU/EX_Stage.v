@@ -208,7 +208,8 @@ module EX_Stage(
                               ex_excp_ale, ex_excp_ine};
 
     //data sram interface
-    assign ex_mem_wait = (ex_inst_ld_b || ex_inst_ld_bu || ex_inst_ld_h || ex_inst_ld_hu || ex_inst_ld_w || (|ex_mem_strb)) & ~mem_to_ex_excep & ~ex_flush & ~ex_excp_ale;
+    assign ex_mem_wait = (ex_inst_ld_b || ex_inst_ld_bu || ex_inst_ld_h || ex_inst_ld_hu || ex_inst_ld_w || 
+                         (|ex_mem_strb)) & ~mem_to_ex_excep & ~ex_flush & ~ex_excp_ale;
     assign ex_sram_size = {ex_inst_ld_w | ex_inst_st_w, (ex_inst_ld_h | ex_inst_ld_hu |ex_inst_st_h)};
     assign data_sram_req = ex_mem_wait & ex_valid & mem_allowin;
     assign data_sram_wr = ex_inst_st_b | ex_inst_st_h | ex_inst_st_w;
