@@ -4,7 +4,6 @@ module tlb
 )
 (
     input  wire        clk,
-    input  wire        reset,
 
     //search port 0 (for inst fetch)
     input  wire [18:0] s0_vppn,
@@ -71,8 +70,8 @@ module tlb
     output wire [ 1:0] r_plv1,
     output wire [ 1:0] r_mat1,
     output wire        r_d1,
-    output wire        r_v1,
-)
+    output wire        r_v1
+);
 
     reg  [TLBNUM-1:0] tlb_e;
     reg  [TLBNUM-1:0] tlb_ps4MB; //pagesize 1:4MB 0:4KB
@@ -98,7 +97,7 @@ module tlb
 
     genvar i;
     generate
-        for(i=0; i<TLBNUM; i++) begin
+        for(i=0; i<TLBNUM; i=i+1) begin
             assign match0[i] = (s0_vppn[18:10] == tlb_vppn[i][18:10])
                             && (tlb_ps4MB[i] || s0_vppn[9:0] == tlb_vppn[i][9:0])
                             && ((s0_asid == tlb_asid[i]) || tlb_g[i]);
@@ -146,7 +145,7 @@ module tlb
     wire [TLBNUM-1:0] invtlb_mask [31:0];
 
     generate
-        for(i=0; i<TLBNUM; i++) begin
+        for(i=0; i<TLBNUM; i=i+1) begin
             assign cond1[i] = ~tlb_g[i];
             assign cond2[i] = tlb_g[i];
             assign cond3[i] = s1_asid == tlb_asid[i];
@@ -163,8 +162,9 @@ module tlb
     assign invtlb_mask[5] = cond1 & cond3 & cond4;
     assign invtlb_mask[6] = (cond1|cond3) & cond4;
     generate
-        for (i = 7; i < 32; i = i + 1)
+        for (i = 7; i < 32; i=i+1) begin
             assign invtlb_mask[i] = 16'b0;
+        end
     endgenerate
 
 
@@ -172,6 +172,7 @@ module tlb
     assign r_e    = tlb_e    [r_index];
     assign r_vppn = tlb_vppn [r_index];
     assign r_ps   = tlb_ps4MB[r_index];
+    assign r_asid = tlb_asid [r_index];
     assign r_g    = tlb_g    [r_index];
 
     assign r_ppn0 = tlb_ppn0 [r_index];
