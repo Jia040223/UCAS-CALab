@@ -107,34 +107,34 @@ module tlb
         end
     endgenerate
 
-    wire s0_whichpage;
-    wire s1_whichpage;
+    wire s0_oddpage;
+    wire s1_oddpage;
 
     assign s0_found = (|match0);
     assign s0_index = {4{match0[ 0]}} & 4'd0  | {4{match0[ 1]}} & 4'd1  | {4{match0[ 2]}} & 4'd2  | {4{match0[ 3]}} & 4'd3 
                     | {4{match0[ 4]}} & 4'd4  | {4{match0[ 5]}} & 4'd5  | {4{match0[ 6]}} & 4'd6  | {4{match0[ 7]}} & 4'd7 
                     | {4{match0[ 8]}} & 4'd8  | {4{match0[ 9]}} & 4'd9  | {4{match0[10]}} & 4'd10 | {4{match0[11]}} & 4'd11 
                     | {4{match0[12]}} & 4'd12 | {4{match0[13]}} & 4'd13 | {4{match0[14]}} & 4'd14 | {4{match0[15]}} & 4'd15;
-    assign s0_whichpage = (tlb_ps4MB[s0_index])? s0_vppn[9]: s0_va_bit12;
+    assign s0_oddpage = (tlb_ps4MB[s0_index])? s0_vppn[9]: s0_va_bit12;
     assign s0_ps        = (tlb_ps4MB[s0_index]) ? 6'd22 : 6'd12;
-    assign s0_ppn       = (s0_whichpage) ? tlb_ppn1[s0_index] : tlb_ppn0[s0_index];
-    assign s0_plv       = (s0_whichpage) ? tlb_plv1[s0_index] : tlb_plv0[s0_index];
-    assign s0_mat       = (s0_whichpage) ? tlb_mat1[s0_index] : tlb_mat0[s0_index];
-    assign s0_d         = (s0_whichpage) ? tlb_d1  [s0_index] : tlb_d0  [s0_index];
-    assign s0_v         = (s0_whichpage) ? tlb_v1  [s0_index] : tlb_v0  [s0_index];
+    assign s0_ppn       = (s0_oddpage) ? tlb_ppn1[s0_index] : tlb_ppn0[s0_index];
+    assign s0_plv       = (s0_oddpage) ? tlb_plv1[s0_index] : tlb_plv0[s0_index];
+    assign s0_mat       = (s0_oddpage) ? tlb_mat1[s0_index] : tlb_mat0[s0_index];
+    assign s0_d         = (s0_oddpage) ? tlb_d1  [s0_index] : tlb_d0  [s0_index];
+    assign s0_v         = (s0_oddpage) ? tlb_v1  [s0_index] : tlb_v0  [s0_index];
 
     assign s1_found = (|match1);
     assign s1_index = {4{match1[ 0]}} & 4'd0  | {4{match1[ 1]}} & 4'd1  | {4{match1[ 2]}} & 4'd2  | {4{match1[ 3]}} & 4'd3 
                     | {4{match1[ 4]}} & 4'd4  | {4{match1[ 5]}} & 4'd5  | {4{match1[ 6]}} & 4'd6  | {4{match1[ 7]}} & 4'd7 
                     | {4{match1[ 8]}} & 4'd8  | {4{match1[ 9]}} & 4'd9  | {4{match1[10]}} & 4'd10 | {4{match1[11]}} & 4'd11 
                     | {4{match1[12]}} & 4'd12 | {4{match1[13]}} & 4'd13 | {4{match1[14]}} & 4'd14 | {4{match1[15]}} & 4'd15;
-    assign s1_whichpage = (tlb_ps4MB[s1_index])? s1_vppn[9]: s1_va_bit12;
+    assign s1_oddpage = (tlb_ps4MB[s1_index])? s1_vppn[9]: s1_va_bit12;
     assign s1_ps        = (tlb_ps4MB[s1_index]) ? 6'd22 : 6'd12;
-    assign s1_ppn       = (s1_whichpage) ? tlb_ppn1[s1_index] : tlb_ppn0[s1_index];
-    assign s1_plv       = (s1_whichpage) ? tlb_plv1[s1_index] : tlb_plv0[s1_index];
-    assign s1_mat       = (s1_whichpage) ? tlb_mat1[s1_index] : tlb_mat0[s1_index];
-    assign s1_d         = (s1_whichpage) ? tlb_d1  [s1_index] : tlb_d0  [s1_index];
-    assign s1_v         = (s1_whichpage) ? tlb_v1  [s1_index] : tlb_v0  [s1_index];
+    assign s1_ppn       = (s1_oddpage) ? tlb_ppn1[s1_index] : tlb_ppn0[s1_index];
+    assign s1_plv       = (s1_oddpage) ? tlb_plv1[s1_index] : tlb_plv0[s1_index];
+    assign s1_mat       = (s1_oddpage) ? tlb_mat1[s1_index] : tlb_mat0[s1_index];
+    assign s1_d         = (s1_oddpage) ? tlb_d1  [s1_index] : tlb_d0  [s1_index];
+    assign s1_v         = (s1_oddpage) ? tlb_v1  [s1_index] : tlb_v0  [s1_index];
 
     // invtlb
     wire [TLBNUM-1:0] cond1;
@@ -171,7 +171,7 @@ module tlb
     // read
     assign r_e    = tlb_e    [r_index];
     assign r_vppn = tlb_vppn [r_index];
-    assign r_ps   = tlb_ps4MB[r_index];
+    assign r_ps   = tlb_ps4MB[r_index] ? 6'd22 : 6'd12;
     assign r_asid = tlb_asid [r_index];
     assign r_g    = tlb_g    [r_index];
 
