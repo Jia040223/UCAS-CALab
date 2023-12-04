@@ -73,7 +73,7 @@ module mul(
 
 endmodule
 
-module booth_2(             //booth��λһ������pi��cģ��
+module booth_2(             //booth两位乘
     input y2,
     input y1,
     input y0,
@@ -100,7 +100,7 @@ module booth_2(             //booth��λһ������pi��cģ��
 
 endmodule
 
-module Wallace(             //����ʿ��
+module Wallace(             //Wallace树
     input mul_clk,
     input resetn,
     input [16:0] n,
@@ -169,7 +169,7 @@ module Wallace(             //����ʿ��
 
 endmodule
 
-module Full_Adder(              //ȫ����
+module Full_Adder(              //1位全加器
     input A,
     input B,
     input Cin,
@@ -181,7 +181,7 @@ module Full_Adder(              //ȫ����
 
 endmodule
 
-module adder_4(                 //4λ�ӷ���
+module adder_4(                 //4位超前进位加法器
     input c0,
     input [3:0] p,
     input [3:0] g,
@@ -199,7 +199,7 @@ module adder_4(                 //4λ�ӷ���
 
 endmodule
 
-module adder_64(                //64λ�ӷ���
+module adder_64(                //64位超前进位加法器
     input Cin,
     input [63:0] A,
     input [63:0] B,
