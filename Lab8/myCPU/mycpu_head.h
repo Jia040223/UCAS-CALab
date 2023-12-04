@@ -19,7 +19,7 @@
 
 `define ESUBCODE_ADEF 9'h0
 
-// exp12
+//------exp12------
 `define CSR_CRMD        14'h0
 `define CSR_PRMD        14'h1
 `define CSR_ESTAT       14'h5
@@ -39,7 +39,7 @@
 `define CSR_EENTRY_VA   31:6
 `define CSR_SAVE_DATA   31:0
 
-//exp13
+//------exp13------
 `define CSR_ECFG        14'h4
 `define CSR_BADV        14'h7
 `define CSR_TID         14'h40   
@@ -61,7 +61,7 @@
 `define ECODE_INE       6'hd
 `define ESUBCODE_ADEF   9'h0
 
-// exp 15
+//------exp 15-------
 `define STATE_IDLE      5'b00001
 `define STATE_AR_REQ    3'b010
 `define STATE_AR_ACK    3'b100
@@ -76,3 +76,33 @@
 
 `define STATE_B_REQ     3'b010
 `define STATE_B_ACK     3'b100
+
+//------exp18------
+`define CSR_TLBIDX     14'h010
+`define CSR_TLBEHI     14'h011
+`define CSR_TLBELO0    14'h012
+`define CSR_TLBELO1    14'h013
+`define CSR_ASID       14'h018
+`define CSR_TLBRENTRY  14'h088
+
+//TLBIDX
+`define CSR_TLBIDX_INDEX    3:0
+`define CSR_TLBIDX_PS       29:24
+`define CSR_TLBIDX_NE       31
+
+// TLBEHI
+`define CSR_TLBEHI_VPPN     31:13
+
+// TLBELO0 TLBELO1
+`define CSR_TLBELO_V        0
+`define CSR_TLBELO_D        1
+`define CSR_TLBELO_PLV      3:2
+`define CSR_TLBELO_MAT      5:4
+`define CSR_TLBELO_G        6
+`define CSR_TLBELO_PPN      31:8
+
+// ASID
+`define CSR_ASID_ASID       9:0
+
+// TLBRENTRY
+`define CSR_TLBRENTRY_PA    31:6
