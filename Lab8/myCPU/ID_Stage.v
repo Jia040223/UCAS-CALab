@@ -21,7 +21,7 @@ module ID_Stage(
     input  wire [39:0] mem_rf_zip,
     input  wire [39:0] ex_rf_zip,
 
-    //nput  wire [31:0] id_flush
+    //except signals
     input  wire       id_flush,
     input  wire       has_int
 );
@@ -128,6 +128,15 @@ module ID_Stage(
     wire        mem_res_from_mem;
     wire        ex_res_from_csr;
     wire        mem_res_from_csr;
+
+    wire        id_res_from_csr;
+    wire [13:0] id_csr_num;
+    wire        id_csr_we;
+    wire [31:0] id_csr_wmask;
+    wire [31:0] id_csr_wvalue;
+    wire        id_ertn_flush;
+    wire        id_excp_adef;
+    wire        id_excp_ine;
         
 //stage control signal
     assign id_ready_go      = ~conflict;
@@ -158,7 +167,7 @@ module ID_Stage(
 
     assign {if_excp_adef} = if_to_id_excep_reg;
                                            
-//decode instruction
+//-----decode instruction-----
     assign op_31_26  = inst[31:26];
     assign op_25_22  = inst[25:22];
     assign op_21_20  = inst[21:20];
@@ -176,6 +185,7 @@ module ID_Stage(
     assign i16  = inst[25:10];
     assign i26  = {inst[ 9: 0], inst[25:10]};
 
+    //decoders
     decoder_6_64 u_dec0(.in(op_31_26 ), .out(op_31_26_d ));
     decoder_4_16 u_dec1(.in(op_25_22 ), .out(op_25_22_d ));
     decoder_2_4  u_dec2(.in(op_21_20 ), .out(op_21_20_d ));
@@ -258,7 +268,7 @@ module ID_Stage(
     wire type_branch_uncond = inst_jirl | inst_b | inst_bl;
     wire type_branch_cond = inst_beq | inst_bne | inst_blt | inst_bge | inst_bltu | inst_bgeu;
 
-    //inst_u12i
+    //inst_others
     wire inst_lu12i_w = op_31_26_d[6'h05] & ~inst[25];
     wire inst_pcaddul2i = op_31_26_d[6'h07] & ~inst[25];
 
@@ -268,6 +278,7 @@ module ID_Stage(
 
     wire type_others  = inst_lu12i_w | inst_pcaddul2i | inst_rdcntid | inst_rdcntvl | inst_rdcntvh;
 
+    //inst_excpt
     wire inst_break   = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h14];
     wire inst_syscall = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h16];
 
@@ -279,6 +290,18 @@ module ID_Stage(
 
     wire type_excp    = inst_break | inst_syscall | inst_csrrd | inst_csrwr | inst_csrxchg | inst_ertn;
 
+    //inst tlb
+    wire inst_tlbsrch = op_31_26_d[6'h01] & op_25_22_d[4'h9] & op_21_20_d[2'h0] & op_19_15_d[5'h10] & op_14_13_d[2'h1] & op_12_10_d[3'h2]; //rk == 5'h0a;
+    wire inst_tlbrd   = op_31_26_d[6'h01] & op_25_22_d[4'h9] & op_21_20_d[2'h0] & op_19_15_d[5'h10] & op_14_13_d[2'h1] & op_12_10_d[3'h3]; //rk == 5'h0b;
+    wire inst_tlbwr   = op_31_26_d[6'h01] & op_25_22_d[4'h9] & op_21_20_d[2'h0] & op_19_15_d[5'h10] & op_14_13_d[2'h1] & op_12_10_d[3'h4]; //rk == 5'h0c;
+    wire inst_tlbfill = op_31_26_d[6'h01] & op_25_22_d[4'h9] & op_21_20_d[2'h0] & op_19_15_d[5'h10] & op_14_13_d[2'h1] & op_12_10_d[3'h5]; //rk == 5'h0d;
+    wire inst_invtlb  = op_31_26_d[6'h01] & op_25_22_d[4'h9] & op_21_20_d[2'h0] & op_19_15_d[5'h13];
+
+    wire type_tlb    = inst_tlbsrch | inst_tlbrd | inst_tlbwr | inst_tlbfill | inst_invtlb;
+
+
+//-----control signals and regfile value-----
+    //branch and jump signals(to IF)
     wire [32:0] sub_res;
   
     assign rj_eq_rd = (rj_value == rkd_value);
@@ -301,7 +324,8 @@ module ID_Stage(
     assign br_stall = type_branch_cond & conflict;
     assign br_target = (type_branch_cond | inst_bl | inst_b) ? (id_pc + br_offs) :
                                                 /*inst_jirl*/ (rj_value + jirl_offs);
-    
+
+    //alu_op
     assign alu_op[ 0] = inst_add_w | inst_addi_w | 
                         type_load | 
                         type_store |
@@ -318,6 +342,7 @@ module ID_Stage(
     assign alu_op[10] = inst_srai_w | inst_sra_w;
     assign alu_op[11] = inst_lu12i_w;
     
+    //imm control
     assign need_ui5   =  inst_slli_w | inst_srli_w | inst_srai_w;
     assign need_ui12  =  inst_andi | inst_ori | inst_xori;
     assign need_si12  =  inst_addi_w | 
@@ -339,6 +364,7 @@ module ID_Stage(
 
     assign jirl_offs = {{14{i16[15]}}, i16[15:0], 2'b0};
 
+    //alu src and dst
     assign src_reg_is_rd = type_branch_cond |
                            type_store | inst_csrwr | inst_csrxchg;
 
@@ -358,11 +384,12 @@ module ID_Stage(
     assign dst_is_r1     = inst_bl;
     assign gr_we         = ~(type_store | 
                              type_branch_cond |
+                             type_tlb |
                              inst_b |
                              inst_syscall | inst_ertn);
     assign dest          = dst_is_r1 ? 5'd1 : inst_rdcntid ? rj : rd;
 
-//regfile control
+    //regfile control
     assign rf_raddr1   = rj;
     assign rf_raddr2   = src_reg_is_rd ? rd :rk;
     assign id_rf_we    = gr_we ; 
@@ -414,6 +441,7 @@ module ID_Stage(
     .wdata  (wb_rf_wdata )
     );
 
+    //register value
     assign rj_value  =  conflict_r1_ex ? ex_rf_wdata:
                         conflict_r1_mem ? mem_rf_wdata:
                         conflict_r1_wb  ? wb_rf_wdata : rf_rdata1; 
@@ -424,6 +452,7 @@ module ID_Stage(
 
     assign id_rkd_value = rkd_value;
 
+    //div and mul control
     assign res_from_mul = inst_mul_w | inst_mulh_w | inst_mulh_wu;
     assign res_from_div = inst_div_w | inst_div_wu | inst_mod_w | inst_mod_wu;
 
@@ -432,27 +461,31 @@ module ID_Stage(
     assign div_r      = inst_mod_w | inst_mod_wu;
     
     assign mul_h      = inst_mulh_w | inst_mulh_wu;
-        
-    assign id_to_ex_data = {alu_op, alu_src1, alu_src2,
-                            id_rf_we, id_rf_waddr,
-                            id_pc,
-                            inst_st_b, inst_st_h, inst_st_w,
-                            id_rkd_value,
-                            inst_ld_b, inst_ld_bu, inst_ld_h, inst_ld_hu, inst_ld_w,
-                            inst_rdcntvl, inst_rdcntvh, inst_rdcntid, 
-                            res_from_mul, mul_signed, mul_h, res_from_div, div_signed, div_r};
 
-    wire        id_res_from_csr = inst_csrrd | inst_csrwr | inst_csrxchg | inst_rdcntid;
-    wire [13:0] id_csr_num      = inst_ertn ? `CSR_ERA : 
+    //csr and except signals
+    assign id_res_from_csr = inst_csrrd | inst_csrwr | inst_csrxchg | inst_rdcntid;
+    assign id_csr_num      = inst_ertn ? `CSR_ERA : 
                                   inst_syscall ? `CSR_EENTRY :
                                   inst_rdcntid ? `CSR_TID : 
                                   inst[23:10];
-    wire        id_csr_we       = inst_csrwr | inst_csrxchg;
-    wire [31:0] id_csr_wmask    = (inst_csrxchg)? rj_value : 32'hffffffff;
-    wire [31:0] id_csr_wvalue   = rkd_value;
-    wire        id_ertn_flush   = inst_ertn;
-    wire        id_excp_adef    = if_excp_adef;
-    wire        id_excp_ine     = ~(type_calc | type_calc_i | type_branch_uncond | type_branch_cond | type_load | type_store | type_excp | type_others) & id_valid;
+    assign id_csr_we       = inst_csrwr | inst_csrxchg;
+    assign id_csr_wmask    = (inst_csrxchg)? rj_value : 32'hffffffff;
+    assign id_csr_wvalue   = rkd_value;
+    assign id_ertn_flush   = inst_ertn;
+    assign id_excp_adef    = if_excp_adef;
+    assign id_excp_ine     = ~(type_calc | type_calc_i | type_branch_uncond | type_branch_cond | type_load | type_store | type_excp | type_tlb | type_others) & id_valid;
+
+
+//-----ID to EX data bus-----
+    assign id_to_ex_data   = {alu_op, alu_src1, alu_src2,
+                              id_rf_we, id_rf_waddr,
+                              id_pc,
+                              inst_st_b, inst_st_h, inst_st_w,
+                              id_rkd_value,
+                              inst_ld_b, inst_ld_bu, inst_ld_h, inst_ld_hu, inst_ld_w,
+                              inst_rdcntvl, inst_rdcntvh, inst_rdcntid, 
+                              res_from_mul, mul_signed, mul_h, res_from_div, div_signed, div_r};
+    
 
     assign id_to_ex_excep = {id_res_from_csr, id_csr_num, id_csr_we, id_csr_wmask, id_csr_wvalue, 
                              id_ertn_flush, has_int, id_excp_adef, inst_syscall, inst_break,

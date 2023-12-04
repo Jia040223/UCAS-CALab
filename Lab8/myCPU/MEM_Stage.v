@@ -65,7 +65,7 @@ module MEM_Stage(
     wire        mem_excp_ine;
     
 
-//stage control signal
+//-----stage control signal-----
     assign mem_ready_go     = mem_data_sram_req & data_sram_data_ok | ~mem_data_sram_req;
     assign mem_allowin      = ~mem_valid | mem_ready_go & wb_allowin | mem_flush;     
     assign mem_to_wb_valid  = mem_valid & mem_ready_go & ~mem_flush;
@@ -77,7 +77,7 @@ module MEM_Stage(
             mem_valid <= ex_to_mem_valid; 
     end
 
-//exe and mem state interface
+//-----EX and MEM state interface-----
     always @(posedge clk) begin
         if(ex_to_mem_valid & mem_allowin) begin
             ex_to_mem_data_reg <= ex_to_mem_data;
@@ -97,8 +97,11 @@ module MEM_Stage(
             mem_ertn_flush, mem_has_int, mem_excp_adef, mem_excp_syscall, mem_excp_break,
             mem_excp_ale, mem_excp_ine
             } = ex_to_mem_excep_reg;
-    
-//mem and wb state interface
+
+    //exception signal to EX
+    assign mem_to_ex_excep =  (mem_ertn_flush | mem_excep) & mem_valid;
+
+//-----final rf_wdata-----
     assign shift_rdata   = {24'b0, data_sram_rdata} >> {mem_final_result[1:0], 3'b0};
     
     assign mem_result[ 7: 0]   =  shift_rdata[ 7: 0];
@@ -117,11 +120,7 @@ module MEM_Stage(
                               {32{~mul_h & res_from_mul}} & mul_result[31:0] |
                               {32{~res_from_mul & ~res_from_mem}} & mem_final_result;
 
-    assign mem_to_wb_data = {mem_rf_we,
-                             mem_rf_waddr,
-                             mem_rf_wdata,
-                             mem_pc};
-                       
+//-----MEM to ID data(backward)----- 
     assign mem_res_from_mem = res_from_mem & ~mem_to_wb_valid & mem_valid;
                              
     assign mem_rf_zip      = {mem_res_from_mem,
@@ -130,10 +129,17 @@ module MEM_Stage(
                               mem_rf_waddr,
                               mem_rf_wdata};
 
+//-----MEM and WB state interface-----
+    assign mem_to_wb_data = {mem_rf_we,
+                             mem_rf_waddr,
+                             mem_rf_wdata,
+                             mem_pc};
+                          
+    //exception
+    assign mem_excep = mem_has_int | mem_excp_adef | mem_excp_syscall | mem_excp_break | mem_excp_ale | mem_excp_ine;
+
     assign mem_to_wb_excep = {mem_res_from_csr, mem_csr_num, mem_csr_we, mem_csr_wmask, mem_csr_wvalue, 
                               mem_ertn_flush, mem_has_int, mem_excp_adef, mem_excp_syscall, mem_excp_break,
                               mem_excp_ale, mem_final_result, mem_excp_ine};
-    assign mem_excep = mem_has_int | mem_excp_adef | mem_excp_syscall | mem_excp_break | mem_excp_ale | mem_excp_ine;
-    assign mem_to_ex_excep =  (mem_ertn_flush | mem_excep) & mem_valid;
   
 endmodule

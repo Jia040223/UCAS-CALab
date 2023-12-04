@@ -89,10 +89,8 @@
 `define CSR_TLBIDX_INDEX    3:0
 `define CSR_TLBIDX_PS       29:24
 `define CSR_TLBIDX_NE       31
-
 // TLBEHI
 `define CSR_TLBEHI_VPPN     31:13
-
 // TLBELO0 TLBELO1
 `define CSR_TLBELO_V        0
 `define CSR_TLBELO_D        1
@@ -100,9 +98,7 @@
 `define CSR_TLBELO_MAT      5:4
 `define CSR_TLBELO_G        6
 `define CSR_TLBELO_PPN      31:8
-
 // ASID
 `define CSR_ASID_ASID       9:0
-
 // TLBRENTRY
 `define CSR_TLBRENTRY_PA    31:6

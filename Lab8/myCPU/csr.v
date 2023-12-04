@@ -169,6 +169,7 @@ module csr(
     reg  [25:0] csr_tlbrentry_pa;
     wire [31:0] csr_tlbrentry_rvalue;
 
+//-----CSR Registers-----
     //CRMD
     always @(posedge clk) begin
         if(~resetn) begin
@@ -332,7 +333,6 @@ module csr(
     //TICLR
     assign csr_ticlr_clr = 1'b0;
 
-    //exp18
     // TLBIDX
     always @ (posedge clk) begin
         if (~resetn) begin
@@ -493,7 +493,7 @@ module csr(
         end
     end
     
-    //---rvalue and output---
+//---rvalue and output---
     //exp13
     assign ex_entry = csr_eentry_rvalue;
     assign csr_crmd_rvalue = {23'b0, csr_crmd_datm, csr_crmd_datm, csr_crmd_pg, csr_crmd_da, csr_crmd_ie, csr_crmd_plv};
