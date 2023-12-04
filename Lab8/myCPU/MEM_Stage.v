@@ -22,7 +22,12 @@ module MEM_Stage(
     output wire [39:0] mem_rf_zip,
 
     input  wire        mem_flush,
-    output wire        mem_to_ex_excep  
+    output wire        mem_to_ex_excep,
+    
+    //exp 18
+    input wire                          s1_found,
+    input wire                   [ 3:0] s1_index,
+    output wire                         mem_csr_tlbrd  
 );
     reg  [`EX_TO_MEM_DATA_WIDTH-1:0] ex_to_mem_data_reg;
     reg  [`EX_TO_MEM_EXCEP_WIDTH-1:0] ex_to_mem_excep_reg;
@@ -51,6 +56,8 @@ module MEM_Stage(
 
     wire        mem_res_from_mem;
     wire        mem_res_from_csr;
+    wire        res_from_mul;
+    wire        res_from_div;
     wire [13:0] mem_csr_num;
     wire        mem_csr_we;
     wire [31:0] mem_csr_wmask;

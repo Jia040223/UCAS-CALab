@@ -71,7 +71,7 @@ module csr(
     reg [1:0]   csr_crmd_plv;
     reg         csr_crmd_ie;
     wire [31:0] csr_crmd_rvalue;
-    wire         csr_crmd_da;       //CRMD的直接地�?翻译使能
+    wire         csr_crmd_da;       //CRMD的直接地�??翻译使能
     wire         csr_crmd_pg;
     wire [1:0]   csr_crmd_datf;
     wire [1:0]   csr_crmd_datm;
@@ -349,9 +349,10 @@ module csr(
             csr_tlbidx_ne <= ~r_tlb_e;
         end 
         else if (tlbsrch_we) begin
-            if(tlbsrch_hit)
+            if(tlbsrch_hit) begin
                 csr_tlbidx_index <= tlbsrch_hit_index;
-                csr_tlbidx_ne <= 1'b0
+                csr_tlbidx_ne <= 1'b0;
+            end
             else
                 csr_tlbidx_ne <= 1'b1;
         end 
@@ -367,7 +368,7 @@ module csr(
 
     // TLBEHI
     always @ (posedge clk) begin
-        if (reset) begin
+        if (~resetn) begin
             csr_tlbehi_vppn <= 19'b0;
         end 
         else if (tlbrd_we) begin

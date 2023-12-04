@@ -128,7 +128,9 @@ module ID_Stage(
     wire        mem_res_from_mem;
     wire        ex_res_from_csr;
     wire        mem_res_from_csr;
-
+    
+    wire        if_excp_adef;
+    
     wire        id_res_from_csr;
     wire [13:0] id_csr_num;
     wire        id_csr_we;

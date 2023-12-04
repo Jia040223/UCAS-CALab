@@ -27,7 +27,19 @@ module EX_Stage(
     input  wire        data_sram_addr_ok,
 
     input  wire        ex_flush,
-    input  wire        mem_to_ex_excep
+    input  wire        mem_to_ex_excep,
+    
+    // exp 18
+    // to tlb
+    output wire [19:0] s1_va_highbits,
+    output wire [ 9:0] s1_asid,
+    output wire        invtlb_valid,
+    output wire [ 4:0] invtlb_op,
+    // from csr, used for tlbsrch
+    input  wire [ 9:0] csr_asid_asid,
+    input  wire [18:0] csr_tlbehi_vppn,
+    // blk tlbsrch
+    input  wire        mem_csr_tlbrd
 );
     reg  [`ID_TO_EX_DATA_WIDTH-1:0] id_to_ex_data_reg;
     reg  [`ID_TO_EX_EXCEP_WIDTH-1:0] id_to_ex_excep_reg;
@@ -87,6 +99,11 @@ module EX_Stage(
     reg  [63:0] counter;
     wire        ex_mem_wait;
     wire [ 1:0] ex_sram_size;
+    
+    wire        ex_inst_rdcntvl;
+    wire        ex_inst_rdcntvh;
+    wire        ex_inst_rdcntid;
+    wire        ex_has_int;
 
 //-----stage control signal-----
     assign ex_ready_go      = (data_sram_req & data_sram_addr_ok) | (ex_res_from_div & ex_div_complete) | ~(data_sram_req | ex_res_from_div);

@@ -67,7 +67,6 @@ module mycpu_top(
     wire [`ID_TO_EX_EXCEP_WIDTH  - 1:0] id_to_ex_excep;
     wire [`EX_TO_MEM_EXCEP_WIDTH - 1:0] ex_to_mem_excep;
     wire [`MEM_TO_WB_EXCEP_WIDTH - 1:0] mem_to_wb_excep;
-    wire [31:0] ex_entry;
 
     wire        ex_mem_we;
     wire        ex_res_from_mem;
@@ -90,8 +89,6 @@ module mycpu_top(
     wire wb_flush;
     wire mem_to_ex_excep;
 
-    wire has_int;
-    
     wire [`WB_TO_IF_CSR_DATA_WIDTH -1:0]  wb_to_if_csr_data;
 
     wire        inst_sram_req;
@@ -115,23 +112,24 @@ module mycpu_top(
     wire [31:0] data_sram_rdata;
 
     //exp13 csr
-    wire [13:0] wb_csr_num,
-    wire        wb_csr_we,
-    wire [31:0] wb_csr_wmask,
-    wire [31:0] wb_csr_wvalue,
-    wire        wb_ertn_flush_valid,
-    wire        wb_excep_valid,
-    wire [ 5:0] wb_csr_ecode,
-    wire [ 8:0] wb_csr_esubcode,
+    wire [13:0] wb_csr_num;
+    wire        wb_csr_we;
+    wire [31:0] wb_csr_wmask;
+    wire [31:0] wb_csr_wvalue;
+    wire        wb_ertn_flush_valid;
+    wire        wb_excep_valid;
+    wire [ 5:0] wb_csr_ecode;
+    wire [ 8:0] wb_csr_esubcode;
+    wire [31:0] wb_pc;
 
-    wire [31:0] csr_rvalue,
-    wire [31:0] ex_entry,
+    wire [31:0] csr_rvalue;
+    wire [31:0] ex_entry;
 
-    wire        ipi_int_in,
-    wire [ 7:0] hw_int_in,
-    wire [31:0] coreid_in,
-    wire [31:0] wb_vaddr,
-    wire        has_int,
+    wire        ipi_int_in;
+    wire [ 7:0] hw_int_in;
+    wire [31:0] coreid_in;
+    wire [31:0] wb_vaddr;
+    wire        has_int;
 
     //exp18
     wire [ 9:0] csr_asid_asid;
@@ -426,8 +424,8 @@ module mycpu_top(
         .wb_csr_wvalue(wb_csr_wvalue),
         .wb_ertn_flush_valid(wb_ertn_flush_valid),
         .wb_excep_valid(wb_excep_valid),
-        .wb_ecode(wb_csr_ecode), 
-        .wb_esubcode(wb_csr_esubcode), 
+        .wb_csr_ecode(wb_csr_ecode), 
+        .wb_csr_esubcode(wb_csr_esubcode), 
         .wb_pc(wb_pc),
         .csr_rvalue(csr_rvalue),
         .ex_entry(ex_entry),
@@ -451,8 +449,8 @@ module mycpu_top(
     );
 
     csr my_csr(
-        .clk        (clk  ),
-        .reset      (aresetn),
+        .clk        (aclk  ),
+        .resetn      (aresetn),
         .csr_num(wb_csr_num),
         .csr_we(wb_csr_we),
         .csr_wmask(wb_csr_wmask),
@@ -514,7 +512,7 @@ module mycpu_top(
     );
 
     tlb my_tlb(
-        .clk        (clk),
+        .clk        (aclk),
         
         .s0_vppn    (s0_vppn),
         .s0_va_bit12(s0_va_bit12),

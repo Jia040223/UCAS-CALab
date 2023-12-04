@@ -18,7 +18,6 @@ module WB_Stage(
     output wire [`WB_TO_IF_CSR_DATA_WIDTH -1:0] wb_to_if_csr_data,
     //flush
     output wire        wb_flush,
-    output wire        has_int,
 
     //exp13 csr
     output wire [13:0] wb_csr_num,
@@ -29,6 +28,7 @@ module WB_Stage(
     output wire        wb_excep_valid,
     output wire [ 5:0] wb_csr_ecode,
     output wire [ 8:0] wb_csr_esubcode,
+    output wire [31:0] wb_pc,
 
     input  wire [31:0] csr_rvalue,
     input  wire [31:0] ex_entry,
