@@ -8,7 +8,11 @@
 `define EX_TO_MEM_EXCEP_WIDTH   87
 `define MEM_TO_WB_EXCEP_WIDTH   119
 
-`define WB_TO_IF_CSR_DATA_WIDTH 66
+`define ID_TO_EX_TLB_WIDTH      10
+`define EX_TO_MEM_TLB_WIDTH     20
+`define MEM_TO_WB_TLB_WIDTH     20
+
+`define WB_TO_IF_CSR_DATA_WIDTH 99
 
 `define ECODE_INT   6'h0
 `define ECODE_ADEF  6'h8

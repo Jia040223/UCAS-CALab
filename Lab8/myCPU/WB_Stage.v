@@ -5,8 +5,9 @@ module WB_Stage(
     input  wire        resetn,
     // mem and wb state interface
     output wire        wb_allowin,
-    input  wire [`MEM_TO_WB_DATA_WIDTH-1:0] mem_to_wb_data,
+    input  wire [ `MEM_TO_WB_DATA_WIDTH-1:0] mem_to_wb_data,
     input  wire [`MEM_TO_WB_EXCEP_WIDTH-1:0] mem_to_wb_excep,
+    input  wire [  `MEM_TO_WB_TLB_WIDTH-1:0] mem_to_wb_tlb,
     input  wire        mem_to_wb_valid,  
     // trace debug interface
     output wire [31:0] debug_wb_pc,
@@ -15,7 +16,9 @@ module WB_Stage(
     output wire [31:0] debug_wb_rf_wdata,
     // id and wb stage interface
     output wire [37:0] wb_rf_zip,
+    // if and wb stage interface
     output wire [`WB_TO_IF_CSR_DATA_WIDTH -1:0] wb_to_if_csr_data,
+
     //flush
     output wire        wb_flush,
 
@@ -40,6 +43,7 @@ module WB_Stage(
     input  wire        has_int,
 
     //exp18
+    output wire         wb_csr_tlbrd,
     input  wire  [ 3:0] csr_tlbidx_index, // from csr
     // tlbrd
     output wire         tlbrd_we, // to csr
@@ -54,12 +58,14 @@ module WB_Stage(
     output wire         tlbsrch_hit,
     output wire  [ 3:0] tlbsrch_hit_index   
 );    
-    reg  [`MEM_TO_WB_DATA_WIDTH-1:0] mem_to_wb_data_reg;
+    reg  [ `MEM_TO_WB_DATA_WIDTH-1:0] mem_to_wb_data_reg;
     reg  [`MEM_TO_WB_EXCEP_WIDTH-1:0] mem_to_wb_excep_reg; 
+    reg  [  `MEM_TO_WB_TLB_WIDTH-1:0] mem_to_wb_tlb_reg;
     
+    reg  [ 3:0] rand_idx;
+
     wire        wb_ready_go;
     reg         wb_valid;
-    wire [31:0] wb_pc;
     wire [31:0] wb_rf_result;
     wire [31:0] wb_rf_wdata;
     wire [ 4:0] wb_rf_waddr;
@@ -76,6 +82,24 @@ module WB_Stage(
     wire        wb_excp_ale;
     wire        wb_excp_ine;
 
+    wire        wb_inst_tlbsrch;
+    wire        wb_inst_tlbwr;
+    wire        wb_inst_tlbfill;
+    wire        wb_inst_tlbrd;
+    wire        wb_inst_invtlb;
+
+    wire        wb_tlb_refetch;
+
+    wire        wb_tlbwr_valid;
+    wire        wb_tlbfill_valid;
+    wire        wb_tlbrd_valid;
+    wire        wb_invtlb_valid;
+
+    wire        wb_csr_tlbwr;
+    wire        wb_s1_found;
+    wire [ 3:0] wb_s1_index;
+    wire [ 4:0] wb_invtlb_op;
+
 //-----stage control signal-----
     assign wb_ready_go      = 1'b1;
     assign wb_allowin       = ~wb_valid | wb_ready_go ;     
@@ -89,9 +113,10 @@ module WB_Stage(
 
 //-----MEM and WB state interface-----
     always @(posedge clk) begin
-        if(mem_to_wb_valid & wb_allowin)begin
-            mem_to_wb_data_reg <= mem_to_wb_data;
+        if(mem_to_wb_valid & wb_allowin) begin
+            mem_to_wb_data_reg  <= mem_to_wb_data;
             mem_to_wb_excep_reg <= mem_to_wb_excep;
+            mem_to_wb_tlb_reg   <= mem_to_wb_tlb;
         end
     end
     
@@ -108,6 +133,9 @@ module WB_Stage(
             wb_ertn_flush, wb_has_int, wb_excp_adef, wb_excp_syscall, wb_excp_break,
             wb_excp_ale, wb_vaddr, wb_excp_ine
             } = mem_to_wb_excep_reg;
+    
+    assign {wb_s1_found, wb_s1_index, wb_invtl_op,
+            wb_inst_tlbfill, wb_inst_tlbwr, wb_inst_tlbfill, wb_inst_tlbrd, wb_inst_invtlb} = mem_to_wb_tlb_reg;
 
 //-----WB to ID data(backward)----- 
     assign wb_rf_wdata = (wb_res_from_csr)? csr_rvalue : wb_rf_result;
@@ -129,20 +157,34 @@ module WB_Stage(
     assign wb_ertn_flush_valid  = wb_ertn_flush & wb_valid;
     assign wb_excep_valid       = wb_excep & wb_valid;
 
+    assign wb_tlbwr_valid       = wb_inst_tlbwr & wb_valid;
+    assign wb_tlbfill_valid     = wb_inst_tlbfill & wb_valid;
+    assign wb_tlbrd_valid       = wb_inst_tlbrd & wb_valid;
+    assign wb_invtlb_valid      = wb_inst_invtlb & wb_valid;
+    assign wb_csr_tlbwr         = ((wb_csr_num == `CSR_ASID || wb_csr_num == `CSR_CRMD) 
+                                    && wb_csr_we) && wb_valid;
+    
+    assign wb_tlb_refetch       = wb_tlbwr_valid | wb_tlbfill_valid | wb_tlbrd_valid | wb_invtlb_valid | wb_csr_tlbwr;
+
+    assign wb_csr_tlbrd = ((wb_csr_num == `CSR_ASID || wb_csr_num == `CSR_TLBEHI) && wb_csr_we
+                            || wb_inst_tlbrd) && wb_valid;
+
+
     assign ipi_int_in   = 1'b0;
     assign hw_int_in    = 8'b0;
     assign coreid_in    = 32'b0;
 
     //WB to IF data
-    assign wb_to_if_csr_data = {wb_ertn_flush_valid, wb_excep_valid, ex_entry, csr_rvalue};
+    assign wb_to_if_csr_data = {wb_ertn_flush_valid, wb_excep_valid, wb_tlb_refetch, ex_entry, csr_rvalue, wb_pc};
+
 
     //flush pipline
-    assign wb_flush = wb_ertn_flush_valid | wb_excep_valid;
+    assign wb_flush = wb_ertn_flush_valid | wb_excep_valid | wb_tlb_refetch;
 
 //-----TLB relavant signals-----
     //tlbfill select random idx
     always @ (posedge clk) begin
-        if (reset) begin
+        if (~resetn) begin
             rand_idx <= 4'b0;
         end else begin
             rand_idx <= {rand_idx[1:0], 2'b0} + 4'd8; // 4*rand_idx+8 mod 16
@@ -150,19 +192,18 @@ module WB_Stage(
     end
 
     // tlbrd
-    assign tlbrd_we = inst_tlbrd;
+    assign tlbrd_we = wb_inst_tlbrd;
     assign r_index = csr_tlbidx_index;
 
     // tlbwr and tlbfill
-    assign w_index = inst_tlbwr ? csr_tlbidx_index : rand_idx;
-    assign we = inst_tlbwr | inst_tlbfill;
+    assign w_index = wb_inst_tlbwr ? csr_tlbidx_index : rand_idx;
+    assign tlb_we = wb_inst_tlbwr | wb_inst_tlbfill;
 
     // tlbsrch
-    assign tlbsrch_we = inst_tlbsrch;
-    assign tlbsrch_hit = wb_tlbsrch_hit;
-    assign tlbsrch_hit_index = wb_tlbsrch_hit_index;
+    assign tlbsrch_we = wb_inst_tlbsrch;
+    assign tlbsrch_hit = wb_s1_found;
+    assign tlbsrch_hit_index = wb_s1_index;
     
-
 //-----trace debug interface-----
     assign debug_wb_pc = wb_pc;
     assign debug_wb_rf_wdata = wb_rf_wdata;

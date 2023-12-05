@@ -9,12 +9,13 @@ module ID_Stage(
     output wire        br_stall,
     output wire [31:0] br_target,
     input  wire        if_to_id_valid,
-    input  wire [`IF_TO_ID_DATA_WIDTH-1:0] if_to_id_data,
+    input  wire [ `IF_TO_ID_DATA_WIDTH-1:0] if_to_id_data,
     input  wire [`IF_TO_ID_EXCEP_WIDTH-1:0] if_to_id_excep,
     // id and exe state interface
     input  wire        ex_allowin,
-    output wire [`ID_TO_EX_DATA_WIDTH-1:0] id_to_ex_data,
+    output wire [ `ID_TO_EX_DATA_WIDTH-1:0] id_to_ex_data,
     output wire [`ID_TO_EX_EXCEP_WIDTH-1:0] id_to_ex_excep,
+    output wire [  `ID_TO_EX_TLB_WIDTH-1:0] id_to_ex_tlb,
     output wire        id_to_ex_valid,  
     // id and wb state interface
     input  wire [37:0] wb_rf_zip, // {wb_rf_we, wb_rf_waddr, wb_rf_wdata}
@@ -25,7 +26,7 @@ module ID_Stage(
     input  wire       id_flush,
     input  wire       has_int
 );
-    reg  [`IF_TO_ID_DATA_WIDTH-1:0] if_to_id_data_reg; 
+    reg  [ `IF_TO_ID_DATA_WIDTH-1:0] if_to_id_data_reg; 
     reg  [`IF_TO_ID_EXCEP_WIDTH-1:0] if_to_id_excep_reg;
     
     wire [31:0] id_pc;
@@ -139,6 +140,8 @@ module ID_Stage(
     wire        id_ertn_flush;
     wire        id_excp_adef;
     wire        id_excp_ine;
+
+    wire        invtlb_op;
         
 //stage control signal
     assign id_ready_go      = ~conflict;
@@ -492,5 +495,7 @@ module ID_Stage(
     assign id_to_ex_excep = {id_res_from_csr, id_csr_num, id_csr_we, id_csr_wmask, id_csr_wvalue, 
                              id_ertn_flush, has_int, id_excp_adef, inst_syscall, inst_break,
                              id_excp_ine};
+
+    assign id_to_ex_tlb   = {rd, inst_tlbsrch, inst_tlbwr, inst_tlbfill, inst_tlbrd, inst_invtlb};
 
 endmodule

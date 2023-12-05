@@ -5,14 +5,16 @@ module MEM_Stage(
     input  wire        resetn,
     // exe and mem state interface
     output wire        mem_allowin,
-    input  wire [`EX_TO_MEM_DATA_WIDTH-1:0] ex_to_mem_data,
+    input  wire [ `EX_TO_MEM_DATA_WIDTH-1:0] ex_to_mem_data,
     input  wire [`EX_TO_MEM_EXCEP_WIDTH-1:0] ex_to_mem_excep, 
+    input  wire [  `EX_TO_MEM_TLB_WIDTH-1:0] ex_to_mem_tlb,
     input  wire        ex_to_mem_valid,
 
     // mem and wb state interface
     input  wire        wb_allowin,
-    output wire [`MEM_TO_WB_DATA_WIDTH-1:0] mem_to_wb_data,
+    output wire [ `MEM_TO_WB_DATA_WIDTH-1:0] mem_to_wb_data,
     output wire [`MEM_TO_WB_EXCEP_WIDTH-1:0] mem_to_wb_excep,
+    output wire [ `MEM_TO_WB_TLB_WIDTH-1:0 ] mem_to_wb_tlb,
     output wire        mem_to_wb_valid,  
    
     input  wire        data_sram_data_ok,
@@ -23,14 +25,12 @@ module MEM_Stage(
 
     input  wire        mem_flush,
     output wire        mem_to_ex_excep,
-    
-    //exp 18
-    input  wire        s1_found,
-    input  wire [ 3:0] s1_index,
+
     output wire        mem_csr_tlbrd  
 );
-    reg  [`EX_TO_MEM_DATA_WIDTH-1:0] ex_to_mem_data_reg;
+    reg  [ `EX_TO_MEM_DATA_WIDTH-1:0] ex_to_mem_data_reg;
     reg  [`EX_TO_MEM_EXCEP_WIDTH-1:0] ex_to_mem_excep_reg;
+    reg  [  `EX_TO_MEM_TLB_WIDTH-1:0] ex_to_mem_tlb_reg;
 
     wire [31:0] mem_pc;
     wire        mem_ready_go;
@@ -71,6 +71,14 @@ module MEM_Stage(
     wire        mem_excp_ale;
     wire        mem_excp_ine;
     
+    wire        mem_inst_tlbsrch;
+    wire        mem_inst_tlbwr;
+    wire        mem_inst_tlbfill;
+    wire        mem_inst_tlbrd;
+    wire        mem_inst_invtl;
+
+    wire        mem_s1_found;
+    wire [ 3:0] mem_s1_index;
 
 //-----stage control signal-----
     assign mem_ready_go     = mem_data_sram_req & data_sram_data_ok | ~mem_data_sram_req;
@@ -87,8 +95,9 @@ module MEM_Stage(
 //-----EX and MEM state interface-----
     always @(posedge clk) begin
         if(ex_to_mem_valid & mem_allowin) begin
-            ex_to_mem_data_reg <= ex_to_mem_data;
+            ex_to_mem_data_reg  <= ex_to_mem_data;
             ex_to_mem_excep_reg <= ex_to_mem_excep;
+            ex_to_mem_tlb_reg   <= ex_to_mem_tlb;
         end
     end
     
@@ -104,6 +113,10 @@ module MEM_Stage(
             mem_ertn_flush, mem_has_int, mem_excp_adef, mem_excp_syscall, mem_excp_break,
             mem_excp_ale, mem_excp_ine
             } = ex_to_mem_excep_reg;
+    
+    assign {mem_s1_found, mem_s1_index,
+            mem_inst_tlbsrch, mem_inst_tlbwr, mem_inst_tlbfill, mem_inst_tlbrd, mem_inst_invtl
+            } = ex_to_mem_tlb_reg;
 
     //exception signal to EX
     assign mem_to_ex_excep =  (mem_ertn_flush | mem_excep) & mem_valid;
@@ -153,5 +166,8 @@ module MEM_Stage(
     assign mem_to_wb_excep = {mem_res_from_csr, mem_csr_num, mem_csr_we, mem_csr_wmask, mem_csr_wvalue, 
                               mem_ertn_flush, mem_has_int, mem_excp_adef, mem_excp_syscall, mem_excp_break,
                               mem_excp_ale, mem_final_result, mem_excp_ine};
+    
+    assign mem_to_wb_tlb = {mem_s1_found, mem_s1_index,
+                            mem_inst_tlbsrch, mem_inst_tlbwr, mem_inst_tlbfill, mem_inst_tlbrd, mem_inst_invtl};
   
 endmodule
