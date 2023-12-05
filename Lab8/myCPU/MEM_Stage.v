@@ -25,9 +25,9 @@ module MEM_Stage(
     output wire        mem_to_ex_excep,
     
     //exp 18
-    input wire                          s1_found,
-    input wire                   [ 3:0] s1_index,
-    output wire                         mem_csr_tlbrd  
+    input  wire        s1_found,
+    input  wire [ 3:0] s1_index,
+    output wire        mem_csr_tlbrd  
 );
     reg  [`EX_TO_MEM_DATA_WIDTH-1:0] ex_to_mem_data_reg;
     reg  [`EX_TO_MEM_EXCEP_WIDTH-1:0] ex_to_mem_excep_reg;
@@ -126,6 +126,11 @@ module MEM_Stage(
                               {32{mul_h}} & mul_result[63:32] |
                               {32{~mul_h & res_from_mul}} & mul_result[31:0] |
                               {32{~res_from_mul & ~res_from_mem}} & mem_final_result;
+
+//-----TLB relavant signals-----
+    //to EX
+    assign mem_csr_tlbrd = ((mem_csr_num == `CSR_ASID || mem_csr_num == `CSR_TLBEHI) && mem_csr_we
+                     || ms_inst_tlbrd) && mem_valid;
 
 //-----MEM to ID data(backward)----- 
     assign mem_res_from_mem = res_from_mem & ~mem_to_wb_valid & mem_valid;

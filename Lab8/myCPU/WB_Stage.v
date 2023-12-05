@@ -139,6 +139,30 @@ module WB_Stage(
     //flush pipline
     assign wb_flush = wb_ertn_flush_valid | wb_excep_valid;
 
+//-----TLB relavant signals-----
+    //tlbfill select random idx
+    always @ (posedge clk) begin
+        if (reset) begin
+            rand_idx <= 4'b0;
+        end else begin
+            rand_idx <= {rand_idx[1:0], 2'b0} + 4'd8; // 4*rand_idx+8 mod 16
+        end
+    end
+
+    // tlbrd
+    assign tlbrd_we = inst_tlbrd;
+    assign r_index = csr_tlbidx_index;
+
+    // tlbwr and tlbfill
+    assign w_index = inst_tlbwr ? csr_tlbidx_index : rand_idx;
+    assign we = inst_tlbwr | inst_tlbfill;
+
+    // tlbsrch
+    assign tlbsrch_we = inst_tlbsrch;
+    assign tlbsrch_hit = wb_tlbsrch_hit;
+    assign tlbsrch_hit_index = wb_tlbsrch_hit_index;
+    
+
 //-----trace debug interface-----
     assign debug_wb_pc = wb_pc;
     assign debug_wb_rf_wdata = wb_rf_wdata;

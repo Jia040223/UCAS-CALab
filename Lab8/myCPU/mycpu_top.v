@@ -366,7 +366,7 @@ module mycpu_top(
         .invtlb_op        (invtlb_op),
         .csr_asid_asid    (csr_asid_asid),
         .csr_tlbehi_vppn  (csr_tlbehi_vppn),
-        .mem_csr_tlbrd     (mem_csr_tlbrd)
+        .mem_csr_tlbrd    (mem_csr_tlbrd)
      );
 
     MEM_Stage my_MEM_Stage
