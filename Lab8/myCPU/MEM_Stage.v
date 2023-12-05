@@ -130,7 +130,7 @@ module MEM_Stage(
 //-----TLB relavant signals-----
     //to EX
     assign mem_csr_tlbrd = ((mem_csr_num == `CSR_ASID || mem_csr_num == `CSR_TLBEHI) && mem_csr_we
-                     || ms_inst_tlbrd) && mem_valid;
+                     || mem_inst_tlbrd) && mem_valid;
 
 //-----MEM to ID data(backward)----- 
     assign mem_res_from_mem = res_from_mem & ~mem_to_wb_valid & mem_valid;
