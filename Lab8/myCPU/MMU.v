@@ -1,12 +1,12 @@
 `include "mycpu_head.h"
 
 module MMU(
-    //search port 0 (for inst fetch)
+    //search port
     output wire [18:0] s_vppn,
     output wire        s_va_bit12,
     output wire [ 9:0] s_asid,
     input  wire        s_found,
-    input  wire [$clog2(TLBNUM)-1:0] s_index,
+    input  wire [$clog2(`TLBNUM)-1:0] s_index,
     input  wire [19:0] s_ppn,
     input  wire [ 5:0] s_ps,
     input  wire [ 1:0] s_plv,
@@ -42,10 +42,10 @@ module MMU(
     assign csr_crmd_plv = csr_crmd_rvalue[`CSR_CRMD_PLV];
     assign csr_asid_asid = csr_asid_rvalue[`CSR_ASID_ASID];
 
-    assign dwm0_hit =   csr_crmd_da && csr_crmd_pg 
-                     && csr_dmw0_rvalue[csr_crmd_plv] && (csr_dmw0_rvalue[CSR_DMW_VSEG] == nextpc[CSR_DMW_VSEG]);
-    assign dwm1_hit =   csr_crmd_da && csr_crmd_pg
-                     && csr_dmw1_rvalue[csr_crmd_plv] && (csr_dmw1_rvalue[CSR_DMW_VSEG] == nextpc[CSR_DMW_VSEG]);
+    assign dwm0_hit =   ~csr_crmd_da && csr_crmd_pg 
+                     && csr_dmw0_rvalue[csr_crmd_plv] && (csr_dmw0_rvalue[`CSR_DMW_VSEG] == nextpc[`CSR_DMW_VSEG]);
+    assign dwm1_hit =   ~csr_crmd_da && csr_crmd_pg
+                     && csr_dmw1_rvalue[csr_crmd_plv] && (csr_dmw1_rvalue[`CSR_DMW_VSEG] == nextpc[`CSR_DMW_VSEG]);
 
     assign dmw_pa0  =   {csr_dmw0_rvalue[`CSR_DMW_PSEG], va[28:0]}; //csr_dmw_rvalue[27:25] = csr_dmw_pseg
     assign dmw_pa1  =   {csr_dmw1_rvalue[`CSR_DMW_PSEG], va[28:0]}; 
