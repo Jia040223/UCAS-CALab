@@ -1,7 +1,7 @@
 `include "mycpu_head.h"
 
 module MMU(
-    //search port 0 (for inst fetch)
+    //search port
     output wire [18:0] s_vppn,
     output wire        s_va_bit12,
     output wire [ 9:0] s_asid,
