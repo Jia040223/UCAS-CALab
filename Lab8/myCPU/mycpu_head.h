@@ -106,3 +106,21 @@
 `define CSR_ASID_ASID       9:0
 // TLBRENTRY
 `define CSR_TLBRENTRY_PA    31:6
+
+//------exp19------
+`define CSR_DMW0      14'h180
+`define CSR_DMW1      14'h181
+
+`define CSR_DMW_PLV0  0
+`define CSR_DMW_PLV3  3
+`define CSR_DMW_MAT   5:4
+`define CSR_DMW_PSEG  27:25
+`define CSR_DMW_VSEG  31:29
+
+`define ECODE_PIL     6'h1
+`define ECODE_PIS     6'h2
+`define ECODE_PIF     6'h3
+`define ECODE_PME     6'h4
+`define ECODE_PPI     6'h7 
+`define ECODE_TLBR    6'h3f
+`define ESUBCODE_ADEM 9'h1
