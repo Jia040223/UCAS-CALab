@@ -226,12 +226,15 @@ module mycpu_top(
     wire        inst_page_invalid;
     wire        inst_ppi_except;
     wire        inst_page_fault;
-    wire        inst_page_dirty;
+    wire        inst_page_clean;
 
     wire        data_page_invalid;
     wire        data_ppi_except;
     wire        data_page_fault;
-    wire        data_page_dirty;
+    wire        data_page_clean;
+
+    wire [ 9:0] if_asid;
+    wire [ 9:0] ex_asid;
 
     wire [31:0] inst_va;
     wire [31:0] inst_pa;
@@ -331,13 +334,15 @@ module mycpu_top(
         .wb_to_if_csr_data(wb_to_if_csr_data),
         .if_flush(wb_flush),
 
+        .csr_asid_rvalue(csr_asid_rvalue),
         .va         (inst_va),
         .pa         (inst_pa),
+        .if_asid    (if_asid),
 
         .page_invalid   (inst_page_invalid),
         .ppi_except     (inst_ppi_except),
         .page_fault     (inst_page_fault),
-        .page_dirty     (inst_page_dirty)
+        .page_clean     (inst_page_clean)
     );
 
     ID_Stage my_ID_Stage
@@ -410,13 +415,15 @@ module mycpu_top(
 
         .ex_to_wb_rand    (ex_to_wb_rand),
 
-        .va         (data_va),
-        .pa         (data_pa),
+        .csr_asid_rvalue(csr_asid_rvalue),
+        .va             (data_va),
+        .pa             (data_pa),
+        .ex_asid        (ex_asid),
 
         .page_invalid   (data_page_invalid),
         .ppi_except     (data_ppi_except),
         .page_fault     (data_page_fault),
-        .page_dirty     (data_page_dirty)
+        .page_clean     (data_page_clean)
      );
 
     MEM_Stage my_MEM_Stage
@@ -652,16 +659,16 @@ module mycpu_top(
 
         .va         (inst_va),
         .pa         (inst_pa),
+        .asid_input  (if_asid),
 
         .csr_crmd_rvalue(csr_crmd_rvalue),
-        .csr_asid_rvalue(csr_asid_rvalue),
         .csr_dmw0_rvalue(csr_dmw0_rvalue),
         .csr_dmw1_rvalue(csr_dmw1_rvalue),
 
         .page_invalid   (inst_page_invalid),
         .ppi_except     (inst_ppi_except),
         .page_fault     (inst_page_fault),
-        .page_dirty     (inst_page_dirty)
+        .page_clean     (inst_page_clean)
     );
 
     MMU data_mmu(
@@ -678,16 +685,16 @@ module mycpu_top(
 
         .va         (data_va),
         .pa         (data_pa),
+        .asid_input  (ex_asid),
 
         .csr_crmd_rvalue(csr_crmd_rvalue),
-        .csr_asid_rvalue(csr_asid_rvalue),
         .csr_dmw0_rvalue(csr_dmw0_rvalue),
         .csr_dmw1_rvalue(csr_dmw1_rvalue),
 
         .page_invalid   (data_page_invalid),
         .ppi_except     (data_ppi_except),
         .page_fault     (data_page_fault),
-        .page_dirty     (data_page_dirty)
+        .page_clean     (data_page_clean)
     );
     
 endmodule

@@ -28,6 +28,11 @@ module MMU(
     output wire        ppi_except,
     output wire        page_fault,
     output wire        page_clean
+
+    //fro tlbsrch and invtlb
+    input  wire [19:0] s1_va_highbits,
+    input  wire        invtlb_valid,
+    input  wire [ 4:0] invtlb_op,
 )
     wire        csr_crmd_da;
     wire        csr_crmd_pg;
@@ -55,9 +60,9 @@ module MMU(
     assign map_trans      = ~csr_crmd_da && csr_crmd_pg;
 
     assign dmw0_hit =   map_trans && csr_dmw0_rvalue[csr_crmd_plv] && 
-                        (csr_dmw0_rvalue[`CSR_DMW_VSEG] == nextpc[`CSR_DMW_VSEG]);
+                        (csr_dmw0_rvalue[`CSR_DMW_VSEG] == va[`CSR_DMW_VSEG]);
     assign dmw1_hit =   map_trans && csr_dmw1_rvalue[csr_crmd_plv] && 
-                        (csr_dmw1_rvalue[`CSR_DMW_VSEG] == nextpc[`CSR_DMW_VSEG]);
+                        (csr_dmw1_rvalue[`CSR_DMW_VSEG] == va[`CSR_DMW_VSEG]);
 
     assign dmw_pa0  =   {csr_dmw0_rvalue[`CSR_DMW_PSEG], va[28:0]}; //csr_dmw_rvalue[27:25] = csr_dmw_pseg
     assign dmw_pa1  =   {csr_dmw1_rvalue[`CSR_DMW_PSEG], va[28:0]}; 

@@ -129,9 +129,7 @@ module ID_Stage(
     wire        mem_res_from_mem;
     wire        ex_res_from_csr;
     wire        mem_res_from_csr;
-    
-    wire        if_excp_adef;
-    
+       
     wire        id_res_from_csr;
     wire [13:0] id_csr_num;
     wire        id_csr_we;
@@ -140,6 +138,9 @@ module ID_Stage(
     wire        id_ertn_flush;
     wire        id_excp_adef;
     wire        id_excp_ine;
+    wire        id_pif_excep;
+    wire        id_ppi_excep;
+    wire        id_tlbr_excep;
 
     wire        invtlb_op;
     wire        intvtlb_op_fault;
@@ -171,7 +172,7 @@ module ID_Stage(
     
     assign {inst, id_pc} = if_to_id_data_reg;
 
-    assign {if_excp_adef} = if_to_id_excep_reg;
+    assign {id_excp_adef, id_pif_excep, id_ppi_excep, id_tlbr_excep} = if_to_id_excep_reg;
                                            
 //-----decode instruction-----
     assign op_31_26  = inst[31:26];
@@ -478,7 +479,6 @@ module ID_Stage(
     assign id_csr_wmask    = (inst_csrxchg)? rj_value : 32'hffffffff;
     assign id_csr_wvalue   = rkd_value;
     assign id_ertn_flush   = inst_ertn;
-    assign id_excp_adef    = if_excp_adef;
     assign id_excp_ine     = (~(type_calc | type_calc_i | type_branch_uncond | type_branch_cond | type_load | type_store | type_excp | type_tlb | type_others) |
                              inst_invtlb & intvtlb_op_fault) & id_valid;
 
@@ -496,7 +496,7 @@ module ID_Stage(
 
     assign id_to_ex_excep = {id_res_from_csr, id_csr_num, id_csr_we, id_csr_wmask, id_csr_wvalue, 
                              id_ertn_flush, has_int, id_excp_adef, inst_syscall, inst_break,
-                             id_excp_ine};
+                             id_excp_ine, id_pif_excep, id_ppi_excep, id_tlbr_excep};
 
     assign id_to_ex_tlb   = {rd, inst_tlbsrch, inst_tlbwr, inst_tlbfill, inst_tlbrd, inst_invtlb};
 

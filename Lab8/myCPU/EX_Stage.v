@@ -52,6 +52,7 @@ module EX_Stage(
     //to mmu
     output wire [31:0] data_va,
     input  wire [31:0] data_pa,
+    output wire [ 9:0] ex_asid,
 
     //from mmu
     input  wire        data_page_invalid,
@@ -115,6 +116,23 @@ module EX_Stage(
     wire        ex_excp_ale;
     wire        ex_excp_ine;
 
+    wire        ex_inst_pif_excep;
+    wire        ex_inst_ppi_excep;
+    wire        ex_inst_tlbr_excep;
+
+    wire        ex_data_ppi_excep;
+    wire        ex_data_tlbr_excep;
+    wire        ex_data_pil_excep;
+    wire        ex_data_pis_excep;
+    wire        ex_data_pme_excep;
+
+    wire        ex_pif_excep;
+    wire        ex_ppi_excep;
+    wire        ex_tlbr_excep;
+    wire        ex_pil_excep;
+    wire        ex_pis_excep;
+    wire        ex_pme_excep;
+
     reg  [63:0] counter;
     wire        ex_mem_wait;
     wire [ 1:0] ex_sram_size;
@@ -166,8 +184,9 @@ module EX_Stage(
 
     assign {ex_res_from_csr, ex_csr_num, ex_csr_we, ex_csr_wmask, ex_csr_wvalue, 
             ex_ertn_flush, ex_has_int, ex_excp_adef, ex_excp_syscall, ex_excp_break,
-            ex_excp_ine
+            ex_excp_ine, ex_inst_pif_excep, ex_inst_ppi_excep, ex_inst_tlbr_excep
             } = id_to_ex_excep_reg;
+
 
     assign {ex_invtl_op,
             ex_inst_tlbsrch, ex_inst_tlbwr, ex_inst_tlbfill, ex_inst_tlbrd, ex_inst_invtlb
@@ -253,26 +272,30 @@ module EX_Stage(
 
     assign ex_to_mem_excep = {ex_res_from_csr, ex_csr_num, ex_csr_we, ex_csr_wmask, ex_csr_wvalue, 
                               ex_ertn_flush, ex_has_int, ex_excp_adef, ex_excp_syscall, ex_excp_break,
-                              ex_excp_ale, ex_excp_ine};
+                              ex_excp_ale, ex_excp_ine, 
+                              ex_inst_pif_excep, ex_inst_ppi_excep, ex_inst_tlbr_excep,
+                              ex_data_ppi_excep, ex_data_tlbr_excep, ex_data_pil_excep, ex_data_pis_excep, ex_data_pme_excep};
+
     
     assign ex_to_mem_tlb = {s1_found, s1_index, ex_inst_tlbsrch, ex_inst_tlbwr, ex_inst_tlbfill, ex_inst_tlbrd, ex_inst_invtlb};
 
 //-----tlb------   
-    assign s1_va_highbits = {20{ex_inst_tlbsrch}} & {csr_tlbehi_vppn, 1'b0} |
-                            {20{ex_inst_invtlb}} & {ex_rkd_value[31:12]};
-    assign s1_asid = {10{ex_inst_tlbsrch}} & csr_asid_asid |
-                      {10{ex_inst_invtlb}} & ex_alu_src1[9:0];
     assign invtlb_op = ex_invtl_op;
     assign invtlb_valid = ex_inst_invtlb & ex_valid;
 
 //-----mmu-----
-    assign data_va  = ex_alu_result;
+    assign data_va  = {20{ex_inst_tlbsrch}} & {csr_tlbehi_vppn, 13'b0} |
+                      {20{ex_inst_invtlb}}  & {ex_rkd_value} | 
+                      {20{~(ex_inst_invtlb | ex_inst_tlbsrch)}} & ex_alu_result;
+
+    assign ex_asid  = {10{~ex_inst_invtlb}} & csr_asid_asid |
+                      {10{ex_inst_invtlb}}  & ex_alu_src1[9:0];
     
-    assign ex_ppi_excep = data_ppi_except && (ex_res_from_mem | data_sram_wr);
-    assign ex_tlbr_excep = data_page_fault && (ex_res_from_mem | data_sram_wr);
-    assign ex_pil_excep = data_page_invalid && ex_res_from_mem;
-    assign ex_pis_excep = data_page_invalid && data_sram_wr;
-    assign ex_pme_excep = data_page_clean && data_sram_wr; 
+    assign ex_data_ppi_excep = data_ppi_except && ex_mem_wait;
+    assign ex_data_tlbr_excep = data_page_fault && ex_mem_wait;
+    assign ex_data_pil_excep = data_page_invalid && ex_mem_wait && ~data_sram_wr;
+    assign ex_data_pis_excep = data_page_invalid && ex_mem_wait && data_sram_wr;
+    assign ex_data_pme_excep = data_page_clean && ex_mem_wait && data_sram_wr; 
 
 //------data sram interface------
     wire st_addr00 = ex_alu_result[1:0] == 2'b00;
@@ -284,9 +307,9 @@ module EX_Stage(
                        {4{ex_inst_st_h}} & {{2{st_addr10}}, {2{st_addr00}}} |
                        {4{ex_inst_st_w}};
 
-
-    assign ex_mem_wait = (ex_inst_ld_b || ex_inst_ld_bu || ex_inst_ld_h || ex_inst_ld_hu || ex_inst_ld_w || 
-                         (|ex_mem_strb)) & ~mem_to_ex_excep & ~ex_flush & ~ex_excp_ale;
+    assign ex_mem_wait = (ex_inst_ld_b || ex_inst_ld_bu || ex_inst_ld_h || ex_inst_ld_hu || ex_inst_ld_w || (|ex_mem_strb)) 
+                        & ~mem_to_ex_excep & ~ex_flush 
+                        & ~(ex_excp_ale | ex_inst_pif_excep | ex_inst_ppi_excep | ex_inst_tlbr_excep);
     assign ex_sram_size = {ex_inst_ld_w | ex_inst_st_w, (ex_inst_ld_h | ex_inst_ld_hu |ex_inst_st_h)};
     assign data_sram_req = ex_mem_wait & ex_valid & mem_allowin;
     assign data_sram_wr = ex_inst_st_b | ex_inst_st_h | ex_inst_st_w;

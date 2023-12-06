@@ -80,6 +80,15 @@ module WB_Stage(
     wire        wb_excp_ale;
     wire        wb_excp_ine;
 
+    wire        wb_inst_pif_excep;
+    wire        wb_inst_ppi_excep;
+    wire        wb_inst_tlbr_excep;
+    wire        wb_data_ppi_excep;
+    wire        wb_data_tlbr_excep;
+    wire        wb_data_pil_excep;
+    wire        wb_data_pis_excep;
+    wire        wb_data_pme_excep;
+
     wire        wb_inst_tlbsrch;
     wire        wb_inst_tlbwr;
     wire        wb_inst_tlbfill;
@@ -124,11 +133,14 @@ module WB_Stage(
            } = mem_to_wb_data_reg;
 
     //exception
-    assign wb_excep = wb_excp_adef | wb_excp_syscall | wb_excp_break | wb_excp_ale | wb_excp_ine | wb_has_int;
+    assign wb_excep = wb_excp_adef | wb_excp_syscall | wb_excp_break | wb_excp_ale | wb_excp_ine | wb_has_int |
+                      wb_pif_excep | wb_ppi_exc | wb_tlbr_e | wb_pil_excep | wb_pis_excep | wb_pme_excep;
     
     assign {wb_res_from_csr, wb_csr_num, wb_csr_we, wb_csr_wmask, wb_csr_wvalue, 
             wb_ertn_flush, wb_has_int, wb_excp_adef, wb_excp_syscall, wb_excp_break,
-            wb_excp_ale, wb_vaddr, wb_excp_ine
+            wb_excp_ale, wb_vaddr, wb_excp_ine,
+            wb_inst_pif_excep, wb_inst_ppi_excep, wb_inst_tlbr_excep,
+            wb_data_ppi_excep, wb_data_tlbr_excep, wb_data_pil_excep, wb_data_pis_excep, wb_data_pme_excep   
             } = mem_to_wb_excep_reg;
     
     assign {wb_s1_found, wb_s1_index, 
@@ -143,11 +155,21 @@ module WB_Stage(
                         
 //-----CSR relavant signals and data----- 
     assign wb_csr_ecode = wb_has_int        ? `ECODE_INT :
-                          wb_excp_adef      ? `ECODE_ADEF :
+                          wb_excp_adef      ? `ECODE_ADEF:
+                          wb_inst_tlbr_excep? `ECODE_TLBR:
+                          wb_inst_pif_excep ? `ECODE_PIF :
+                          wb_inst_ppi_excep ? `ECODE_PPI :
                           wb_excp_ine       ? `ECODE_INE :
                           wb_excp_syscall   ? `ECODE_SYS :
                           wb_excp_break     ? `ECODE_BRK :
                           wb_excp_ale       ? `ECODE_ALE :
+                          wb_data_tlbr_excep? `ECODE_TLBR:
+                          wb_data_pil_excep ? `ECODE_PIL :
+                          wb_data_pis_excep ? `ECODE_PIS :
+                          wb_data_ppi_excep ? `ECODE_PPI :
+                          wb_data_pme_excep ? `ECODE_PME :
+    
+                          
                           6'b0;
     assign wb_csr_esubcode = 9'b0;
 
@@ -187,7 +209,7 @@ module WB_Stage(
     assign w_index = wb_inst_tlbwr ? csr_tlbidx_index : ex_to_wb_rand;
     assign tlb_we = wb_inst_tlbwr | wb_inst_tlbfill;
 
-    // tlbsrch
+    // tlbsrch to csr
     assign tlbsrch_we = wb_inst_tlbsrch;
     assign tlbsrch_hit = wb_s1_found;
     assign tlbsrch_hit_index = wb_s1_index;

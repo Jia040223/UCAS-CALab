@@ -74,13 +74,13 @@ module csr(
     output wire [31:0] csr_dmw1_rvalue  
 );
     // CRMD
-    reg [1:0]   csr_crmd_plv;
+    reg [ 1:0]  csr_crmd_plv;
     reg         csr_crmd_ie;
+    reg         csr_crmd_da;
+    reg         csr_crmd_pg;
+    reg [ 1:0]  csr_crmd_datf;
+    reg [ 1:0]  csr_crmd_datm;
     wire [31:0] csr_crmd_rvalue;
-    wire         csr_crmd_da;       //CRMD的直接地�??翻译使能
-    wire         csr_crmd_pg;
-    wire [1:0]   csr_crmd_datf;
-    wire [1:0]   csr_crmd_datm;
 
     // PRMD
     reg [1:0] csr_prmd_pplv;
@@ -297,11 +297,13 @@ module csr(
     end
 
     // BADV
-    assign wb_ex_addr_err = wb_ecode==`ECODE_ADE || wb_ecode==`ECODE_ALE;
+    assign wb_ex_addr_err = wb_ecode==`ECODE_ADE || wb_ecode==`ECODE_ALE || wb_ecode==`ECODE_PIF
+                         || wb_ecode==`ECODE_PPI || wb_ecode==`ECODE_PIL || wb_ecode==`ECODE_PIS;
+                         || wb_ecode==`ECODE_PME || wb_ecode==`ECODE_TLBR;
     always @(posedge clk) begin
         if (wb_ex && wb_ex_addr_err)
-            csr_badv_vaddr <= (wb_ecode == `ECODE_ADE && 
-                               wb_esubcode == `ESUBCODE_ADEF) ? wb_pc : wb_vaddr;
+            csr_badv_vaddr <= (wb_ecode == `ECODE_ADE && wb_esubcode == `ESUBCODE_ADEF | 
+                               wb_ecode == `ECODE_PIF) ? wb_pc : wb_vaddr;
     end
 
     // TID

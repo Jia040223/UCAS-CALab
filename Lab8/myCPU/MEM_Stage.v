@@ -62,6 +62,7 @@ module MEM_Stage(
     wire        mem_csr_we;
     wire [31:0] mem_csr_wmask;
     wire [31:0] mem_csr_wvalue;
+    wire [31:0] mem_vaddr;
     wire        mem_ertn_flush;
     wire        mem_excep;
     wire        mem_has_int;
@@ -70,6 +71,15 @@ module MEM_Stage(
     wire        mem_excp_break;
     wire        mem_excp_ale;
     wire        mem_excp_ine;
+
+    wire        mem_inst_pif_excep;
+    wire        mem_inst_ppi_excep;
+    wire        mem_inst_tlbr_excep;
+    wire        mem_data_ppi_excep;
+    wire        mem_data_tlbr_excep;
+    wire        mem_data_pil_excep;
+    wire        mem_data_pis_excep;
+    wire        mem_data_pme_excep;
     
     wire        mem_inst_tlbsrch;
     wire        mem_inst_tlbwr;
@@ -111,7 +121,9 @@ module MEM_Stage(
 
     assign {mem_res_from_csr, mem_csr_num, mem_csr_we, mem_csr_wmask, mem_csr_wvalue, 
             mem_ertn_flush, mem_has_int, mem_excp_adef, mem_excp_syscall, mem_excp_break,
-            mem_excp_ale, mem_excp_ine
+            mem_excp_ale, mem_excp_ine, 
+            mem_inst_pif_excep, mem_inst_ppi_excep, mem_inst_tlbr_excep,
+            mem_data_ppi_excep, mem_data_tlbr_excep, mem_data_pil_excep, mem_data_pis_excep, mem_data_pme_excep     
             } = ex_to_mem_excep_reg;
     
     assign {mem_s1_found, mem_s1_index,
@@ -161,11 +173,17 @@ module MEM_Stage(
                              mem_pc};
                           
     //exception
-    assign mem_excep = mem_has_int | mem_excp_adef | mem_excp_syscall | mem_excp_break | mem_excp_ale | mem_excp_ine;
+    assign mem_excep = mem_has_int | mem_excp_adef | mem_excp_syscall | mem_excp_break | mem_excp_ale | mem_excp_ine |
+                       mem_inst_pif_excep | mem_inst_ppi_excep | mem_inst_tlbr_excep |
+                       mem_data_ppi_excep | mem_data_tlbr_excep | mem_data_pil_excep | mem_data_pis_excep | mem_data_pme_excep;
+
+    assign mem_vaddr = (mem_inst_tlbr | mem_inst_ppi) ? mem_pc : mem_final_result;
 
     assign mem_to_wb_excep = {mem_res_from_csr, mem_csr_num, mem_csr_we, mem_csr_wmask, mem_csr_wvalue, 
                               mem_ertn_flush, mem_has_int, mem_excp_adef, mem_excp_syscall, mem_excp_break,
-                              mem_excp_ale, mem_final_result, mem_excp_ine};
+                              mem_excp_ale, mem_vaddr, mem_excp_ine, 
+                              mem_inst_pif_excep, mem_inst_ppi_excep, mem_inst_tlbr_excep,
+                              mem_data_ppi_excep, mem_data_tlbr_excep, mem_data_pil_excep, mem_data_pis_excep, mem_data_pme_excep};
     
     assign mem_to_wb_tlb = {mem_s1_found, mem_s1_index,
                             mem_inst_tlbsrch, mem_inst_tlbwr, mem_inst_tlbfill, mem_inst_tlbrd, mem_inst_invtl};

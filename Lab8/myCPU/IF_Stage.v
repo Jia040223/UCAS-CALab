@@ -29,8 +29,10 @@ module IF_Stage(
     input  wire        if_flush,
 
     //to mmu
+    input  wire [31:0] csr_asid_rvalue,
     output wire [31:0] inst_va,
     input  wire [31:0] inst_pa,
+    output wire [ 9:0] if_asid,
 
     //from mmu
     input  wire        inst_page_invalid,
@@ -80,10 +82,12 @@ module IF_Stage(
     reg        wb_tlb_refetch_valid_reg;
     
 //-----IF stage control signal-----
-    assign preif_ready_go   = inst_sram_req & inst_sram_addr_ok;
+    assign preif_ready_go   = (inst_sram_req & inst_sram_addr_ok) | 
+                              (if_adef_excep | if_pif_excep | if_ppi_excep | if_tlbr_excep);
     assign to_if_valid      = preif_ready_go & if_allowin & ~preif_cancel & ~if_flush;
 
-    assign if_ready_go      = (inst_sram_data_ok | if_inst_reg_valid) & ~inst_cancel;
+    assign if_ready_go      = ((inst_sram_data_ok | if_inst_reg_valid) & ~inst_cancel) | 
+                              (if_adef_excep | if_pif_excep | if_ppi_excep | if_tlbr_excep);
     assign if_allowin       = ~if_valid | if_ready_go & id_allowin;     
     assign if_to_id_valid   = if_valid & if_ready_go & ~if_flush;
     
@@ -225,6 +229,7 @@ module IF_Stage(
     
 //-----to mmu for va->pa and tlb except------
     assign inst_va  = next_pc;
+    assign if_asid  = csr_asid_rvalue[`CSR_ASID_ASID];
 
     assign if_pif_excep = inst_page_invalid;
     assign if_ppi_excep = inst_ppi_except;
@@ -234,7 +239,8 @@ module IF_Stage(
     assign if_to_id_excep = {if_adef_excep, if_pif_excep, if_ppi_excep, if_tlbr_excep};
     
 //-----inst sram signal-----
-    assign inst_sram_req = if_allowin & resetn & ~br_stall & ~preif_cancel;
+    assign inst_sram_req = if_allowin & resetn & ~br_stall & ~preif_cancel &
+                            ~(if_adef_excep | if_pif_excep | if_ppi_excep | if_tlbr_excep);
     assign inst_sram_wr = 1'b0;
     assign inst_sram_size = 2'b10;
     assign inst_sram_wstrb = 4'b0;
