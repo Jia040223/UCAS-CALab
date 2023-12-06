@@ -54,14 +54,14 @@ module WB_Stage(
     // tlbsrch, to csr
     output wire         tlbsrch_we,
     output wire         tlbsrch_hit,
-    output wire  [ 3:0] tlbsrch_hit_index   
+    output wire  [ 3:0] tlbsrch_hit_index,
+
+    input  wire  [ 3:0] ex_to_wb_rand
 );    
     reg  [ `MEM_TO_WB_DATA_WIDTH-1:0] mem_to_wb_data_reg;
     reg  [`MEM_TO_WB_EXCEP_WIDTH-1:0] mem_to_wb_excep_reg; 
     reg  [  `MEM_TO_WB_TLB_WIDTH-1:0] mem_to_wb_tlb_reg;
     
-    reg  [ 3:0] rand_idx;
-
     wire        wb_ready_go;
     reg         wb_valid;
     wire [31:0] wb_rf_result;
@@ -96,7 +96,6 @@ module WB_Stage(
     wire        wb_csr_tlbwr;
     wire        wb_s1_found;
     wire [ 3:0] wb_s1_index;
-    wire [ 4:0] wb_invtlb_op;
 
 //-----stage control signal-----
     assign wb_ready_go      = 1'b1;
@@ -180,21 +179,12 @@ module WB_Stage(
     assign wb_flush = wb_ertn_flush_valid | wb_excep_valid | wb_tlb_refetch;
 
 //-----TLB relavant signals-----
-    //tlbfill select random idx
-    always @ (posedge clk) begin
-        if (~resetn) begin
-            rand_idx <= 4'b0;
-        end else begin
-            rand_idx <= {rand_idx[1:0], 2'b0} + 4'd8; // 4*rand_idx+8 mod 16
-        end
-    end
-
     // tlbrd
     assign tlbrd_we = wb_inst_tlbrd;
     assign r_index = csr_tlbidx_index;
 
     // tlbwr and tlbfill
-    assign w_index = wb_inst_tlbwr ? csr_tlbidx_index : rand_idx;
+    assign w_index = wb_inst_tlbwr ? csr_tlbidx_index : ex_to_wb_rand;
     assign tlb_we = wb_inst_tlbwr | wb_inst_tlbfill;
 
     // tlbsrch

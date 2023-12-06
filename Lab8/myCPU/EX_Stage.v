@@ -47,6 +47,8 @@ module EX_Stage(
     // blk tlbsrch
     input  wire        mem_csr_tlbrd,
     input  wire        wb_csr_tlbrd
+
+    output wire [ 3:0] ex_to_wb_rand;
 );
     reg  [ `ID_TO_EX_DATA_WIDTH-1:0] id_to_ex_data_reg;
     reg  [`ID_TO_EX_EXCEP_WIDTH-1:0] id_to_ex_excep_reg;
@@ -211,6 +213,7 @@ module EX_Stage(
             counter <= counter + 1;
     end
 
+    assign ex_to_wb_rand = counter[3:0];
     
     //final calculate data    
     assign ex_final_result = ex_res_from_div ? ex_div_result  :

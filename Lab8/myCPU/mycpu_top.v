@@ -86,12 +86,13 @@ module mycpu_top(
     wire        br_stall;
     wire [31:0] br_target;
     
-    wire if_flush;
-    wire id_flush;
-    wire ex_flush;
-    wire mem_flush;
-    wire wb_flush;
-    wire mem_to_ex_excep;
+    wire        if_flush;
+    wire        id_flush;
+    wire        ex_flush;
+    wire        mem_flush;
+    wire        wb_flush;
+    wire        mem_to_ex_excep;
+    wire [ 3:0] ex_to_wb_rand;
 
     wire [`WB_TO_IF_CSR_DATA_WIDTH -1:0]  wb_to_if_csr_data;
 
@@ -376,8 +377,10 @@ module mycpu_top(
         .csr_tlbehi_vppn  (csr_tlbehi_vppn),
         .mem_csr_tlbrd    (mem_csr_tlbrd),
         .wb_csr_tlbrd     (wb_csr_tlbrd),
-        .s1_found        (s1_found),
-        .s1_index        (s1_index)
+        .s1_found         (s1_found),
+        .s1_index         (s1_index),
+
+        .ex_to_wb_rand    (ex_to_wb_rand)
      );
 
     MEM_Stage my_MEM_Stage
@@ -459,7 +462,8 @@ module mycpu_top(
         .tlbsrch_hit     (tlbsrch_hit),
         .tlbsrch_hit_index(tlbsrch_hit_index),
 
-        .wb_csr_tlbrd(wb_csr_tlbrd)
+        .wb_csr_tlbrd(wb_csr_tlbrd),
+        .ex_to_wb_rand(ex_to_wb_rand)
     );
 
     csr my_csr(
