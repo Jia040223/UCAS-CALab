@@ -1,3 +1,5 @@
+`define TLBNUM                  16
+
 `define IF_TO_ID_DATA_WIDTH     64
 `define ID_TO_EX_DATA_WIDTH     163
 `define EX_TO_MEM_DATA_WIDTH    79

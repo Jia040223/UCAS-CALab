@@ -1,7 +1,6 @@
+`include "mycpu_head.h"
+
 module tlb
-#(
-    parameter TLBNUM = 16
-)
 (
     input  wire        clk,
 
