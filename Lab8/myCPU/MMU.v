@@ -52,9 +52,9 @@ module MMU(
     assign direct_map   = csr_crmd_da && ~csr_crmd_pg;
 
     assign dwm0_hit =   ~csr_crmd_da && csr_crmd_pg 
-                     && csr_dmw0_rvalue[csr_crmd_plv] && (csr_dmw0_rvalue[CSR_DMW_VSEG] == nextpc[CSR_DMW_VSEG]);
+                     && csr_dmw0_rvalue[csr_crmd_plv] && (csr_dmw0_rvalue[`CSR_DMW_VSEG] == nextpc[`CSR_DMW_VSEG]);
     assign dwm1_hit =   ~csr_crmd_da && csr_crmd_pg
-                     && csr_dmw1_rvalue[csr_crmd_plv] && (csr_dmw1_rvalue[CSR_DMW_VSEG] == nextpc[CSR_DMW_VSEG]);
+                     && csr_dmw1_rvalue[csr_crmd_plv] && (csr_dmw1_rvalue[`CSR_DMW_VSEG] == nextpc[`CSR_DMW_VSEG]);
 
     assign dmw_pa0  =   {csr_dmw0_rvalue[`CSR_DMW_PSEG], va[28:0]}; //csr_dmw_rvalue[27:25] = csr_dmw_pseg
     assign dmw_pa1  =   {csr_dmw1_rvalue[`CSR_DMW_PSEG], va[28:0]}; 

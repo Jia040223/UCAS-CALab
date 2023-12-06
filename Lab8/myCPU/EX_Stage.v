@@ -31,7 +31,6 @@ module EX_Stage(
     input  wire        ex_flush,
     input  wire        mem_to_ex_excep,
     
-    // exp 18
     // to tlb
     output wire [19:0] s1_va_highbits,
     output wire [ 9:0] s1_asid,
@@ -46,9 +45,19 @@ module EX_Stage(
 
     // blk tlbsrch
     input  wire        mem_csr_tlbrd,
-    input  wire        wb_csr_tlbrd
+    input  wire        wb_csr_tlbrd,
 
-    output wire [ 3:0] ex_to_wb_rand;
+    output wire [ 3:0] ex_to_wb_rand,
+
+    //to mmu
+    output wire [31:0] data_va,
+    input  wire [31:0] data_pa,
+
+    //from mmu
+    input  wire        data_page_invalid,
+    input  wire        data_ppi_except,
+    input  wire        data_page_fault,
+    input  wire        data_page_dirty
 );
     reg  [ `ID_TO_EX_DATA_WIDTH-1:0] id_to_ex_data_reg;
     reg  [`ID_TO_EX_EXCEP_WIDTH-1:0] id_to_ex_excep_reg;

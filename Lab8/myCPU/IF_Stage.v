@@ -28,26 +28,15 @@ module IF_Stage(
     input  wire [`WB_TO_IF_CSR_DATA_WIDTH -1:0] wb_to_if_csr_data,
     input  wire        if_flush,
 
-    //exp19
-    //to tlb
-    output wire [18:0] s0_vppn,
-    output wire        s0_va_bit12,
-    output wire [ 9:0] s0_asid,
+    //to mmu
+    output wire [31:0] inst_va,
+    input  wire [31:0] inst_pa,
 
-    input  wire [18:0] s0_found,
-    input  wire [ 3:0] s0_index,
-    input  wire [19:0] s0_ppn,
-    input  wire [ 5:0] s0_ps,
-    input  wire [ 1:0] s0_plv,
-    input  wire [ 1:0] s0_mat,
-    input  wire        s0_d,
-    input  wire        s0_v,
-
-    //from csr
-    input  wire [31:0] csr_crmd_rvalue,
-    input  wire [31:0] csr_asid_rvalue,
-    input  wire [31:0] csr_dmw0_rvalue,
-    input  wire [31:0] csr_dmw1_rvalue  
+    //from mmu
+    input  wire        inst_page_invalid,
+    input  wire        inst_ppi_except,
+    input  wire        inst_page_fault,
+    input  wire        inst_page_dirty 
 );
     wire [31:0] if_inst;
     wire [31:0] if_to_id_inst;
@@ -235,9 +224,13 @@ module IF_Stage(
     assign if_to_id_excep = if_adef_excep;
 
 //vitual addr to physical addr
+    //direct mapping
+    assign dwm0_hit = csr_crmd_rvalue[`CSR_CRMD_DA] && csr_dmw0_rvalue[`]
+
     assign {s0_vppn, s0_va_bit12} = next_pc[31:12];
-    assign s0_asid = csr_asid_rvalue[CSR_ASID_ASID];
+    assign s0_asid = csr_asid_rvalue[`CSR_ASID_ASID];
     
+
 
 //-----inst sram signal-----
     assign inst_sram_req = if_allowin & resetn & ~br_stall & ~preif_cancel;

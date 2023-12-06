@@ -218,6 +218,26 @@ module mycpu_top(
     wire        r_d1;
     wire        r_v1;
 
+    wire [31:0] csr_crmd_rvalue;
+    wire [31:0] csr_asid_rvalue;
+    wire [31:0] csr_dmw0_rvalue;
+    wire [31:0] csr_dmw1_rvalue; 
+
+    wire        inst_page_invalid;
+    wire        inst_ppi_except;
+    wire        inst_page_fault;
+    wire        inst_page_dirty;
+
+    wire        data_page_invalid;
+    wire        data_ppi_except;
+    wire        data_page_fault;
+    wire        data_page_dirty;
+
+    wire [31:0] inst_va;
+    wire [31:0] inst_pa;
+    wire [31:0] data_va;
+    wire [31:0] data_pa;
+
     AXI_bridge my_AXI_bridge(
         .aclk(aclk),
         .aresetn(aresetn),
@@ -309,7 +329,15 @@ module mycpu_top(
         .if_to_id_excep(if_to_id_excep),
 
         .wb_to_if_csr_data(wb_to_if_csr_data),
-        .if_flush(wb_flush)
+        .if_flush(wb_flush),
+
+        .va         (inst_va),
+        .pa         (inst_pa),
+
+        .page_invalid   (inst_page_invalid),
+        .ppi_except     (inst_ppi_except),
+        .page_fault     (inst_page_fault),
+        .page_dirty     (inst_page_dirty)
     );
 
     ID_Stage my_ID_Stage
@@ -380,7 +408,15 @@ module mycpu_top(
         .s1_found         (s1_found),
         .s1_index         (s1_index),
 
-        .ex_to_wb_rand    (ex_to_wb_rand)
+        .ex_to_wb_rand    (ex_to_wb_rand),
+
+        .va         (data_va),
+        .pa         (data_pa),
+
+        .page_invalid   (data_page_invalid),
+        .ppi_except     (data_ppi_except),
+        .page_fault     (data_page_fault),
+        .page_dirty     (data_page_dirty)
      );
 
     MEM_Stage my_MEM_Stage
@@ -526,7 +562,12 @@ module mycpu_top(
         .w_tlb_plv1      (w_plv1),
         .w_tlb_mat1      (w_mat1),
         .w_tlb_d1        (w_d1),
-        .w_tlb_v1        (w_v1)
+        .w_tlb_v1        (w_v1),
+
+        .csr_crmd_rvalue(csr_crmd_rvalue),
+        .csr_asid_rvalue(csr_asid_rvalue),
+        .csr_dmw0_rvalue(csr_dmw0_rvalue),
+        .csr_dmw1_rvalue(csr_dmw1_rvalue)
     );
 
     tlb my_tlb(
@@ -595,6 +636,58 @@ module mycpu_top(
         .r_mat1     (r_mat1),
         .r_d1       (r_d1),
         .r_v1       (r_v1)
+    );
+
+    MMU inst_mmu(
+        .s_vppn     (s0_vppn),
+        .s_va_bit12 (s0_va_bit12),
+        .s_asid     (s0_asid),
+        .s_found    (s0_found),
+        .s_ppn      (s0_ppn),
+        .s_ps       (s0_ps),
+        .s_plv      (s0_plv),
+        .s_mat      (s0_mat),
+        .s_d        (s0_d),
+        .s_v        (s0_v),
+
+        .va         (inst_va),
+        .pa         (inst_pa),
+
+        .csr_crmd_rvalue(csr_crmd_rvalue),
+        .csr_asid_rvalue(csr_asid_rvalue),
+        .csr_dmw0_rvalue(csr_dmw0_rvalue),
+        .csr_dmw1_rvalue(csr_dmw1_rvalue),
+
+        .page_invalid   (inst_page_invalid),
+        .ppi_except     (inst_ppi_except),
+        .page_fault     (inst_page_fault),
+        .page_dirty     (inst_page_dirty)
+    );
+
+    MMU data_mmu(
+        .s_vppn     (s1_vppn),
+        .s_va_bit12 (s1_va_bit12),
+        .s_asid     (s1_asid),
+        .s_found    (s1_found),
+        .s_ppn      (s1_ppn),
+        .s_ps       (s1_ps),
+        .s_plv      (s1_plv),
+        .s_mat      (s1_mat),
+        .s_d        (s1_d),
+        .s_v        (s1_v),
+
+        .va         (data_va),
+        .pa         (data_pa),
+
+        .csr_crmd_rvalue(csr_crmd_rvalue),
+        .csr_asid_rvalue(csr_asid_rvalue),
+        .csr_dmw0_rvalue(csr_dmw0_rvalue),
+        .csr_dmw1_rvalue(csr_dmw1_rvalue),
+
+        .page_invalid   (data_page_invalid),
+        .ppi_except     (data_ppi_except),
+        .page_fault     (data_page_fault),
+        .page_dirty     (data_page_dirty)
     );
     
 endmodule
