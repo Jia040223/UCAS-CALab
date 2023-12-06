@@ -16,9 +16,7 @@ module WB_Stage(
     output wire [31:0] debug_wb_rf_wdata,
     // id and wb stage interface
     output wire [37:0] wb_rf_zip,
-    // if and wb stage interface
     output wire [`WB_TO_IF_CSR_DATA_WIDTH -1:0] wb_to_if_csr_data,
-
     //flush
     output wire        wb_flush,
 
@@ -134,8 +132,8 @@ module WB_Stage(
             wb_excp_ale, wb_vaddr, wb_excp_ine
             } = mem_to_wb_excep_reg;
     
-    assign {wb_s1_found, wb_s1_index, wb_invtl_op,
-            wb_inst_tlbfill, wb_inst_tlbwr, wb_inst_tlbfill, wb_inst_tlbrd, wb_inst_invtlb} = mem_to_wb_tlb_reg;
+    assign {wb_s1_found, wb_s1_index, 
+            wb_inst_tlbsrch, wb_inst_tlbwr, wb_inst_tlbfill, wb_inst_tlbrd, wb_inst_invtlb} = mem_to_wb_tlb_reg;
 
 //-----WB to ID data(backward)----- 
     assign wb_rf_wdata = (wb_res_from_csr)? csr_rvalue : wb_rf_result;

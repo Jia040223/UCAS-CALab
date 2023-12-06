@@ -142,6 +142,7 @@ module ID_Stage(
     wire        id_excp_ine;
 
     wire        invtlb_op;
+    wire        intvtlb_op_fault;
         
 //stage control signal
     assign id_ready_go      = ~conflict;
@@ -478,7 +479,8 @@ module ID_Stage(
     assign id_csr_wvalue   = rkd_value;
     assign id_ertn_flush   = inst_ertn;
     assign id_excp_adef    = if_excp_adef;
-    assign id_excp_ine     = ~(type_calc | type_calc_i | type_branch_uncond | type_branch_cond | type_load | type_store | type_excp | type_tlb | type_others) & id_valid;
+    assign id_excp_ine     = (~(type_calc | type_calc_i | type_branch_uncond | type_branch_cond | type_load | type_store | type_excp | type_tlb | type_others) |
+                             inst_invtlb & intvtlb_op_fault) & id_valid;
 
 
 //-----ID to EX data bus-----
@@ -498,4 +500,5 @@ module ID_Stage(
 
     assign id_to_ex_tlb   = {rd, inst_tlbsrch, inst_tlbwr, inst_tlbfill, inst_tlbrd, inst_invtlb};
 
+    assign intvtlb_op_fault = rd[4] | rd[3] | (&rd[2:0]);
 endmodule
