@@ -57,7 +57,7 @@ module EX_Stage(
     input  wire        data_page_invalid,
     input  wire        data_ppi_except,
     input  wire        data_page_fault,
-    input  wire        data_page_dirty
+    input  wire        data_page_clean
 );
     reg  [ `ID_TO_EX_DATA_WIDTH-1:0] id_to_ex_data_reg;
     reg  [`ID_TO_EX_EXCEP_WIDTH-1:0] id_to_ex_excep_reg;
@@ -264,6 +264,15 @@ module EX_Stage(
                       {10{ex_inst_invtlb}} & ex_alu_src1[9:0];
     assign invtlb_op = ex_invtl_op;
     assign invtlb_valid = ex_inst_invtlb & ex_valid;
+
+//-----mmu-----
+    assign data_va  = ex_alu_result;
+    
+    assign ex_ppi_excep = data_ppi_except && (ex_res_from_mem | data_sram_wr);
+    assign ex_tlbr_excep = data_page_fault && (ex_res_from_mem | data_sram_wr);
+    assign ex_pil_excep = data_page_invalid && ex_res_from_mem;
+    assign ex_pis_excep = data_page_invalid && data_sram_wr;
+    assign ex_pme_excep = data_page_clean && data_sram_wr; 
 
 //------data sram interface------
     wire st_addr00 = ex_alu_result[1:0] == 2'b00;

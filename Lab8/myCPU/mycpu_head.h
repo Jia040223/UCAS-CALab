@@ -5,7 +5,7 @@
 `define EX_TO_MEM_DATA_WIDTH    79
 `define MEM_TO_WB_DATA_WIDTH    70
 
-`define IF_TO_ID_EXCEP_WIDTH    1
+`define IF_TO_ID_EXCEP_WIDTH    4
 `define ID_TO_EX_EXCEP_WIDTH    86
 `define EX_TO_MEM_EXCEP_WIDTH   87
 `define MEM_TO_WB_EXCEP_WIDTH   119

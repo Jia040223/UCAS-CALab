@@ -36,7 +36,7 @@ module IF_Stage(
     input  wire        inst_page_invalid,
     input  wire        inst_ppi_except,
     input  wire        inst_page_fault,
-    input  wire        inst_page_dirty 
+    input  wire        inst_page_clean 
 );
     wire [31:0] if_inst;
     wire [31:0] if_to_id_inst;
@@ -64,6 +64,9 @@ module IF_Stage(
     wire        wb_csr_ex_valid;
     wire        wb_tlb_refetch_valid;
     wire        if_adef_excep;
+    wire        if_pif_excep;
+    wire        if_ppi_excep;
+    wire        if_tlbr_excep;
     
     reg [31:0] csr_rvalue_reg;
     reg [31:0] ex_entry_reg;
@@ -220,24 +223,22 @@ module IF_Stage(
     assign if_to_id_data    = {if_to_id_inst,     // 32-63
                                if_pc};      // 0-31   
     
-    //exception
-    assign if_to_id_excep = if_adef_excep;
+//-----to mmu for va->pa and tlb except------
+    assign inst_va  = next_pc;
 
-//vitual addr to physical addr
-    //direct mapping
-    assign dwm0_hit = csr_crmd_rvalue[`CSR_CRMD_DA] && csr_dmw0_rvalue[`]
+    assign if_pif_excep = inst_page_invalid;
+    assign if_ppi_excep = inst_ppi_except;
+    assign if_tlbr_excep = inst_page_fault;
 
-    assign {s0_vppn, s0_va_bit12} = next_pc[31:12];
-    assign s0_asid = csr_asid_rvalue[`CSR_ASID_ASID];
+    //to id exception
+    assign if_to_id_excep = {if_adef_excep, if_pif_excep, if_ppi_excep, if_tlbr_excep};
     
-
-
 //-----inst sram signal-----
     assign inst_sram_req = if_allowin & resetn & ~br_stall & ~preif_cancel;
     assign inst_sram_wr = 1'b0;
     assign inst_sram_size = 2'b10;
     assign inst_sram_wstrb = 4'b0;
-    assign inst_sram_addr = nextpc;
+    assign inst_sram_addr = pa;
     assign inst_sram_wdata = 32'b0;
 
 endmodule
