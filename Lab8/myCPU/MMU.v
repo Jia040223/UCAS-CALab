@@ -16,10 +16,9 @@ module MMU(
     //virtual addr and physical addr
     input  wire [31:0] va,
     output wire [31:0] pa,
-
+    input  wire [ 9:0] asid_input,
     //from csr
     input  wire [31:0] csr_crmd_rvalue,
-    input  wire [31:0] csr_asid_rvalue,
     input  wire [31:0] csr_dmw0_rvalue,
     input  wire [31:0] csr_dmw1_rvalue,
 
@@ -27,17 +26,16 @@ module MMU(
     output wire        page_invalid,
     output wire        ppi_except,
     output wire        page_fault,
-    output wire        page_clean
+    output wire        page_clean,
 
     //fro tlbsrch and invtlb
     input  wire [19:0] s1_va_highbits,
     input  wire        invtlb_valid,
-    input  wire [ 4:0] invtlb_op,
-)
+    input  wire [ 4:0] invtlb_op
+);
     wire        csr_crmd_da;
     wire        csr_crmd_pg;
     wire [1:0]  csr_crmd_plv;
-    wire [9:0]  csr_asid_asid;
 
     wire        dmw0_hit;
     wire        dmw1_hit;
@@ -54,7 +52,6 @@ module MMU(
     assign csr_crmd_da   = csr_crmd_rvalue[`CSR_CRMD_DA];
     assign csr_crmd_pg   = csr_crmd_rvalue[`CSR_CRMD_PG];
     assign csr_crmd_plv  = csr_crmd_rvalue[`CSR_CRMD_PLV];
-    assign csr_asid_asid = csr_asid_rvalue[`CSR_ASID_ASID];
 
     assign direct_trans   = csr_crmd_da && ~csr_crmd_pg;
     assign map_trans      = ~csr_crmd_da && csr_crmd_pg;
@@ -68,18 +65,18 @@ module MMU(
     assign dmw_pa1  =   {csr_dmw1_rvalue[`CSR_DMW_PSEG], va[28:0]}; 
 
     //tlb mapping
-    assign tlb_map  =   ~dwm0_hit & ~dwm1_hit & map_trans;
+    assign tlb_map  =   ~dmw0_hit & ~dmw1_hit & map_trans;
 
     assign {s_vppn, s_va_bit12} = va[31:12];
-    assign s_asid  =   csr_asid_asid;
+    assign s_asid  =   asid_input;
 
     assign tlb_pa   =  {32{s_ps == 6'd12}} & {s_ppn[19:0], va[11:0]} |
                        {32{s_ps == 6'd21}} & {s_ppn[19:9], va[20:0]};
 
     //physical addr
     assign pa    =  direct_trans ? va
-                  : dmw_hit0     ? dmw_pa0
-                  : dmw_hit1     ? dmw_pa1
+                  : dmw0_hit     ? dmw_pa0
+                  : dmw1_hit     ? dmw_pa1
                   : tlb_pa; 
     
     //for exception

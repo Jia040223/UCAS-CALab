@@ -82,8 +82,7 @@ module IF_Stage(
     reg        wb_tlb_refetch_valid_reg;
     
 //-----IF stage control signal-----
-    assign preif_ready_go   = (inst_sram_req & inst_sram_addr_ok) | 
-                              (if_adef_excep | if_pif_excep | if_ppi_excep | if_tlbr_excep);
+    assign preif_ready_go   = (inst_sram_req & inst_sram_addr_ok);
     assign to_if_valid      = preif_ready_go & if_allowin & ~preif_cancel & ~if_flush;
 
     assign if_ready_go      = ((inst_sram_data_ok | if_inst_reg_valid) & ~inst_cancel) | 
@@ -194,7 +193,7 @@ module IF_Stage(
     always @(posedge clk) begin
         if (~resetn)
             preif_cancel <= 1'b0;
-        else if ((inst_sram_req | br_stall) &  & (wb_csr_ex_valid | wb_tlb_refetch_valid | wb_ertn_flush_valid | br_taken | (br_stall | br_stall_reg) & inst_sram_addr_ok ) & ~axi_arid[0])
+        else if ((inst_sram_req | br_stall) & (wb_csr_ex_valid | wb_tlb_refetch_valid | wb_ertn_flush_valid | br_taken | (br_stall | br_stall_reg) & inst_sram_addr_ok ) & ~axi_arid[0])
             preif_cancel <= 1'b1;
         else if (inst_sram_data_ok & ~inst_cancel)
             preif_cancel <= 1'b0;
@@ -228,7 +227,7 @@ module IF_Stage(
                                if_pc};      // 0-31   
     
 //-----to mmu for va->pa and tlb except------
-    assign inst_va  = next_pc;
+    assign inst_va  = nextpc;
     assign if_asid  = csr_asid_rvalue[`CSR_ASID_ASID];
 
     assign if_pif_excep = inst_page_invalid;
@@ -239,12 +238,11 @@ module IF_Stage(
     assign if_to_id_excep = {if_adef_excep, if_pif_excep, if_ppi_excep, if_tlbr_excep};
     
 //-----inst sram signal-----
-    assign inst_sram_req = if_allowin & resetn & ~br_stall & ~preif_cancel &
-                            ~(if_adef_excep | if_pif_excep | if_ppi_excep | if_tlbr_excep);
+    assign inst_sram_req = if_allowin & resetn & ~br_stall & ~preif_cancel;
     assign inst_sram_wr = 1'b0;
     assign inst_sram_size = 2'b10;
     assign inst_sram_wstrb = 4'b0;
-    assign inst_sram_addr = pa;
+    assign inst_sram_addr = inst_pa;
     assign inst_sram_wdata = 32'b0;
 
 endmodule

@@ -65,7 +65,7 @@ module csr(
     output wire [ 1:0]      w_tlb_plv1,
     output wire [ 1:0]      w_tlb_mat1,
     output wire             w_tlb_d1,
-    output wire             w_tlb_v1
+    output wire             w_tlb_v1,
 
     //exp19
     output wire [31:0] csr_crmd_rvalue,
@@ -80,7 +80,6 @@ module csr(
     reg         csr_crmd_pg;
     reg [ 1:0]  csr_crmd_datf;
     reg [ 1:0]  csr_crmd_datm;
-    wire [31:0] csr_crmd_rvalue;
 
     // PRMD
     reg [1:0] csr_prmd_pplv;
@@ -169,7 +168,6 @@ module csr(
 
     // ASID
     wire [ 7:0] csr_asid_asidbits;
-    wire [31:0] csr_asid_rvalue;
 
     // TLBRENTRY
     reg  [25:0] csr_tlbrentry_pa;
@@ -211,7 +209,7 @@ module csr(
 
     // DA PG DATF DATM
     always @ (posedge clk) begin
-        if (reset) begin
+        if (~resetn) begin
             csr_crmd_da <= 1'b1;
             csr_crmd_pg <= 1'b0;
             csr_crmd_datf <= 2'b0;
@@ -321,7 +319,7 @@ module csr(
 
     // BADV
     assign wb_ex_addr_err = wb_ecode==`ECODE_ADE || wb_ecode==`ECODE_ALE || wb_ecode==`ECODE_PIF
-                         || wb_ecode==`ECODE_PPI || wb_ecode==`ECODE_PIL || wb_ecode==`ECODE_PIS;
+                         || wb_ecode==`ECODE_PPI || wb_ecode==`ECODE_PIL || wb_ecode==`ECODE_PIS
                          || wb_ecode==`ECODE_PME || wb_ecode==`ECODE_TLBR;
     always @(posedge clk) begin
         if (wb_ex && wb_ex_addr_err)
@@ -540,7 +538,7 @@ module csr(
 
     //DMW0-1
     always @(posedge clk ) begin
-        if(reset) begin
+        if(~resetn) begin
             csr_dmw0_plv0 <= 1'b0;
             csr_dmw0_plv3 <= 1'b0;
             csr_dmw0_mat  <= 2'b0;
@@ -562,7 +560,7 @@ module csr(
     end
 
     always @(posedge clk ) begin
-        if(reset) begin
+        if(~resetn) begin
             csr_dmw1_plv0 <= 1'b0;
             csr_dmw1_plv3 <= 1'b0;
             csr_dmw1_mat  <= 2'b0;
@@ -642,7 +640,7 @@ module csr(
     assign has_int = (|(csr_estat_is[12:0] & csr_ecfg_lie[12:0])) && (csr_crmd_ie == 1'b1);
 
     // TLB entry
-    assign w_tlb_e    = csr_estat_ecode == ECODE_TLBR ? 1'b1 : ~csr_tlbidx_ne;
+    assign w_tlb_e    = csr_estat_ecode == `ECODE_TLBR ? 1'b1 : ~csr_tlbidx_ne;
     assign w_tlb_ps   =  csr_tlbidx_ps;
     assign w_tlb_vppn =  csr_tlbehi_vppn;
     assign w_tlb_asid =  csr_asid_asid;

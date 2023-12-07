@@ -335,14 +335,14 @@ module mycpu_top(
         .if_flush(wb_flush),
 
         .csr_asid_rvalue(csr_asid_rvalue),
-        .va         (inst_va),
-        .pa         (inst_pa),
+        .inst_va         (inst_va),
+        .inst_pa         (inst_pa),
         .if_asid    (if_asid),
 
-        .page_invalid   (inst_page_invalid),
-        .ppi_except     (inst_ppi_except),
-        .page_fault     (inst_page_fault),
-        .page_clean     (inst_page_clean)
+        .inst_page_invalid   (inst_page_invalid),
+        .inst_ppi_except     (inst_ppi_except),
+        .inst_page_fault     (inst_page_fault),
+        .inst_page_clean     (inst_page_clean)
     );
 
     ID_Stage my_ID_Stage
@@ -415,15 +415,14 @@ module mycpu_top(
 
         .ex_to_wb_rand    (ex_to_wb_rand),
 
-        .csr_asid_rvalue(csr_asid_rvalue),
-        .va             (data_va),
-        .pa             (data_pa),
+        .data_va             (data_va),
+        .data_pa             (data_pa),
         .ex_asid        (ex_asid),
 
-        .page_invalid   (data_page_invalid),
-        .ppi_except     (data_ppi_except),
-        .page_fault     (data_page_fault),
-        .page_clean     (data_page_clean)
+        .data_page_invalid   (data_page_invalid),
+        .data_ppi_except     (data_ppi_except),
+        .data_page_fault     (data_page_fault),
+        .data_page_clean     (data_page_clean)
      );
 
     MEM_Stage my_MEM_Stage

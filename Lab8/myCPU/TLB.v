@@ -9,7 +9,7 @@ module tlb
     input  wire        s0_va_bit12,
     input  wire [ 9:0] s0_asid,
     output wire        s0_found,
-    output wire [$clog2(TLBNUM)-1:0] s0_index,
+    output wire [$clog2(`TLBNUM)-1:0] s0_index,
     output wire [19:0] s0_ppn,
     output wire [ 5:0] s0_ps,
     output wire [ 1:0] s0_plv,
@@ -22,7 +22,7 @@ module tlb
     input  wire        s1_va_bit12,
     input  wire [ 9:0] s1_asid,
     output wire        s1_found,
-    output wire [$clog2(TLBNUM)-1:0] s1_index,
+    output wire [$clog2(`TLBNUM)-1:0] s1_index,
     output wire [19:0] s1_ppn,
     output wire [ 5:0] s1_ps,
     output wire [ 1:0] s1_plv,
@@ -36,7 +36,7 @@ module tlb
 
     //write port
     input  wire        we, //write enable
-    input  wire [$clog2(TLBNUM)-1:0] w_index,
+    input  wire [$clog2(`TLBNUM)-1:0] w_index,
     input  wire        w_e,
     input  wire [18:0] w_vppn,
     input  wire [ 5:0] w_ps,
@@ -54,7 +54,7 @@ module tlb
     input  wire        w_v1,
 
     //read port
-    input  wire [$clog2(TLBNUM)-1:0] r_index,
+    input  wire [$clog2(`TLBNUM)-1:0] r_index,
     output wire        r_e,
     output wire [18:0] r_vppn,
     output wire [ 5:0] r_ps,
@@ -72,31 +72,31 @@ module tlb
     output wire        r_v1
 );
 
-    reg  [TLBNUM-1:0] tlb_e;
-    reg  [TLBNUM-1:0] tlb_ps4MB; //pagesize 1:4MB 0:4KB
-    reg  [18:0] tlb_vppn [TLBNUM-1:0];
-    reg  [ 9:0] tlb_asid [TLBNUM-1:0];
-    reg         tlb_g    [TLBNUM-1:0];
+    reg  [`TLBNUM-1:0] tlb_e;
+    reg  [`TLBNUM-1:0] tlb_ps4MB; //pagesize 1:4MB 0:4KB
+    reg  [18:0] tlb_vppn [`TLBNUM-1:0];
+    reg  [ 9:0] tlb_asid [`TLBNUM-1:0];
+    reg         tlb_g    [`TLBNUM-1:0];
 
-    reg  [19:0] tlb_ppn0 [TLBNUM-1:0];
-    reg  [ 1:0] tlb_plv0 [TLBNUM-1:0];
-    reg  [ 1:0] tlb_mat0 [TLBNUM-1:0];
-    reg         tlb_d0   [TLBNUM-1:0];
-    reg         tlb_v0   [TLBNUM-1:0];
+    reg  [19:0] tlb_ppn0 [`TLBNUM-1:0];
+    reg  [ 1:0] tlb_plv0 [`TLBNUM-1:0];
+    reg  [ 1:0] tlb_mat0 [`TLBNUM-1:0];
+    reg         tlb_d0   [`TLBNUM-1:0];
+    reg         tlb_v0   [`TLBNUM-1:0];
 
-    reg  [19:0] tlb_ppn1 [TLBNUM-1:0];
-    reg  [ 1:0] tlb_plv1 [TLBNUM-1:0];
-    reg  [ 1:0] tlb_mat1 [TLBNUM-1:0];
-    reg         tlb_d1   [TLBNUM-1:0];
-    reg         tlb_v1   [TLBNUM-1:0];
+    reg  [19:0] tlb_ppn1 [`TLBNUM-1:0];
+    reg  [ 1:0] tlb_plv1 [`TLBNUM-1:0];
+    reg  [ 1:0] tlb_mat1 [`TLBNUM-1:0];
+    reg         tlb_d1   [`TLBNUM-1:0];
+    reg         tlb_v1   [`TLBNUM-1:0];
     
     // search
-    wire [TLBNUM-1:0] match0;
-    wire [TLBNUM-1:0] match1;
+    wire [`TLBNUM-1:0] match0;
+    wire [`TLBNUM-1:0] match1;
 
     genvar i;
     generate
-        for(i=0; i<TLBNUM; i=i+1) begin
+        for(i=0; i<`TLBNUM; i=i+1) begin
             assign match0[i] = (s0_vppn[18:9] == tlb_vppn[i][18:9])
                             && (tlb_ps4MB[i] || s0_vppn[8:0] == tlb_vppn[i][8:0])
                             && ((s0_asid == tlb_asid[i]) || tlb_g[i])
@@ -138,15 +138,15 @@ module tlb
     assign s1_v         = (s1_whichpage) ? tlb_v1  [s1_index] : tlb_v0  [s1_index];
 
     // invtlb
-    wire [TLBNUM-1:0] cond1;
-    wire [TLBNUM-1:0] cond2;
-    wire [TLBNUM-1:0] cond3;
-    wire [TLBNUM-1:0] cond4;
+    wire [`TLBNUM-1:0] cond1;
+    wire [`TLBNUM-1:0] cond2;
+    wire [`TLBNUM-1:0] cond3;
+    wire [`TLBNUM-1:0] cond4;
 
-    wire [TLBNUM-1:0] invtlb_mask [31:0];
+    wire [`TLBNUM-1:0] invtlb_mask [31:0];
 
     generate
-        for(i=0; i<TLBNUM; i=i+1) begin
+        for(i=0; i<`TLBNUM; i=i+1) begin
             assign cond1[i] = ~tlb_g[i];
             assign cond2[i] = tlb_g[i];
             assign cond3[i] = s1_asid == tlb_asid[i];

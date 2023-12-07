@@ -284,9 +284,9 @@ module EX_Stage(
     assign invtlb_valid = ex_inst_invtlb & ex_valid;
 
 //-----mmu-----
-    assign data_va  = {20{ex_inst_tlbsrch}} & {csr_tlbehi_vppn, 13'b0} |
-                      {20{ex_inst_invtlb}}  & {ex_rkd_value} | 
-                      {20{~(ex_inst_invtlb | ex_inst_tlbsrch)}} & ex_alu_result;
+    assign data_va  = {32{ex_inst_tlbsrch}} & {csr_tlbehi_vppn, 13'b0} |
+                      {32{ex_inst_invtlb}}  & {ex_rkd_value} | 
+                      {32{~(ex_inst_invtlb | ex_inst_tlbsrch)}} & ex_alu_result;
 
     assign ex_asid  = {10{~ex_inst_invtlb}} & csr_asid_asid |
                       {10{ex_inst_invtlb}}  & ex_alu_src1[9:0];
