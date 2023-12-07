@@ -26,12 +26,7 @@ module MMU(
     output wire        page_invalid,
     output wire        ppi_except,
     output wire        page_fault,
-    output wire        page_clean,
-
-    //fro tlbsrch and invtlb
-    input  wire [19:0] s1_va_highbits,
-    input  wire        invtlb_valid,
-    input  wire [ 4:0] invtlb_op
+    output wire        page_clean
 );
     wire        csr_crmd_da;
     wire        csr_crmd_pg;
