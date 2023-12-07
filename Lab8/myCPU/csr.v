@@ -172,6 +172,7 @@ module csr(
     reg  [25:0] csr_tlbrentry_pa;
     wire [31:0] csr_tlbrentry_rvalue;
     wire        tlb_excep;
+    wire        tlb_tlbr_excep;
 
     //DMW0-1
     reg         csr_dmw0_plv0;
@@ -322,7 +323,7 @@ module csr(
                          || wb_ecode==`ECODE_PME || wb_ecode==`ECODE_TLBR;
     always @(posedge clk) begin
         if (wb_ex && wb_ex_addr_err)
-            csr_badv_vaddr <= (wb_ecode == `ECODE_ADE && wb_esubcode == `ESUBCODE_ADEF | 
+            csr_badv_vaddr <= ((wb_ecode == `ECODE_ADE & wb_esubcode == `ESUBCODE_ADEF) | 
                                wb_ecode == `ECODE_PIF) ? wb_pc : wb_vaddr;
     end
 
@@ -418,6 +419,9 @@ module csr(
             else    
                 csr_tlbehi_vppn <= 19'b0;
         end 
+        else if (tlb_excep) begin
+            csr_tlbehi_vppn <= wb_vaddr[31:13];
+        end
         else if (csr_we && csr_num == `CSR_TLBEHI) begin
             csr_tlbehi_vppn <= csr_wmask[`CSR_TLBEHI_VPPN] & csr_wvalue[`CSR_TLBEHI_VPPN] |
                               ~csr_wmask[`CSR_TLBEHI_VPPN] & csr_tlbehi_vppn;
@@ -582,8 +586,8 @@ module csr(
     
 //---rvalue and output---
     //exp13
-    assign ex_entry = {32{~tlb_excep}} & csr_eentry_rvalue |
-                      {32{tlb_excep}}  & csr_tlbrentry_rvalue;
+    assign ex_entry = {32{~tlb_tlbr_excep}} & csr_eentry_rvalue |
+                      {32{tlb_tlbr_excep}}  & csr_tlbrentry_rvalue;
     assign csr_crmd_rvalue = {23'b0, csr_crmd_datm, csr_crmd_datf, csr_crmd_pg, csr_crmd_da, csr_crmd_ie, csr_crmd_plv};
     assign csr_prmd_rvalue = {29'b0, csr_prmd_pie, csr_prmd_pplv};
     assign csr_estat_rvalue =  {1'b0, csr_estat_esubcode, csr_estat_ecode, 3'b0, csr_estat_is};
@@ -612,8 +616,9 @@ module csr(
     //exp19
     assign csr_dmw0_rvalue = {csr_dmw0_vseg, 1'b0, csr_dmw0_pseg, 19'b0, csr_dmw0_mat, csr_dmw0_plv3, 2'b0, csr_dmw0_plv0};
     assign csr_dmw1_rvalue = {csr_dmw1_vseg, 1'b0, csr_dmw1_pseg, 19'b0, csr_dmw1_mat, csr_dmw1_plv3, 2'b0, csr_dmw1_plv0};
-    assign tlb_excep       = wb_ecode==`ECODE_PIF | wb_ecode==`ECODE_PPI | wb_ecode==`ECODE_PIL | 
-                             wb_ecode==`ECODE_PIS | wb_ecode==`ECODE_PME | wb_ecode==`ECODE_TLBR;
+    assign tlb_excep       = wb_ecode == `ECODE_PIF | wb_ecode == `ECODE_PPI | wb_ecode == `ECODE_PIL | 
+                             wb_ecode == `ECODE_PIS | wb_ecode == `ECODE_PME | wb_ecode == `ECODE_TLBR;
+    assign tlb_tlbr_excep  = wb_ecode == `ECODE_TLBR;
 
     assign csr_rvalue =   {32{csr_num == `CSR_CRMD  }} & csr_crmd_rvalue
                         | {32{csr_num == `CSR_PRMD  }} & csr_prmd_rvalue 
