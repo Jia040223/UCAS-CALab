@@ -256,7 +256,7 @@ module EX_Stage(
                              ex_pc,
                              ex_final_result,
                              ex_inst_ld_b, ex_inst_ld_bu, ex_inst_ld_h, ex_inst_ld_hu, ex_inst_ld_w,
-                             ex_mem_wait,
+                             ex_mem_wait & ~(ex_data_ppi_excep | ex_data_tlbr_excep | ex_data_pil_excep | ex_data_pis_excep | ex_data_pme_excep),
                              ex_res_from_mul, ex_mul_h, ex_res_from_div};
     
     //ALE exception
@@ -304,7 +304,8 @@ module EX_Stage(
                         & ~mem_to_ex_excep & ~ex_flush 
                         & ~(ex_excp_ale | ex_inst_pif_excep | ex_inst_ppi_excep | ex_inst_tlbr_excep);
     assign ex_sram_size = {ex_inst_ld_w | ex_inst_st_w, (ex_inst_ld_h | ex_inst_ld_hu |ex_inst_st_h)};
-    assign data_sram_req = ex_mem_wait & ex_valid & mem_allowin;
+    assign data_sram_req = ex_mem_wait & ex_valid & mem_allowin & 
+                           ~(ex_data_ppi_excep | ex_data_tlbr_excep | ex_data_pil_excep | ex_data_pis_excep | ex_data_pme_excep);
     assign data_sram_wr = ex_inst_st_b | ex_inst_st_h | ex_inst_st_w;
     assign data_sram_size = ex_sram_size;
     assign data_sram_wstrb = ex_mem_strb;
