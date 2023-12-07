@@ -126,13 +126,6 @@ module EX_Stage(
     wire        ex_data_pis_excep;
     wire        ex_data_pme_excep;
 
-    wire        ex_pif_excep;
-    wire        ex_ppi_excep;
-    wire        ex_tlbr_excep;
-    wire        ex_pil_excep;
-    wire        ex_pis_excep;
-    wire        ex_pme_excep;
-
     reg  [63:0] counter;
     wire        ex_mem_wait;
     wire [ 1:0] ex_sram_size;

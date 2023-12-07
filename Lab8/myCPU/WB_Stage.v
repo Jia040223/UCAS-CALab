@@ -169,8 +169,6 @@ module WB_Stage(
                           wb_data_pis_excep ? `ECODE_PIS :
                           wb_data_ppi_excep ? `ECODE_PPI :
                           wb_data_pme_excep ? `ECODE_PME :
-    
-                          
                           6'b0;
     assign wb_csr_esubcode = 9'b0;
 
