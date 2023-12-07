@@ -308,7 +308,7 @@ module EX_Stage(
     assign data_sram_wr = ex_inst_st_b | ex_inst_st_h | ex_inst_st_w;
     assign data_sram_size = ex_sram_size;
     assign data_sram_wstrb = ex_mem_strb;
-    assign data_sram_addr = ex_alu_result;
+    assign data_sram_addr = data_pa;
     assign data_sram_wdata = (ex_inst_st_b)? {4{ex_rkd_value[ 7:0]}} :
                              (ex_inst_st_h)? {2{ex_rkd_value[15:0]}} :
                               ex_rkd_value;
