@@ -156,7 +156,7 @@ module WB_Stage(
                         
 //-----CSR relavant signals and data----- 
     assign wb_csr_ecode = wb_has_int        ? `ECODE_INT :
-                          wb_excp_adef      ? `ECODE_ADEF:
+                          wb_excp_adef      ? `ECODE_ADE :
                           wb_inst_tlbr_excep? `ECODE_TLBR:
                           wb_inst_pif_excep ? `ECODE_PIF :
                           wb_inst_ppi_excep ? `ECODE_PPI :

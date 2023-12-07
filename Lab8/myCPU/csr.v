@@ -96,7 +96,6 @@ module csr(
     reg [31:0] csr_era_pc;
     wire [31:0] csr_era_rvalue;
 
-
     // EENTRY
     reg [25:0] csr_eentry_va; // entry address for exception
     wire [31:0] csr_eentry_rvalue;
@@ -187,7 +186,7 @@ module csr(
     reg  [ 2:0] csr_dmw1_vseg;
 
 //-----CSR Registers-----
-    //CRMD
+    // CRMD: PLV IE
     always @(posedge clk) begin
         if(~resetn) begin
             csr_crmd_plv <= 2'b0;
@@ -207,7 +206,7 @@ module csr(
         end    
     end
 
-    // DA PG DATF DATM
+    // CRMD: DA PG DATF DATM
     always @ (posedge clk) begin
         if (~resetn) begin
             csr_crmd_da <= 1'b1;
@@ -584,7 +583,7 @@ module csr(
 //---rvalue and output---
     //exp13
     assign ex_entry = csr_eentry_rvalue;
-    assign csr_crmd_rvalue = {23'b0, csr_crmd_datm, csr_crmd_datm, csr_crmd_pg, csr_crmd_da, csr_crmd_ie, csr_crmd_plv};
+    assign csr_crmd_rvalue = {23'b0, csr_crmd_datm, csr_crmd_datf, csr_crmd_pg, csr_crmd_da, csr_crmd_ie, csr_crmd_plv};
     assign csr_prmd_rvalue = {29'b0, csr_prmd_pie, csr_prmd_pplv};
     assign csr_estat_rvalue =  {1'b0, csr_estat_esubcode, csr_estat_ecode, 3'b0, csr_estat_is};
     assign csr_era_rvalue =  csr_era_pc;
