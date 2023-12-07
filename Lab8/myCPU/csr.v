@@ -65,16 +65,21 @@ module csr(
     output wire [ 1:0]      w_tlb_plv1,
     output wire [ 1:0]      w_tlb_mat1,
     output wire             w_tlb_d1,
-    output wire             w_tlb_v1
+    output wire             w_tlb_v1,
+
+    //exp19
+    output wire [31:0] csr_crmd_rvalue,
+    output wire [31:0] csr_asid_rvalue,
+    output wire [31:0] csr_dmw0_rvalue,
+    output wire [31:0] csr_dmw1_rvalue  
 );
     // CRMD
-    reg [1:0]   csr_crmd_plv;
+    reg [ 1:0]  csr_crmd_plv;
     reg         csr_crmd_ie;
-    wire [31:0] csr_crmd_rvalue;
-    wire         csr_crmd_da;       //CRMD的直接地�??翻译使能
-    wire         csr_crmd_pg;
-    wire [1:0]   csr_crmd_datf;
-    wire [1:0]   csr_crmd_datm;
+    reg         csr_crmd_da;
+    reg         csr_crmd_pg;
+    reg [ 1:0]  csr_crmd_datf;
+    reg [ 1:0]  csr_crmd_datm;
 
     // PRMD
     reg [1:0] csr_prmd_pplv;
@@ -90,7 +95,6 @@ module csr(
     // ERA
     reg [31:0] csr_era_pc;
     wire [31:0] csr_era_rvalue;
-
 
     // EENTRY
     reg [25:0] csr_eentry_va; // entry address for exception
@@ -163,14 +167,29 @@ module csr(
 
     // ASID
     wire [ 7:0] csr_asid_asidbits;
-    wire [31:0] csr_asid_rvalue;
 
     // TLBRENTRY
     reg  [25:0] csr_tlbrentry_pa;
     wire [31:0] csr_tlbrentry_rvalue;
+    wire        tlb_excep;
+    wire        tlb_tlbr_excep;
+
+    //DMW0-1
+    reg         csr_dmw0_plv0;
+    reg         csr_dmw0_plv3;
+    reg  [ 1:0] csr_dmw0_mat ;
+    reg  [ 2:0] csr_dmw0_pseg;
+    reg  [ 2:0] csr_dmw0_vseg;
+
+    reg         csr_dmw1_plv0;
+    reg         csr_dmw1_plv3;
+    reg  [ 1:0] csr_dmw1_mat ;
+    reg  [ 2:0] csr_dmw1_pseg;
+    reg  [ 2:0] csr_dmw1_vseg;
 
 //-----CSR Registers-----
-    //CRMD
+    // CRMD
+    // CRMD: PLV IE
     always @(posedge clk) begin
         if(~resetn) begin
             csr_crmd_plv <= 2'b0;
@@ -190,10 +209,33 @@ module csr(
         end    
     end
 
-    assign csr_crmd_da    = 1'b1;
-    assign csr_crmd_pg    = 1'b0;
-    assign csr_crmd_datf  = 2'b0;
-    assign csr_crmd_datm  = 2'b0;
+    // CRMD: DA PG DATF DATM
+    always @ (posedge clk) begin
+        if (~resetn) begin
+            csr_crmd_da <= 1'b1;
+            csr_crmd_pg <= 1'b0;
+            csr_crmd_datf <= 2'b0;
+            csr_crmd_datm <= 2'b0;
+        end 
+        else if (wb_ex && wb_ecode == `ECODE_TLBR) begin
+            csr_crmd_da <= 1'b1;
+            csr_crmd_pg <= 1'b0;
+        end 
+        else if (ertn_flush && csr_estat_ecode == `ECODE_TLBR) begin
+            csr_crmd_da <= 1'b0;
+            csr_crmd_pg <= 1'b1;
+        end 
+        else if (csr_we && csr_num == `CSR_CRMD) begin
+            csr_crmd_da <= csr_wmask[`CSR_CRMD_DA] & csr_wvalue[`CSR_CRMD_DA] |
+                          ~csr_wmask[`CSR_CRMD_DA] & csr_crmd_da;
+            csr_crmd_pg <= csr_wmask[`CSR_CRMD_PG] & csr_wvalue[`CSR_CRMD_PG] |
+                          ~csr_wmask[`CSR_CRMD_PG] & csr_crmd_pg;
+            csr_crmd_datf <= csr_wmask[`CSR_CRMD_DATF] & csr_wvalue[`CSR_CRMD_DATF] |
+                            ~csr_wmask[`CSR_CRMD_DATF] & csr_crmd_datf;
+            csr_crmd_datm <= csr_wmask[`CSR_CRMD_DATM] & csr_wvalue[`CSR_CRMD_DATM] |
+                            ~csr_wmask[`CSR_CRMD_DATM] & csr_crmd_datm;
+        end
+    end
 
     //PRMD
     always @(posedge clk) begin
@@ -236,8 +278,6 @@ module csr(
         end
     end
 
-   
-
     // ERA
     always @(posedge clk) begin
         if (wb_ex)
@@ -278,11 +318,13 @@ module csr(
     end
 
     // BADV
-    assign wb_ex_addr_err = wb_ecode==`ECODE_ADE || wb_ecode==`ECODE_ALE;
+    assign wb_ex_addr_err = wb_ecode==`ECODE_ADE || wb_ecode==`ECODE_ALE || wb_ecode==`ECODE_PIF
+                         || wb_ecode==`ECODE_PPI || wb_ecode==`ECODE_PIL || wb_ecode==`ECODE_PIS
+                         || wb_ecode==`ECODE_PME || wb_ecode==`ECODE_TLBR;
     always @(posedge clk) begin
         if (wb_ex && wb_ex_addr_err)
-            csr_badv_vaddr <= (wb_ecode == `ECODE_ADE && 
-                               wb_esubcode == `ESUBCODE_ADEF) ? wb_pc : wb_vaddr;
+            csr_badv_vaddr <= ((wb_ecode == `ECODE_ADE & wb_esubcode == `ESUBCODE_ADEF) | 
+                               wb_ecode == `ECODE_PIF) ? wb_pc : wb_vaddr;
     end
 
     // TID
@@ -377,6 +419,9 @@ module csr(
             else    
                 csr_tlbehi_vppn <= 19'b0;
         end 
+        else if (tlb_excep) begin
+            csr_tlbehi_vppn <= (wb_ecode == `ECODE_PIF) ? wb_pc[31:13] : wb_vaddr[31:13];
+        end
         else if (csr_we && csr_num == `CSR_TLBEHI) begin
             csr_tlbehi_vppn <= csr_wmask[`CSR_TLBEHI_VPPN] & csr_wvalue[`CSR_TLBEHI_VPPN] |
                               ~csr_wmask[`CSR_TLBEHI_VPPN] & csr_tlbehi_vppn;
@@ -493,11 +538,57 @@ module csr(
                                ~csr_wmask[`CSR_TLBRENTRY_PA] & csr_tlbrentry_pa;
         end
     end
+
+    //DMW0-1
+    always @(posedge clk ) begin
+        if(~resetn) begin
+            csr_dmw0_plv0 <= 1'b0;
+            csr_dmw0_plv3 <= 1'b0;
+            csr_dmw0_mat  <= 2'b0;
+            csr_dmw0_pseg <= 3'b0;
+            csr_dmw0_vseg <= 3'b0;
+        end
+        else if(csr_we && csr_num == `CSR_DMW0)begin
+            csr_dmw0_plv0  <= csr_wmask[`CSR_DMW_PLV0] & csr_wvalue[`CSR_DMW_PLV0]
+                        | ~csr_wmask[`CSR_DMW_PLV0] & csr_dmw0_plv0; 
+            csr_dmw0_plv3  <= csr_wmask[`CSR_DMW_PLV3] & csr_wvalue[`CSR_DMW_PLV3]
+                        | ~csr_wmask[`CSR_DMW_PLV3] & csr_dmw0_plv3; 
+            csr_dmw0_mat   <= csr_wmask[`CSR_DMW_MAT] & csr_wvalue[`CSR_DMW_MAT]
+                        | ~csr_wmask[`CSR_DMW_MAT] & csr_dmw0_mat; 
+            csr_dmw0_pseg  <= csr_wmask[`CSR_DMW_PSEG] & csr_wvalue[`CSR_DMW_PSEG]
+                        | ~csr_wmask[`CSR_DMW_PSEG] & csr_dmw0_pseg;
+            csr_dmw0_vseg  <= csr_wmask[`CSR_DMW_VSEG] & csr_wvalue[`CSR_DMW_VSEG]
+                        | ~csr_wmask[`CSR_DMW_VSEG] & csr_dmw0_vseg;   
+        end
+    end
+
+    always @(posedge clk ) begin
+        if(~resetn) begin
+            csr_dmw1_plv0 <= 1'b0;
+            csr_dmw1_plv3 <= 1'b0;
+            csr_dmw1_mat  <= 2'b0;
+            csr_dmw1_pseg <= 3'b0;
+            csr_dmw1_vseg <= 3'b0;
+        end
+        else if(csr_we && csr_num == `CSR_DMW1)begin
+            csr_dmw1_plv0  <= csr_wmask[`CSR_DMW_PLV0] & csr_wvalue[`CSR_DMW_PLV0]
+                        | ~csr_wmask[`CSR_DMW_PLV0] & csr_dmw1_plv0; 
+            csr_dmw1_plv3  <= csr_wmask[`CSR_DMW_PLV3] & csr_wvalue[`CSR_DMW_PLV3]
+                        | ~csr_wmask[`CSR_DMW_PLV3] & csr_dmw1_plv3; 
+            csr_dmw1_mat   <= csr_wmask[`CSR_DMW_MAT] & csr_wvalue[`CSR_DMW_MAT]
+                        | ~csr_wmask[`CSR_DMW_MAT] & csr_dmw1_mat; 
+            csr_dmw1_pseg  <= csr_wmask[`CSR_DMW_PSEG] & csr_wvalue[`CSR_DMW_PSEG]
+                        | ~csr_wmask[`CSR_DMW_PSEG] & csr_dmw1_pseg;
+            csr_dmw1_vseg  <= csr_wmask[`CSR_DMW_VSEG] & csr_wvalue[`CSR_DMW_VSEG]
+                        | ~csr_wmask[`CSR_DMW_VSEG] & csr_dmw1_vseg;   
+        end
+    end
     
 //---rvalue and output---
     //exp13
-    assign ex_entry = csr_eentry_rvalue;
-    assign csr_crmd_rvalue = {23'b0, csr_crmd_datm, csr_crmd_datm, csr_crmd_pg, csr_crmd_da, csr_crmd_ie, csr_crmd_plv};
+    assign ex_entry = {32{~tlb_tlbr_excep}} & csr_eentry_rvalue |
+                      {32{tlb_tlbr_excep}}  & csr_tlbrentry_rvalue;
+    assign csr_crmd_rvalue = {23'b0, csr_crmd_datm, csr_crmd_datf, csr_crmd_pg, csr_crmd_da, csr_crmd_ie, csr_crmd_plv};
     assign csr_prmd_rvalue = {29'b0, csr_prmd_pie, csr_prmd_pplv};
     assign csr_estat_rvalue =  {1'b0, csr_estat_esubcode, csr_estat_ecode, 3'b0, csr_estat_is};
     assign csr_era_rvalue =  csr_era_pc;
@@ -522,6 +613,12 @@ module csr(
     assign csr_asid_rvalue = {8'b0, csr_asid_asidbits, 6'b0, csr_asid_asid};
     assign csr_tlbrentry_rvalue = {csr_tlbrentry_pa, 6'b0};
 
+    //exp19
+    assign csr_dmw0_rvalue = {csr_dmw0_vseg, 1'b0, csr_dmw0_pseg, 19'b0, csr_dmw0_mat, csr_dmw0_plv3, 2'b0, csr_dmw0_plv0};
+    assign csr_dmw1_rvalue = {csr_dmw1_vseg, 1'b0, csr_dmw1_pseg, 19'b0, csr_dmw1_mat, csr_dmw1_plv3, 2'b0, csr_dmw1_plv0};
+    assign tlb_excep       = wb_ecode == `ECODE_PIF | wb_ecode == `ECODE_PPI | wb_ecode == `ECODE_PIL | 
+                             wb_ecode == `ECODE_PIS | wb_ecode == `ECODE_PME | wb_ecode == `ECODE_TLBR;
+    assign tlb_tlbr_excep  = wb_ecode == `ECODE_TLBR;
 
     assign csr_rvalue =   {32{csr_num == `CSR_CRMD  }} & csr_crmd_rvalue
                         | {32{csr_num == `CSR_PRMD  }} & csr_prmd_rvalue 
@@ -543,12 +640,14 @@ module csr(
                         | {32{csr_num == `CSR_TLBELO0}} & csr_tlbelo0_rvalue
                         | {32{csr_num == `CSR_TLBELO1}} & csr_tlbelo1_rvalue
                         | {32{csr_num == `CSR_ASID  }} & csr_asid_rvalue
-                        | {32{csr_num == `CSR_TLBRENTRY}} & csr_tlbrentry_rvalue;
+                        | {32{csr_num == `CSR_TLBRENTRY}} & csr_tlbrentry_rvalue
+                        | {32{csr_num == `CSR_DMW0  }} & csr_dmw0_rvalue
+                        | {32{csr_num == `CSR_DMW1  }} & csr_dmw1_rvalue;
                   
     assign has_int = (|(csr_estat_is[12:0] & csr_ecfg_lie[12:0])) && (csr_crmd_ie == 1'b1);
 
     // TLB entry
-    assign w_tlb_e    = ~csr_tlbidx_ne;
+    assign w_tlb_e    = csr_estat_ecode == `ECODE_TLBR ? 1'b1 : ~csr_tlbidx_ne;
     assign w_tlb_ps   =  csr_tlbidx_ps;
     assign w_tlb_vppn =  csr_tlbehi_vppn;
     assign w_tlb_asid =  csr_asid_asid;

@@ -26,7 +26,19 @@ module IF_Stage(
     output wire [`IF_TO_ID_EXCEP_WIDTH-1:0] if_to_id_excep,
 
     input  wire [`WB_TO_IF_CSR_DATA_WIDTH -1:0] wb_to_if_csr_data,
-    input  wire        if_flush
+    input  wire        if_flush,
+
+    //to mmu
+    input  wire [31:0] csr_asid_rvalue,
+    output wire [31:0] inst_va,
+    input  wire [31:0] inst_pa,
+    output wire [ 9:0] if_asid,
+
+    //from mmu
+    input  wire        inst_page_invalid,
+    input  wire        inst_ppi_except,
+    input  wire        inst_page_fault,
+    input  wire        inst_page_clean 
 );
     wire [31:0] if_inst;
     wire [31:0] if_to_id_inst;
@@ -49,24 +61,32 @@ module IF_Stage(
 
     wire [31:0] csr_rvalue;
     wire [31:0] ex_entry;
+    wire [31:0] wb_pc;
     wire        wb_ertn_flush_valid;
     wire        wb_csr_ex_valid;
+    wire        wb_tlb_refetch_valid;
     wire        if_adef_excep;
+    wire        if_pif_excep;
+    wire        if_ppi_excep;
+    wire        if_tlbr_excep;
     
     reg [31:0] csr_rvalue_reg;
     reg [31:0] ex_entry_reg;
     reg [31:0] br_target_reg;
+    reg [31:0] wb_pc_reg;
 
     reg        wb_ertn_flush_valid_reg;
     reg        wb_csr_ex_valid_reg;
     reg        br_taken_reg;
     reg        br_stall_reg;
+    reg        wb_tlb_refetch_valid_reg;
     
 //-----IF stage control signal-----
-    assign preif_ready_go   = inst_sram_req & inst_sram_addr_ok;
+    assign preif_ready_go   = (inst_sram_req & inst_sram_addr_ok);
     assign to_if_valid      = preif_ready_go & if_allowin & ~preif_cancel & ~if_flush;
 
-    assign if_ready_go      = (inst_sram_data_ok | if_inst_reg_valid) & ~inst_cancel;
+    assign if_ready_go      = ((inst_sram_data_ok | if_inst_reg_valid) & ~inst_cancel) | 
+                              (if_adef_excep | if_pif_excep | if_ppi_excep | if_tlbr_excep);
     assign if_allowin       = ~if_valid | if_ready_go & id_allowin;     
     assign if_to_id_valid   = if_valid & if_ready_go & ~if_flush;
     
@@ -80,13 +100,15 @@ module IF_Stage(
     end
        
 //-----pc relevant signals-----
-    assign {wb_ertn_flush_valid, wb_csr_ex_valid, ex_entry, csr_rvalue} = wb_to_if_csr_data;
+    assign {wb_ertn_flush_valid, wb_csr_ex_valid, wb_tlb_refetch_valid, ex_entry, csr_rvalue, wb_pc} = wb_to_if_csr_data;
 
     assign seq_pc           = if_pc + 3'h4; 
     assign nextpc           =   wb_ertn_flush_valid_reg ? csr_rvalue_reg
                               : wb_ertn_flush_valid ? csr_rvalue  
                               : wb_csr_ex_valid_reg ? ex_entry_reg
                               : wb_csr_ex_valid ? ex_entry
+                              : wb_tlb_refetch_valid_reg ? wb_pc_reg + 32'h4
+                              : wb_tlb_refetch_valid ? wb_pc + 32'h4
                               : br_taken_reg ? br_target_reg
                               : br_taken ? br_target 
                               : seq_pc; 
@@ -142,11 +164,24 @@ module IF_Stage(
         end
     end
 
+    always @(posedge clk) begin
+        if (~resetn) begin
+            wb_pc_reg <= 32'b0;
+            wb_tlb_refetch_valid_reg <= 1'b0;
+        end
+        else if (wb_tlb_refetch_valid) begin
+            wb_pc_reg <= wb_pc;
+            wb_tlb_refetch_valid_reg <= 1'b1;
+        end
+        else if (preif_ready_go)
+            wb_tlb_refetch_valid_reg <= 1'b0;
+    end
+
 //-----inst cancel signals-----
     always @(posedge clk) begin
         if (~resetn)
             inst_cancel_num <= 4'b0;
-        else if ((wb_csr_ex_valid | wb_ertn_flush_valid | br_taken) & ((if_valid & ~if_ready_go)))
+        else if ((wb_csr_ex_valid | wb_ertn_flush_valid | br_taken | wb_tlb_refetch_valid) & ((if_valid & ~if_ready_go)))
             inst_cancel_num <= inst_cancel_num + 4'b1;
         else if (inst_cancel & inst_sram_data_ok)
             inst_cancel_num <= inst_cancel_num - 4'b1;
@@ -158,7 +193,7 @@ module IF_Stage(
     always @(posedge clk) begin
         if (~resetn)
             preif_cancel <= 1'b0;
-        else if ((inst_sram_req | br_stall) &  & (wb_csr_ex_valid | wb_ertn_flush_valid | br_taken | (br_stall | br_stall_reg) & inst_sram_addr_ok ) & ~axi_arid[0])
+        else if ((inst_sram_req | br_stall) & (wb_csr_ex_valid | wb_tlb_refetch_valid | wb_ertn_flush_valid | br_taken | (br_stall | br_stall_reg) & inst_sram_addr_ok ) & ~axi_arid[0])
             preif_cancel <= 1'b1;
         else if (inst_sram_data_ok & ~inst_cancel)
             preif_cancel <= 1'b0;
@@ -177,7 +212,7 @@ module IF_Stage(
             if_inst_reg <= 32'b0;
             if_inst_reg_valid <= 1'b0;
         end
-        else if (if_to_id_valid & id_allowin | (wb_csr_ex_valid | wb_ertn_flush_valid | br_taken)) //inst has been passed to ID or canceled
+        else if (if_to_id_valid & id_allowin | (wb_csr_ex_valid | wb_tlb_refetch_valid | wb_ertn_flush_valid | br_taken)) //inst has been passed to ID or canceled
             if_inst_reg_valid <= 1'b0;
         else if (~if_inst_reg_valid & inst_sram_data_ok & ~inst_cancel & ~preif_cancel) begin
             if_inst_reg_valid <= 1'b1;
@@ -191,15 +226,23 @@ module IF_Stage(
     assign if_to_id_data    = {if_to_id_inst,     // 32-63
                                if_pc};      // 0-31   
     
-    //exception
-    assign if_to_id_excep = if_adef_excep;
+//-----to mmu for va->pa and tlb except------
+    assign inst_va  = nextpc;
+    assign if_asid  = csr_asid_rvalue[`CSR_ASID_ASID];
 
+    assign if_pif_excep = inst_page_invalid;
+    assign if_ppi_excep = inst_ppi_except;
+    assign if_tlbr_excep = inst_page_fault;
+
+    //to id exception
+    assign if_to_id_excep = {if_adef_excep, if_pif_excep, if_ppi_excep, if_tlbr_excep};
+    
 //-----inst sram signal-----
     assign inst_sram_req = if_allowin & resetn & ~br_stall & ~preif_cancel;
     assign inst_sram_wr = 1'b0;
     assign inst_sram_size = 2'b10;
     assign inst_sram_wstrb = 4'b0;
-    assign inst_sram_addr = nextpc;
+    assign inst_sram_addr = inst_pa;
     assign inst_sram_wdata = 32'b0;
 
 endmodule

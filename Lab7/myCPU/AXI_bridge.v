@@ -387,11 +387,11 @@ module AXI_bridge(
 //************************************************************
     //interface
     assign inst_sram_rdata   = rdata_buffer[0];
-    assign inst_sram_addr_ok = ~arid[0] & arvalid & arready | ~wid[0] & wvalid & wready;
+    assign inst_sram_addr_ok = ~arid[0] & arvalid & arready | ~wid[0] & awvalid & awready;
     assign inst_sram_data_ok = ~rid_reg[0] & state_r_ack | ~bid[0] & bvalid & bready;
 
     assign data_sram_rdata   = rdata_buffer[1];
-    assign data_sram_addr_ok = arid[0] & arvalid & arready | wid[0] & wvalid & wready;
+    assign data_sram_addr_ok = arid[0] & arvalid & arready | wid[0] & awvalid & awready;
     assign data_sram_data_ok = rid_reg[0] & state_r_ack | bid[0] & bvalid & bready;
 
 endmodule
