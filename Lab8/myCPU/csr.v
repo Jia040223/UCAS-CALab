@@ -420,7 +420,7 @@ module csr(
                 csr_tlbehi_vppn <= 19'b0;
         end 
         else if (tlb_excep) begin
-            csr_tlbehi_vppn <= (wb_ecode == `ECODE_PIF) ? wb_pc : wb_vaddr[31:13];
+            csr_tlbehi_vppn <= (wb_ecode == `ECODE_PIF) ? wb_pc[31:13] : wb_vaddr[31:13];
         end
         else if (csr_we && csr_num == `CSR_TLBEHI) begin
             csr_tlbehi_vppn <= csr_wmask[`CSR_TLBEHI_VPPN] & csr_wvalue[`CSR_TLBEHI_VPPN] |
