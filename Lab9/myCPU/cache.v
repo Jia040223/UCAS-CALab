@@ -32,6 +32,7 @@ module cache(
     input  wire         wr_rdy
 );
 
+/* ------buffers------ */
     // request buffer
     reg  [68:0] req_buffer;
     wire        op_reg;
@@ -71,11 +72,23 @@ module cache(
 
     assign {wrbuf_way, wrbuf_index, wrbuf_offset, wrbuf_wstrb, wrbuf_wdata} = write_buffer;
 
-    // replace way
-    wire        replace_way;
+    // burst data counter
+    reg  [ 1:0] ret_cnt;
+    always @(posedge clk) begin
+        if(~resetn) begin
+            ret_cnt <= 2'b0;
+        end
+        else if(ret_valid) begin
+            if(~ret_last) begin
+                ret_cnt <= ret_cnt + 1'b1;
+            end
+            else begin
+                ret_cnt <= 2'b0;
+            end
+        end
+    end
 
-
-    /* tag match */
+/* ------tag match------ */
     wire        hit_write;
     wire        hit_write_conflict;
     wire        cache_hit;
@@ -90,9 +103,10 @@ module cache(
     assign hit_result = {32{hit_way[0]}} & data_bank_rdata_0[offset_reg[3:2]] |
                         {32{hit_way[1]}} & data_bank_rdata_1[offset_reg[3:2]];
     
-    assign rdata = (ret_valid)? ret_data : hit_result;
+    // random replace way
+    wire replace_way = $random[0];
 
-    /* main state machine */
+/* ------main state machine------ */
     parameter state_IDLE    = 5'b00001;
     parameter state_LOOKUP  = 5'b00010;
     parameter state_MISS    = 5'b00100;
@@ -166,7 +180,7 @@ module cache(
         endcase
     end
 
-    /* write state machine */
+/* ------write state machine------ */
     parameter state_WR_IDLE = 2'b01;
     parameter state_WR_WRITE = 2'b10;
     parameter WR_IDLE = 0;
@@ -207,7 +221,7 @@ module cache(
         endcase
     end
 
-    /* cache control */
+/* ------cache data & control------ */
     wire        tag_we_0;
     wire [ 7:0] tag_addr_0;
     wire [19:0] tag_wdata_0;
@@ -269,6 +283,7 @@ module cache(
         end
     end
 
+    // RAM port
     assign tag_we_0 = ret_valid & ret_last[0] & ~replace_way;
     assign tag_we_1 = ret_valid & ret_last[0] & replace_way;
     assign tag_addr_0 = (current_state[IDLE] | current_state[LOOKUP])? index : index_reg;
@@ -287,11 +302,22 @@ module cache(
             assign data_bank_addr_0[i] = (current_state[IDLE] | current_state[LOOKUP])? index : index_reg;
             assign data_bank_addr_1[i] = (current_state[IDLE] | current_state[LOOKUP])? index : index_reg;
 
-            assign data_bank_wdata_0[i] = wrbuf_wdata;
-            assign data_bank_wdata_1[i] = wrbuf_wdata;
+            assign data_bank_wdata_0[i] = (wr_current_state[WR_WRITE])? wrbuf_wdata :
+                                          (offset_reg[3:2] != i || ~op_reg)? ret_data : 
+                                          {wstrb_r[3] ? wdata_r[31:24] : ret_data[31:24],
+                                           wstrb_r[2] ? wdata_r[23:16] : ret_data[23:16],
+                                           wstrb_r[1] ? wdata_r[15: 8] : ret_data[15: 8],
+                                           wstrb_r[0] ? wdata_r[ 7: 0] : ret_data[ 7: 0]};  
+            assign data_bank_wdata_1[i] = (wr_current_state[WR_WRITE])? wrbuf_wdata :
+                                          (offset_reg[3:2] != i || ~op_reg)? ret_data : 
+                                          {wstrb_r[3] ? wdata_r[31:24] : ret_data[31:24],
+                                           wstrb_r[2] ? wdata_r[23:16] : ret_data[23:16],
+                                           wstrb_r[1] ? wdata_r[15: 8] : ret_data[15: 8],
+                                           wstrb_r[0] ? wdata_r[ 7: 0] : ret_data[ 7: 0]};
         end
     endgenerate
 
+    // RAM instance 
     TAG_RAM TAG_RAM[0] (
         .clka (clk),
         .wea  (tag_we_0),
@@ -306,7 +332,6 @@ module cache(
         .dina (tag_wdata_1),
         .douta(tag_rdata_1) 
     );
-
     
     generate
         for(i=0; i<4; i=i+1) begin
@@ -326,6 +351,40 @@ module cache(
             );
         end
     endgenerate
+
+/* ------CPU interface------ */
+    assign addr_ok = current_state[IDLE] | (current_state[LOOKUP] & valid & cache_hit & (op | ~op & hit_write_conflict));
+
+    assign data_ok = (current_state[LOOKUP] & cache_hit) | (current_state[LOOKUP] & op_reg) 
+                   | (current_state[REFILL] & ~op_reg & ret_valid & ret_cnt==offset_r[3:2]);
+
+    assign rdata = (ret_valid)? ret_data : hit_result;
     
+/* ------AXI interface------ */
+    // read port
+    assign rd_type = 3'b100;
+    assign rd_addr = {tag_reg, index_reg, offset_reg};
+    assign rd_req = current_state[REPLACE];
+
+    // write port
+    reg wr_req_reg;
+    always @(posedge clk) begin
+        if(~resetn) begin
+            wr_req_reg <= 1'b0;
+        end
+        else if(current_state[MISS] & next_state[REPLACE]) begin
+            wr_req_reg <= 1'b1;
+        end
+        else if(wr_rdy) begin
+            wr_req_reg <= 1'b0;
+        end
+    end
+
+    assign wr_req = wr_req_reg;
+    assign wr_type = 3'b100;
+    assign wr_addr = (replace_way)? {tag_rdata_1, index_reg, offset_reg} : {tag_rdata_0, index_reg, offset_reg};
+    assign wr_wstrb = 4'hf;
+    assign wr_data = (replace_way)? {data_bank_rdata_1[3], data_bank_rdata_1[2], data_bank_rdata_1[1], data_bank_rdata_1[0]}:
+                                    {data_bank_rdata_0[3], data_bank_rdata_0[2], data_bank_rdata_0[1], data_bank_rdata_0[0]};
 
 endmodule
