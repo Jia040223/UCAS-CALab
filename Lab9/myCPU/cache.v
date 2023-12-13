@@ -304,16 +304,16 @@ module cache(
 
             assign data_bank_wdata_0[i] = (wr_current_state[WR_WRITE])? wrbuf_wdata :
                                           (offset_reg[3:2] != i || ~op_reg)? ret_data : 
-                                          {wstrb_r[3] ? wdata_r[31:24] : ret_data[31:24],
-                                           wstrb_r[2] ? wdata_r[23:16] : ret_data[23:16],
-                                           wstrb_r[1] ? wdata_r[15: 8] : ret_data[15: 8],
-                                           wstrb_r[0] ? wdata_r[ 7: 0] : ret_data[ 7: 0]};  
+                                          {wstrb_reg[3] ? wdata_r[31:24] : ret_data[31:24],
+                                           wstrb_reg[2] ? wdata_r[23:16] : ret_data[23:16],
+                                           wstrb_reg[1] ? wdata_r[15: 8] : ret_data[15: 8],
+                                           wstrb_reg[0] ? wdata_r[ 7: 0] : ret_data[ 7: 0]};  
             assign data_bank_wdata_1[i] = (wr_current_state[WR_WRITE])? wrbuf_wdata :
                                           (offset_reg[3:2] != i || ~op_reg)? ret_data : 
-                                          {wstrb_r[3] ? wdata_r[31:24] : ret_data[31:24],
-                                           wstrb_r[2] ? wdata_r[23:16] : ret_data[23:16],
-                                           wstrb_r[1] ? wdata_r[15: 8] : ret_data[15: 8],
-                                           wstrb_r[0] ? wdata_r[ 7: 0] : ret_data[ 7: 0]};
+                                          {wstrb_reg[3] ? wdata_r[31:24] : ret_data[31:24],
+                                           wstrb_reg[2] ? wdata_r[23:16] : ret_data[23:16],
+                                           wstrb_reg[1] ? wdata_r[15: 8] : ret_data[15: 8],
+                                           wstrb_reg[0] ? wdata_r[ 7: 0] : ret_data[ 7: 0]};
         end
     endgenerate
 
