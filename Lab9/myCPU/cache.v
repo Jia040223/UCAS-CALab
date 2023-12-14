@@ -91,64 +91,13 @@ module cache(
     reg  [255:0] dirty_arr       [`CACHE_WAY - 1:0];
     reg  [255:0] valid_arr       [`CACHE_WAY - 1:0];
     
+    reg  [ 7:0] call_cnt         [`CACHE_WAY - 1:0][255:0];
     wire replace_way;
 
     reg wr_req_reg;
+    reg  [ 1:0] ret_cnt;
 
     genvar i, way;
-
-    // request buffer
-    always @(posedge clk) begin
-        if(~resetn)
-            {op_reg, index_reg, tag_reg, offset_reg, wstrb_reg, wdata_reg} <= 69'b0;
-        else if(valid & addr_ok)
-            {op_reg, index_reg, tag_reg, offset_reg, wstrb_reg, wdata_reg}
-                                 <= {op, index, tag, offset, wstrb, wdata};
-    end
-
-    // write buffer
-    always @(posedge clk) begin
-        if(~resetn)
-            {wrbuf_way, wrbuf_index, wrbuf_offset, wrbuf_wstrb, wrbuf_wdata} <= 49'b0;
-        else if(hit_write)
-            {wrbuf_way, wrbuf_index, wrbuf_offset, wrbuf_wstrb, wrbuf_wdata}
-            <= {hit_way[1], index_reg, offset_reg, wstrb_reg, wdata_reg};
-    end
-    
-    // burst data counter
-    reg  [ 1:0] ret_cnt;
-    always @(posedge clk) begin
-        if(~resetn)
-            ret_cnt <= 2'b0;
-        else if(ret_valid) begin
-            if(~ret_last)
-                ret_cnt <= ret_cnt + 1'b1;
-            else
-                ret_cnt <= 2'b0;
-        end
-    end
-
-/* ------tag match/update------ */
-    generate
-        for(way = 0; way < `CACHE_WAY; way = way + 1) begin: tag_value
-            assign hit_way[way] = valid_arr[way][index_reg] & tag_rdata[way] == tag_reg;
-            assign tag_we[way]  = ret_valid & ret_last[0] & replace_way == way;
-
-        end
-    endgenerate
-    assign cache_hit = |hit_way;
-
-    assign tag_addr = (current_state[IDLE] | current_state[LOOKUP])? index : index_reg;
-    assign tag_wdata = tag_reg;
-
-
-    assign hit_write = current_state[LOOKUP] & cache_hit & op_reg;
-    assign hit_write_conflict = (hit_write | wr_current_state[WR_WRITE]) & valid & ~op & {index, offset[3:2]} == {index_reg, offset_reg[3:2]};
-    assign hit_result = {32{hit_way[0]}} & data_bank_rdata[0][offset_reg[3:2]] |
-                        {32{hit_way[1]}} & data_bank_rdata[1][offset_reg[3:2]];
-    
-    // random replace way
-    assign replace_way = $random;
 
 /* ------main state machine------ */
     always @(posedge clk) begin
@@ -230,6 +179,73 @@ module cache(
         endcase
     end
 
+    // request buffer
+    always @(posedge clk) begin
+        if(~resetn)
+            {op_reg, index_reg, tag_reg, offset_reg, wstrb_reg, wdata_reg} <= 69'b0;
+        else if(valid & addr_ok)
+            {op_reg, index_reg, tag_reg, offset_reg, wstrb_reg, wdata_reg}
+                                 <= {op, index, tag, offset, wstrb, wdata};
+    end
+
+    // write buffer
+    always @(posedge clk) begin
+        if(~resetn)
+            {wrbuf_way, wrbuf_index, wrbuf_offset, wrbuf_wstrb, wrbuf_wdata} <= 49'b0;
+        else if(hit_write)
+            {wrbuf_way, wrbuf_index, wrbuf_offset, wrbuf_wstrb, wrbuf_wdata}
+            <= {hit_way[1], index_reg, offset_reg, wstrb_reg, wdata_reg};
+    end
+    
+    // burst data counter
+    always @(posedge clk) begin
+        if(~resetn)
+            ret_cnt <= 2'b0;
+        else if(ret_valid) begin
+            if(~ret_last)
+                ret_cnt <= ret_cnt + 1'b1;
+            else
+                ret_cnt <= 2'b0;
+        end
+    end
+
+/* ------tag match/update------ */
+    generate
+        for(way = 0; way < `CACHE_WAY; way = way + 1) begin: tag_value
+            assign hit_way[way] = valid_arr[way][index_reg] & tag_rdata[way] == tag_reg;
+            assign tag_we[way]  = ret_valid & ret_last[0] & replace_way == way;
+        end
+    endgenerate
+    assign cache_hit = |hit_way;
+
+    assign tag_addr = (current_state[IDLE] | current_state[LOOKUP])? index : index_reg;
+    assign tag_wdata = tag_reg;
+
+    assign hit_write = current_state[LOOKUP] & cache_hit & op_reg;
+    assign hit_write_conflict = (hit_write | wr_current_state[WR_WRITE]) & valid & ~op & {index, offset[3:2]} == {index_reg, offset_reg[3:2]};
+    assign hit_result = {32{hit_way[0]}} & data_bank_rdata[0][offset_reg[3:2]] |
+                        {32{hit_way[1]}} & data_bank_rdata[1][offset_reg[3:2]];
+    
+    // random replace way
+	integer i_call;
+	always @ (posedge clk) begin
+		if (~resetn) begin
+			for (i_call = 0; i_call < 256; i_call = i_call + 1) begin
+				call_cnt[0][i_call] <= 8'b0;
+				call_cnt[1][i_call] <= 8'b0;
+			end
+		end
+		else if (state_LOOKUP)begin
+			if (~hit_way[0]) call_cnt[0][index_reg] <= call_cnt[0][index_reg] + 1;
+			if (~hit_way[1]) call_cnt[1][index_reg] <= call_cnt[1][index_reg] + 1;
+		end
+		else if (state_REFILL) call_cnt[replace_way][index_reg] <= 8'b0;
+	end
+
+	assign replace_way = (~valid_arr[0][index_reg])? 1'd0 :
+						 (~valid_arr[1][index_reg])? 1'd1 :
+						 (call_cnt[0][index_reg] >= call_cnt[1][index_reg])? 1'd0 : 1'd1;
+
 /* ------cache data & control------ */
     // dirty array
     always @(posedge clk) begin
@@ -250,7 +266,6 @@ module cache(
     end
 
     // RAM port
-
     generate
         for (i=0; i<4; i=i+1) begin: data_bank
             for (way = 0; way < `CACHE_WAY; way = way + 1) begin: data_bank_we_value
@@ -258,8 +273,7 @@ module cache(
                                               {4{ret_valid & (ret_cnt == i) & replace_way == way}} & 4'hf;
             end
             
-            assign data_bank_addr[i] = (current_state[IDLE] | current_state[LOOKUP])? index : index_reg;
-
+            assign data_bank_addr[i]  = (current_state[IDLE] | current_state[LOOKUP])? index : index_reg;
             assign data_bank_wdata[i] = (wr_current_state[WR_WRITE])? wrbuf_wdata :
                                           (offset_reg[3:2] != i || ~op_reg)? ret_data :
                                           {wstrb_reg[3] ? wdata_reg[31:24] : ret_data[31:24],
@@ -270,37 +284,24 @@ module cache(
     endgenerate
 
     // RAM instance 
-    TAG_RAM tag_ram_way0 (
-        .clka (clk),
-        .wea  (tag_we[0]),
-        .addra(tag_addr),
-        .dina (tag_wdata),
-        .douta(tag_rdata[0]) 
-    );
-    TAG_RAM tag_ram_way1 (
-        .clka (clk),
-        .wea  (tag_we[1]),
-        .addra(tag_addr),
-        .dina (tag_wdata),
-        .douta(tag_rdata[1]) 
-    );
-    
     generate
-        for(i=0; i<4; i=i+1) begin
-            DATA_Bank_RAM data_bank_ram_way0(
+        for (way = 0; way < `CACHE_WAY; way = way + 1) begin: ram_generate
+            TAG_RAM tag_ram_way0 (
                 .clka (clk),
-                .wea  (data_bank_we[0][i]),
-                .addra(data_bank_addr[i]),
-                .dina (data_bank_wdata[i]),
-                .douta(data_bank_rdata[0][i])
+                .wea  (tag_we[way]),
+                .addra(tag_addr),
+                .dina (tag_wdata),
+                .douta(tag_rdata[way]) 
             );
-            DATA_Bank_RAM data_bank_ram_way1(
-                .clka (clk),
-                .wea  (data_bank_we[1][i]),
-                .addra(data_bank_addr[i]),
-                .dina (data_bank_wdata[i]),
-                .douta(data_bank_rdata[1][i])
-            );
+            for(i = 0; i < 4; i = i + 1) begin: bank_ram_generate
+                DATA_Bank_RAM data_bank_ram_way0(
+                    .clka (clk),
+                    .wea  (data_bank_we[way][i]),
+                    .addra(data_bank_addr[i]),
+                    .dina (data_bank_wdata[i]),
+                    .douta(data_bank_rdata[way][i])
+                );
+            end
         end
     endgenerate
 
@@ -321,15 +322,12 @@ module cache(
 
     // write port
     always @(posedge clk) begin
-        if(~resetn) begin
+        if(~resetn)
             wr_req_reg <= 1'b0;
-        end
-        else if(current_state[MISS] & next_state[REPLACE]) begin
+        else if(current_state[MISS] & next_state[REPLACE])
             wr_req_reg <= 1'b1;
-        end
-        else if(wr_rdy) begin
+        else if(wr_rdy)
             wr_req_reg <= 1'b0;
-        end
     end
 
     assign wr_req   = wr_req_reg;
