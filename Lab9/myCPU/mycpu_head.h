@@ -1,4 +1,5 @@
 `define TLBNUM                  16
+`define CACHE_WAY               2
 
 /* ------BUS WIDTH------ */
 `define IF_TO_ID_DATA_WIDTH     64
