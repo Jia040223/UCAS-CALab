@@ -134,7 +134,8 @@ module WB_Stage(
 
     //exception
     assign wb_excep = wb_excp_adef | wb_excp_syscall | wb_excp_break | wb_excp_ale | wb_excp_ine | wb_has_int |
-                      wb_pif_excep | wb_ppi_exc | wb_tlbr_e | wb_pil_excep | wb_pis_excep | wb_pme_excep;
+                      wb_inst_pif_excep | wb_inst_ppi_excep | wb_inst_tlbr_excep |
+                      wb_data_ppi_excep | wb_data_tlbr_excep | wb_data_pil_excep | wb_data_pis_excep | wb_data_pme_excep;
     
     assign {wb_res_from_csr, wb_csr_num, wb_csr_we, wb_csr_wmask, wb_csr_wvalue, 
             wb_ertn_flush, wb_has_int, wb_excp_adef, wb_excp_syscall, wb_excp_break,
@@ -155,7 +156,7 @@ module WB_Stage(
                         
 //-----CSR relavant signals and data----- 
     assign wb_csr_ecode = wb_has_int        ? `ECODE_INT :
-                          wb_excp_adef      ? `ECODE_ADEF:
+                          wb_excp_adef      ? `ECODE_ADE :
                           wb_inst_tlbr_excep? `ECODE_TLBR:
                           wb_inst_pif_excep ? `ECODE_PIF :
                           wb_inst_ppi_excep ? `ECODE_PPI :
