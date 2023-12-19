@@ -105,6 +105,7 @@ module mycpu_top(
     wire        inst_sram_addr_ok;
     wire        inst_sram_data_ok;
     wire [31:0] inst_sram_rdata;
+    wire        if_exception;
     
     wire        data_sram_req;
     wire        data_sram_wr;
@@ -294,6 +295,7 @@ module mycpu_top(
         .inst_sram_addr_ok(inst_sram_addr_ok),
         .inst_sram_data_ok(inst_sram_data_ok),
         .inst_sram_rdata(inst_sram_rdata),
+        .if_exception(if_exception),
         
         .data_sram_req(data_sram_req),
         .data_sram_wr(data_sram_wr),
@@ -320,6 +322,7 @@ module mycpu_top(
         .inst_sram_addr_ok(inst_sram_addr_ok),
         .inst_sram_data_ok(inst_sram_data_ok),
         .inst_sram_rdata(inst_sram_rdata),
+        .if_exception(if_exception),
         .axi_arid(arid),
 
         .id_allowin(id_allowin),

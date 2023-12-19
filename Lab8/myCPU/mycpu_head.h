@@ -118,11 +118,13 @@
 
 //------exp 15-------
 `define STATE_IDLE      5'b00001
-`define STATE_AR_REQ    3'b010
-`define STATE_AR_ACK    3'b100
+`define STATE_AR_REQ    4'b0010
+`define STATE_AR_EXCEP  4'b0100
+`define STATE_AR_ACK    4'b1000
 
-`define STATE_R_RDY     3'b010
-`define STATE_R_ACK     3'b100
+`define STATE_R_RDY     4'b0010
+`define STATE_R_EXCEP   4'b0100
+`define STATE_R_ACK     4'b1000
 
 `define STATE_W_REQ     5'b00010
 `define STATE_W_ADDR    5'b00100

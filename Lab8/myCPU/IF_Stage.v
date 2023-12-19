@@ -13,6 +13,7 @@ module IF_Stage(
     input  wire        inst_sram_addr_ok,
     input  wire        inst_sram_data_ok,
     input  wire [31:0] inst_sram_rdata,
+    output             if_exception,
 
     input  wire [ 3:0] axi_arid,
     // id to if stage signal
@@ -236,6 +237,7 @@ module IF_Stage(
 
     //to id exception
     assign if_to_id_excep = {if_adef_excep, if_pif_excep, if_ppi_excep, if_tlbr_excep};
+    assign if_exception = if_adef_excep | if_pif_excep | if_ppi_excep | if_tlbr_excep;
     
 //-----inst sram signal-----
     assign inst_sram_req = if_allowin & resetn & ~br_stall & ~preif_cancel;

@@ -55,6 +55,8 @@ module AXI_bridge(
     output wire        inst_sram_addr_ok,
     output wire        inst_sram_data_ok,
     output wire [31:0] inst_sram_rdata,
+
+    input  wire        if_exception,
     // data sram interface
     input  wire        data_sram_req,
     input  wire        data_sram_wr,
@@ -67,17 +69,20 @@ module AXI_bridge(
     output wire [31:0] data_sram_rdata
 );
     //read request state machine
-    reg  [ 2:0] ar_current_state;
-    reg  [ 2:0] ar_next_state;
+    reg  [ 3:0] ar_current_state;
+    reg  [ 3:0] ar_next_state;
     wire        state_ar_idle;
     wire        state_ar_req;
+    wire        state_ar_excep;
     wire        state_ar_ack;
+    wire        arexcep;
 
     //read data state machine
-    reg  [ 2:0] r_current_state;
-    reg  [ 2:0] r_next_state;
+    reg  [ 3:0] r_current_state;
+    reg  [ 3:0] r_next_state;
     wire        state_r_idle;
     wire        state_r_rdy;
+    wire        state_r_excep;
     wire        state_r_ack;
     reg  [ 3:0] rid_reg;
 
@@ -117,8 +122,10 @@ module AXI_bridge(
             `STATE_IDLE: begin
                 if (~aresetn | data_conflict)
                     ar_next_state = `STATE_IDLE;
-                else if ((inst_sram_req & ~inst_sram_wr | data_sram_req & ~data_sram_wr) & ~(read_wait_counter[0]))
+                else if ((inst_sram_req & ~inst_sram_wr & ~if_exception | data_sram_req & ~data_sram_wr) & ~(read_wait_counter[0]))
                     ar_next_state = `STATE_AR_REQ;
+                else if (inst_sram_req & ~inst_sram_wr & if_exception)
+                    ar_next_state = `STATE_AR_EXCEP;
                 else
                     ar_next_state = `STATE_IDLE;
             end
@@ -130,6 +137,13 @@ module AXI_bridge(
                     ar_next_state = `STATE_AR_REQ;
             end
 
+            `STATE_AR_EXCEP: begin
+                if (state_r_idle)
+                    ar_next_state = `STATE_AR_ACK;
+                else
+                    ar_next_state = `STATE_AR_EXCEP;
+            end
+
             `STATE_AR_ACK: begin
                 ar_next_state = `STATE_IDLE;
             end
@@ -138,9 +152,10 @@ module AXI_bridge(
         endcase
     end
 
-    assign {state_ar_ack, state_ar_req, state_ar_idle} = ar_current_state;
+    assign {state_ar_ack, state_ar_excep, state_ar_req, state_ar_idle} = ar_current_state;
     
     assign arvalid      = state_ar_req;
+    assign arexcep      = state_ar_excep;
     always @(posedge aclk) begin
         if (~aresetn) begin
             arid    <= 4'b0;
@@ -179,6 +194,8 @@ module AXI_bridge(
                     r_next_state = `STATE_IDLE;
                 else if (arvalid & arready | (|read_wait_counter))
                     r_next_state = `STATE_R_RDY;
+                else if (arexcep)
+                    r_next_state = `STATE_R_EXCEP;
                 else
                     r_next_state = `STATE_IDLE;
             end
@@ -190,6 +207,10 @@ module AXI_bridge(
                     r_next_state = `STATE_R_RDY;
             end
 
+            `STATE_R_EXCEP: begin
+                r_next_state = `STATE_R_ACK;
+            end
+
             `STATE_R_ACK: begin
                 r_next_state = `STATE_IDLE;
             end
@@ -198,7 +219,7 @@ module AXI_bridge(
         endcase
     end
 
-    assign {state_r_ack, state_r_rdy, state_r_idle} = r_current_state;
+    assign {state_r_ack, state_r_excep, state_r_rdy, state_r_idle} = r_current_state;
 
     assign rready = state_r_rdy;
     always @(posedge aclk) begin
@@ -387,7 +408,7 @@ module AXI_bridge(
 //************************************************************
     //interface
     assign inst_sram_rdata   = rdata_buffer[0];
-    assign inst_sram_addr_ok = ~arid[0] & arvalid & arready | ~wid[0] & wvalid & wready;
+    assign inst_sram_addr_ok = ~arid[0] & (arvalid & arready | state_ar_excep) | ~wid[0] & wvalid & wready;
     assign inst_sram_data_ok = ~rid_reg[0] & state_r_ack | ~bid[0] & bvalid & bready;
 
     assign data_sram_rdata   = rdata_buffer[1];
