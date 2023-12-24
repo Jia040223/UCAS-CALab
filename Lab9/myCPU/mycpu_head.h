@@ -1,8 +1,5 @@
 `define TLBNUM                  16
-`define CACHE_WAY               2
-`define CACHE_SET	            8
 
-/* ------BUS WIDTH------ */
 `define IF_TO_ID_DATA_WIDTH     64
 `define ID_TO_EX_DATA_WIDTH     163
 `define EX_TO_MEM_DATA_WIDTH    79
@@ -19,7 +16,7 @@
 
 `define WB_TO_IF_CSR_DATA_WIDTH 99
 
-/* ------ECODE & ESUBCODE------*/ 
+// ECODE and ESUBCODE
 `define ECODE_INT       6'h0
 `define ECODE_PIL       6'h1
 `define ECODE_PIS       6'h2
@@ -35,7 +32,7 @@
 
 `define ESUBCODE_ADEF 9'h0
 
-/* ------exp 12------ */
+//------exp12------
 // csr
 `define CSR_CRMD        14'h0
 `define CSR_PRMD        14'h1
@@ -80,7 +77,7 @@
 // SAVE
 `define CSR_SAVE_DATA   31:0
 
-/* ------exp 13------ */
+//------exp13------
 // ECFG
 `define CSR_ECFG_LIE    12:0
 // TICLR
@@ -92,7 +89,7 @@
 `define CSR_TCFG_PERIOD 1
 `define CSR_TCFG_INITV  31:2
 
-/* ------exp 18------ */
+//------exp18------
 //TLBIDX
 `define CSR_TLBIDX_INDEX    3:0
 `define CSR_TLBIDX_PS       29:24
@@ -111,7 +108,7 @@
 // TLBRENTRY
 `define CSR_TLBRENTRY_PA    31:6
 
-/* ------exp 19------ */
+//------exp19------
 // DMW
 `define CSR_DMW_PLV0  0
 `define CSR_DMW_PLV3  3
@@ -119,13 +116,15 @@
 `define CSR_DMW_PSEG  27:25
 `define CSR_DMW_VSEG  31:29
 
-/* ------AXI STATE------ */
+//------exp 15-------
 `define STATE_IDLE      5'b00001
-`define STATE_AR_REQ    3'b010
-`define STATE_AR_ACK    3'b100
+`define STATE_AR_REQ    4'b0010
+`define STATE_AR_EXCEP  4'b0100
+`define STATE_AR_ACK    4'b1000
 
-`define STATE_R_RDY     3'b010
-`define STATE_R_ACK     3'b100
+`define STATE_R_RDY     4'b0010
+`define STATE_R_EXCEP   4'b0100
+`define STATE_R_ACK     4'b1000
 
 `define STATE_W_REQ     5'b00010
 `define STATE_W_ADDR    5'b00100
