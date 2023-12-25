@@ -91,7 +91,7 @@ module cache(
     reg  [255:0] dirty_arr       [`CACHE_WAY - 1:0];
     
     reg  [ 7:0] call_cnt         [`CACHE_WAY - 1:0][255:0];
-    wire replace_way;
+    reg  replace_way;
 
     reg  [ 1:0] ret_cnt;
 
@@ -234,15 +234,20 @@ module cache(
 			end
 		end
 		else if (state_LOOKUP)begin
-			if (~hit_way[0]) call_cnt[0][index_reg] <= call_cnt[0][index_reg] + 1;
-			if (~hit_way[1]) call_cnt[1][index_reg] <= call_cnt[1][index_reg] + 1;
+			if (~hit_way[0] & valid) call_cnt[0][index_reg] <= call_cnt[0][index_reg] + 1;
+			if (~hit_way[1] & valid) call_cnt[1][index_reg] <= call_cnt[1][index_reg] + 1;
 		end
 		else if (state_REFILL) call_cnt[replace_way][index_reg] <= 8'b0;
 	end
 
-	assign replace_way = (~tagv_rdata[0][0])? 1'd0 :
+    always @(posedge clk) begin
+        if (~resetn)
+            replace_way <= 1'b0;
+        else if (state_LOOKUP)
+            replace_way <= (~tagv_rdata[0][0])? 1'd0 :
 						 (~tagv_rdata[1][0])? 1'd1 :
 						 (call_cnt[0][index_reg] >= call_cnt[1][index_reg])? 1'd0 : 1'd1;
+    end
 
 /* ------cache data & control------ */
     // dirty array
@@ -297,7 +302,7 @@ module cache(
 
 /* ------CPU interface------ */
     assign addr_ok = current_state[IDLE] | 
-                     (current_state[LOOKUP] & valid & cache_hit & (op | ~op & hit_write_conflict));
+                     (current_state[LOOKUP] & valid & cache_hit & (op | ~op & ~hit_write_conflict));
 
     assign data_ok = (current_state[LOOKUP] & (cache_hit | op_reg)) | 
                      (current_state[REFILL] & ~op_reg & ret_valid & ret_cnt==offset_reg[3:2]);

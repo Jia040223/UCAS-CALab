@@ -96,15 +96,14 @@ module mycpu_top(
 
     wire [`WB_TO_IF_CSR_DATA_WIDTH -1:0]  wb_to_if_csr_data;
 
-    wire        inst_sram_req;
-    wire        inst_sram_wr;
-    wire [ 1:0] inst_sram_size;
-    wire [ 3:0] inst_sram_wstrb;
-    wire [31:0] inst_sram_addr;
-    wire [31:0] inst_sram_wdata;
-    wire        inst_sram_addr_ok;
-    wire        inst_sram_data_ok;
-    wire [31:0] inst_sram_rdata;
+    wire        icache_rd_req;
+    wire [ 2:0] icache_rd_type;
+    wire [31:0] icache_rd_addr;
+    wire        icache_rd_rdy;
+    wire        icache_ret_valid;
+    wire        icache_ret_last;
+    wire [31:0] icache_ret_data;
+
     wire        if_exception;
     
     wire        data_sram_req;
@@ -241,72 +240,17 @@ module mycpu_top(
     wire [31:0] inst_pa;
     wire [31:0] data_va;
     wire [31:0] data_pa;
-
-    AXI_bridge my_AXI_bridge(
-        .aclk(aclk),
-        .aresetn(aresetn),
-        .arid(arid),
-        .araddr(araddr),
-        .arlen(arlen),
-        .arsize(arsize),
-        .arburst(arburst),
-        .arlock(arlock),
-        .arcache(arcache),
-        .arprot(arprot),
-        .arvalid(arvalid),
-        .arready(arready),
-
-        .rid(rid),
-        .rdata(rdata),
-        .rresp(rresp),
-        .rlast(rlast),
-        .rvalid(rvalid),
-        .rready(rready),
-
-        .awid(awid),
-        .awaddr(awaddr),
-        .awlen(awlen),
-        .awsize(awsize),
-        .awburst(awburst),
-        .awlock(awlock),
-        .awcache(awcache),
-        .awprot(awprot),
-        .awvalid(awvalid),
-        .awready(awready),
-
-        .wid(wid),
-        .wdata(wdata),
-        .wstrb(wstrb),
-        .wlast(wlast),
-        .wvalid(wvalid),
-        .wready(wready),
-
-        .bid(bid),
-        .bresp(bresp),
-        .bvalid(bvalid),
-        .bready(bready),
-
-        .inst_sram_req(inst_sram_req),
-        .inst_sram_wr(inst_sram_wr),
-        .inst_sram_size(inst_sram_size),
-        .inst_sram_wstrb(inst_sram_wstrb),
-        .inst_sram_addr(inst_sram_addr),
-        .inst_sram_wdata(inst_sram_wdata),
-        .inst_sram_addr_ok(inst_sram_addr_ok),
-        .inst_sram_data_ok(inst_sram_data_ok),
-        .inst_sram_rdata(inst_sram_rdata),
-        .if_exception(if_exception),
-        
-        .data_sram_req(data_sram_req),
-        .data_sram_wr(data_sram_wr),
-        .data_sram_size(data_sram_size),
-        .data_sram_wstrb(data_sram_wstrb),
-        .data_sram_addr(data_sram_addr),
-        .data_sram_wdata(data_sram_wdata),
-        .data_sram_addr_ok(data_sram_addr_ok),
-        .data_sram_data_ok(data_sram_data_ok),
-        .data_sram_rdata(data_sram_rdata)
-    );
+    
+    wire        inst_sram_req;
+    wire        inst_sram_wr;
+    wire [ 1:0] inst_sram_size;
+    wire [ 3:0] inst_sram_wstrb;
+    wire [31:0] inst_sram_addr;
+    wire [31:0] inst_sram_wdata;
+    wire        inst_sram_addr_ok;
+    wire        inst_sram_data_ok;
+    wire [31:0] inst_sram_rdata;
+    
 
     IF_Stage my_IF_Stage
     (
@@ -322,6 +266,7 @@ module mycpu_top(
         .inst_sram_addr_ok(inst_sram_addr_ok),
         .inst_sram_data_ok(inst_sram_data_ok),
         .inst_sram_rdata(inst_sram_rdata),
+        
         .if_exception(if_exception),
         .axi_arid(arid),
 
@@ -697,6 +642,94 @@ module mycpu_top(
         .ppi_except     (data_ppi_except),
         .page_fault     (data_page_fault),
         .page_clean     (data_page_clean)
+    );
+
+    cache icache(
+        .clk        (aclk),
+        .resetn     (aresetn),
+
+        .valid      (inst_sram_req),
+        .op         (1'b0),
+        .index      (inst_sram_addr[11:4]),
+        .tag        (inst_sram_addr[31:12]),
+        .offset     (inst_sram_addr[3:0]),
+        .wstrb      (inst_sram_wstrb),
+        .wdata      (inst_sram_wdata),
+        .addr_ok    (inst_sram_addr_ok),
+        .data_ok    (inst_sram_data_ok),
+        .rdata      (inst_sram_rdata),
+
+        .rd_req     (icache_rd_req),
+        .rd_type    (icache_rd_type),
+        .rd_addr    (icache_rd_addr),
+        .rd_rdy     (icache_rd_rdy),
+        .ret_valid  (icache_ret_valid),
+        .ret_last   (icache_ret_last),
+        .ret_data   (icache_ret_data)
+    );
+
+    AXI_bridge my_AXI_bridge(
+        .aclk(aclk),
+        .aresetn(aresetn),
+        .arid(arid),
+        .araddr(araddr),
+        .arlen(arlen),
+        .arsize(arsize),
+        .arburst(arburst),
+        .arlock(arlock),
+        .arcache(arcache),
+        .arprot(arprot),
+        .arvalid(arvalid),
+        .arready(arready),
+
+        .rid(rid),
+        .rdata(rdata),
+        .rresp(rresp),
+        .rlast(rlast),
+        .rvalid(rvalid),
+        .rready(rready),
+
+        .awid(awid),
+        .awaddr(awaddr),
+        .awlen(awlen),
+        .awsize(awsize),
+        .awburst(awburst),
+        .awlock(awlock),
+        .awcache(awcache),
+        .awprot(awprot),
+        .awvalid(awvalid),
+        .awready(awready),
+
+        .wid(wid),
+        .wdata(wdata),
+        .wstrb(wstrb),
+        .wlast(wlast),
+        .wvalid(wvalid),
+        .wready(wready),
+
+        .bid(bid),
+        .bresp(bresp),
+        .bvalid(bvalid),
+        .bready(bready),
+
+        .icache_req(icache_rd_req),
+        .icache_type(icache_rd_type),
+        .icache_addr(icache_rd_addr),
+        .icache_rd_rdy(icache_rd_rdy),
+        .icache_ret_valid(icache_ret_valid),
+        .icache_ret_last(icache_ret_last),
+        .icache_ret_data(icache_ret_data),
+        .if_exception(if_exception),
+        
+        .data_sram_req(data_sram_req),
+        .data_sram_wr(data_sram_wr),
+        .data_sram_size(data_sram_size),
+        .data_sram_wstrb(data_sram_wstrb),
+        .data_sram_addr(data_sram_addr),
+        .data_sram_wdata(data_sram_wdata),
+        .data_sram_addr_ok(data_sram_addr_ok),
+        .data_sram_data_ok(data_sram_data_ok),
+        .data_sram_rdata(data_sram_rdata)
     );
     
 endmodule

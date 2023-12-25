@@ -46,21 +46,19 @@ module AXI_bridge(
     output wire        bready ,
 
     // inst sram interface
-    input  wire        inst_sram_req,
-    input  wire        inst_sram_wr,
-    input  wire [ 1:0] inst_sram_size,
-    input  wire [ 3:0] inst_sram_wstrb,
-    input  wire [31:0] inst_sram_addr,
-    input  wire [31:0] inst_sram_wdata,
-    output wire        inst_sram_addr_ok,
-    output wire        inst_sram_data_ok,
-    output wire [31:0] inst_sram_rdata,
+    input  wire        icache_req,
+    input  wire [ 2:0] icache_type,
+    input  wire [31:0] icache_addr,
+    output wire        icache_rd_rdy,
+    output reg         icache_ret_valid,
+    output wire        icache_ret_last,
+    output wire [31:0] icache_ret_data,
 
     input  wire        if_exception,
     // data sram interface
     input  wire        data_sram_req,
-    input  wire        data_sram_wr,
     input  wire [ 1:0] data_sram_size,
+    input  wire        data_sram_wr,
     input  wire [ 3:0] data_sram_wstrb,
     input  wire [31:0] data_sram_addr,
     input  wire [31:0] data_sram_wdata,
@@ -122,9 +120,9 @@ module AXI_bridge(
             `STATE_IDLE: begin
                 if (~aresetn | data_conflict)
                     ar_next_state = `STATE_IDLE;
-                else if ((inst_sram_req & ~inst_sram_wr & ~if_exception | data_sram_req & ~data_sram_wr) & ~(read_wait_counter[0]))
+                else if ((icache_req & ~if_exception | data_sram_req & ~data_sram_wr) & ~(read_wait_counter[1]))
                     ar_next_state = `STATE_AR_REQ;
-                else if (inst_sram_req & ~inst_sram_wr & if_exception)
+                else if (icache_req & if_exception)
                     ar_next_state = `STATE_AR_EXCEP;
                 else
                     ar_next_state = `STATE_IDLE;
@@ -160,20 +158,23 @@ module AXI_bridge(
         if (~aresetn) begin
             arid    <= 4'b0;
             araddr  <= 32'b0;
-            arsize  <= 3'b0;
-            {arlen, arburst, arlock, arcache, arprot} <=
-                {8'b0, 2'b01, 2'b0, 4'b0, 3'b0};
+            arsize  <= 3'b010;
+            arlen   <= 8'b0;
+            {arburst, arlock, arcache, arprot} <=
+                {2'b01, 2'b0, 4'b0, 3'b0};
         end
         else if (state_ar_idle) begin
             if (data_sram_req & ~data_sram_wr) begin
                 arid    <= 4'b1;
                 araddr  <= data_sram_addr;
                 arsize  <= {1'b0, data_sram_size};
+                arlen   <= 8'b0;
             end
-            else if (inst_sram_req & ~inst_sram_wr) begin
+            else if (icache_req) begin
                 arid    <= 4'b0;
-                araddr  <= inst_sram_addr;
-                arsize  <= {1'b0, inst_sram_size};
+                araddr  <= icache_addr;
+                arsize  <= 3'b010;
+                arlen   <= {2{icache_type[2]}};
             end
         end
     end
@@ -201,7 +202,7 @@ module AXI_bridge(
             end
 
             `STATE_R_RDY: begin
-                if (rvalid & rready)
+                if (rvalid & rready & rlast)
                     r_next_state = `STATE_R_ACK;
                 else
                     r_next_state = `STATE_R_RDY;
@@ -229,7 +230,7 @@ module AXI_bridge(
             read_wait_counter <= read_wait_counter;
         else if (arready & arvalid)
             read_wait_counter <= read_wait_counter + 1'b1;
-        else if (rready & rvalid)
+        else if (rready & rvalid & rlast)
             read_wait_counter <= read_wait_counter - 1'b1;
     end
     
@@ -322,10 +323,6 @@ module AXI_bridge(
                 awaddr <= data_sram_addr;
                 awsize <= {1'b0, data_sram_size};
             end
-            else if (inst_sram_req & inst_sram_wr) begin
-                awaddr <= inst_sram_addr;
-                awsize <= {1'b0, inst_sram_size};
-            end
         end
     end
 
@@ -339,10 +336,6 @@ module AXI_bridge(
             if (data_sram_req & data_sram_wr) begin
                wdata <= data_sram_wdata;
                wstrb <= data_sram_wstrb;
-            end
-            else if (inst_sram_req & inst_sram_wr) begin
-                wdata <= inst_sram_wdata;
-                wstrb <= inst_sram_wstrb;
             end
         end
     end
@@ -407,9 +400,18 @@ module AXI_bridge(
 
 //************************************************************
     //interface
-    assign inst_sram_rdata   = rdata_buffer[0];
-    assign inst_sram_addr_ok = ~arid[0] & (arvalid & arready | state_ar_excep) | ~wid[0] & wvalid & wready;
-    assign inst_sram_data_ok = ~rid_reg[0] & state_r_ack | ~bid[0] & bvalid & bready;
+    assign icache_ret_data   = rdata_buffer[0];
+    assign icache_rd_rdy     = state_ar_idle;
+    assign icache_ret_last   = state_r_ack & ~rid_reg[0];
+    always @(posedge aclk) begin
+        if (~aresetn)
+            icache_ret_valid <= 1'b0;
+        else if (~rid[0] & rvalid & rready)
+            icache_ret_valid <= 1'b1;
+        else if (icache_ret_valid)
+            icache_ret_valid <= 1'b0;
+    end
+
 
     assign data_sram_rdata   = rdata_buffer[1];
     assign data_sram_addr_ok = arid[0] & arvalid & arready | wid[0] & wvalid & wready;
