@@ -86,7 +86,7 @@ module IF_Stage(
     
 //-----IF stage control signal-----
     assign preif_ready_go   = (inst_sram_req & inst_sram_addr_ok);
-    assign to_if_valid      = preif_ready_go & if_allowin & ~preif_cancel & ~if_flush;
+    assign to_if_valid      = preif_ready_go & if_allowin & ~preif_cancel;
 
     assign if_ready_go      = ((inst_sram_data_ok | if_inst_reg_valid) & ~inst_cancel) | 
                               (if_adef_excep | if_pif_excep | if_ppi_excep | if_tlbr_excep);
@@ -223,8 +223,8 @@ module IF_Stage(
         end
     end
 
-    assign if_inst          = (inst_sram_data_ok & ~inst_cancel) ? inst_sram_rdata : if_inst_reg;
-    assign if_to_id_inst    = (if_inst_reg_valid)? if_inst_reg : if_inst;
+    assign if_inst          =  inst_sram_rdata;
+    assign if_to_id_inst    = (inst_cancel | ~inst_sram_data_ok | if_inst_reg_valid)? if_inst_reg : if_inst;
     
     assign if_to_id_data    = {if_to_id_inst,     // 32-63
                                if_pc};      // 0-31   

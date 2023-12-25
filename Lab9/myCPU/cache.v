@@ -233,7 +233,7 @@ module cache(
 				call_cnt[1][i_call] <= 8'b0;
 			end
 		end
-		else if (state_LOOKUP)begin
+		else if (current_state[LOOKUP])begin
 			if (~hit_way[0] & valid) call_cnt[0][index_reg] <= call_cnt[0][index_reg] + 1;
 			if (~hit_way[1] & valid) call_cnt[1][index_reg] <= call_cnt[1][index_reg] + 1;
 		end
@@ -243,7 +243,7 @@ module cache(
     always @(posedge clk) begin
         if (~resetn)
             replace_way <= 1'b0;
-        else if (state_LOOKUP)
+        else if (current_state[LOOKUP])
             replace_way <= (~tagv_rdata[0][0])? 1'd0 :
 						 (~tagv_rdata[1][0])? 1'd1 :
 						 (call_cnt[0][index_reg] >= call_cnt[1][index_reg])? 1'd0 : 1'd1;

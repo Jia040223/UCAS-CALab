@@ -120,7 +120,7 @@ module AXI_bridge(
             `STATE_IDLE: begin
                 if (~aresetn | data_conflict)
                     ar_next_state = `STATE_IDLE;
-                else if ((icache_req & ~if_exception | data_sram_req & ~data_sram_wr) & ~(read_wait_counter[1]))
+                else if ((icache_req & ~if_exception | data_sram_req & ~data_sram_wr) & ~(read_wait_counter[0]))
                     ar_next_state = `STATE_AR_REQ;
                 else if (icache_req & if_exception)
                     ar_next_state = `STATE_AR_EXCEP;
@@ -401,7 +401,7 @@ module AXI_bridge(
 //************************************************************
     //interface
     assign icache_ret_data   = rdata_buffer[0];
-    assign icache_rd_rdy     = state_ar_idle;
+    assign icache_rd_rdy     = state_ar_idle & ~(data_sram_req & ~data_sram_wr) & ~(read_wait_counter[0]) & ~data_conflict;
     assign icache_ret_last   = state_r_ack & ~rid_reg[0];
     always @(posedge aclk) begin
         if (~aresetn)
@@ -411,7 +411,6 @@ module AXI_bridge(
         else if (icache_ret_valid)
             icache_ret_valid <= 1'b0;
     end
-
 
     assign data_sram_rdata   = rdata_buffer[1];
     assign data_sram_addr_ok = arid[0] & arvalid & arready | wid[0] & wvalid & wready;
