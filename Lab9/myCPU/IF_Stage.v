@@ -217,14 +217,14 @@ module IF_Stage(
         end
         else if (if_to_id_valid & id_allowin | (wb_csr_ex_valid | wb_tlb_refetch_valid | wb_ertn_flush_valid | br_taken)) //inst has been passed to ID or canceled
             if_inst_reg_valid <= 1'b0;
-        else if (~if_inst_reg_valid & inst_sram_data_ok & ~inst_cancel & ~preif_cancel) begin
+        else if (~if_inst_reg_valid & inst_sram_data_ok & ~inst_cancel & ~preif_cancel & if_valid) begin
             if_inst_reg_valid <= 1'b1;
             if_inst_reg <= if_to_id_inst;
         end
     end
 
     assign if_inst          =  inst_sram_rdata;
-    assign if_to_id_inst    = (inst_cancel | ~inst_sram_data_ok | if_inst_reg_valid)? if_inst_reg : if_inst;
+    assign if_to_id_inst    =  (if_inst_reg_valid & ~(inst_sram_data_ok & ~inst_cancel))? if_inst_reg : if_inst;
     
     assign if_to_id_data    = {if_to_id_inst,     // 32-63
                                if_pc};      // 0-31   

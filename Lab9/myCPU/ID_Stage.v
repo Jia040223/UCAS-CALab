@@ -156,10 +156,12 @@ module ID_Stage(
     always @(posedge clk) begin
         if(~resetn)
             id_valid <= 1'b0;
-        else if(br_taken)
-            id_valid <= 1'b0;
-        else if(id_allowin)
-            id_valid <= if_to_id_valid;
+        else if(id_allowin) begin
+            if(br_taken)
+                id_valid <= 1'b0;
+            else
+                id_valid <= if_to_id_valid;
+        end
     end
 
 //if to id stage signal
