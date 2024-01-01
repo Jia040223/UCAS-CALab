@@ -224,7 +224,7 @@ module AXI_bridge(
     always @(posedge aclk) begin
         if (~aresetn) 
             read_wait_counter <= 4'b0;
-        else if (arready & arvalid & rready & rvalid)
+        else if (arready & arvalid & rready & rvalid & rlast)
             read_wait_counter <= read_wait_counter;
         else if (arready & arvalid)
             read_wait_counter <= read_wait_counter + 1'b1;
